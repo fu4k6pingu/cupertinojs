@@ -7,8 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
+		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };
 		C5F83B0F1969155100A381F3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5F83B0E1969155100A381F3 /* main.cpp */; };
 		C5F83B111969155100A381F3 /* objcjs.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C5F83B101969155100A381F3 /* objcjs.1 */; };
 		C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA619691B2D00A381F3 /* libicudata.a */; };
@@ -161,7 +163,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "../../../../usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
+		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
+		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
+		C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* objcjs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = objcjs; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5F83B0E1969155100A381F3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C5F83B101969155100A381F3 /* objcjs.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = objcjs.1; sourceTree = "<group>"; };
@@ -174,6 +180,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */,
 				C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */,
 				C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */,
 				C5F83BDB196923BF00A381F3 /* libv8_libplatform.a in Frameworks */,
@@ -190,6 +197,8 @@
 		C5F83B021969155100A381F3 = {
 			isa = PBXGroup;
 			children = (
+				C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */,
+				C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */,
 				C5F83B6E1969185A00A381F3 /* v8 */,
 				C5F83B0D1969155100A381F3 /* objcjs */,
 				C5F83B0C1969155100A381F3 /* Products */,
@@ -208,6 +217,8 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0E1969155100A381F3 /* main.cpp */,
+				C5D6F09D196A406F00BB9050 /* objccodegen.cpp */,
+				C5D6F09E196A406F00BB9050 /* objccodegen.h */,
 				C5D6F09A1969F28600BB9050 /* README.md */,
 				C5F83B101969155100A381F3 /* objcjs.1 */,
 			);
@@ -390,6 +401,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
+				C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -443,8 +455,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libstdc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -484,8 +496,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libstdc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
@@ -518,8 +530,9 @@
 		C5F83B151969155100A381F3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libstdc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -537,6 +550,8 @@
 					DEBUG,
 					ENABLE_EXTRA_CHECKS,
 					ENABLE_HANDLE_ZAPPING,
+					__STDC_CONSTANT_MACROS,
+					__STDC_LIMIT_MACROS,
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -544,17 +559,26 @@
 					"$(SRCROOT)/deps/v8-trunk",
 					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
 					"$(SRCROOT)/deps/v8-trunk/include",
+					/usr/local/Cellar/llvm/3.4/include,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/llvm/3.4/include,
+					/usr/local/Cellar/llvm/3.4/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
 				);
-				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-U__GXX_EXPERIMENTAL_CXX0X__",
+				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
@@ -562,8 +586,9 @@
 		C5F83B161969155100A381F3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				CLANG_CXX_LIBRARY = "libstdc++";
+				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
+				CLANG_CXX_LIBRARY = "compiler-default";
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -581,6 +606,8 @@
 					DEBUG,
 					ENABLE_EXTRA_CHECKS,
 					ENABLE_HANDLE_ZAPPING,
+					__STDC_CONSTANT_MACROS,
+					__STDC_LIMIT_MACROS,
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -588,17 +615,26 @@
 					"$(SRCROOT)/deps/v8-trunk",
 					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
 					"$(SRCROOT)/deps/v8-trunk/include",
+					/usr/local/Cellar/llvm/3.4/include,
 				);
-				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/llvm/3.4/include,
+					/usr/local/Cellar/llvm/3.4/lib,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
 				);
-				OTHER_CPLUSPLUSFLAGS = "$(OTHER_CFLAGS)";
+				OTHER_CPLUSPLUSFLAGS = (
+					"$(OTHER_CFLAGS)",
+					"-U__GXX_EXPERIMENTAL_CXX0X__",
+				);
 				OTHER_LDFLAGS = "-Wl,-search_paths_first";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = "";
+				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				VALID_ARCHS = x86_64;
 			};
 			name = Release;
