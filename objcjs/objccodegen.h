@@ -30,14 +30,16 @@ public:
     llvm::IRBuilder<> *_builder;
     
     llvm::Module *_module;
-    std::map<std::string, bool> *_namedValues;
+    std::map<std::string, llvm::AllocaInst*> _namedValues;
 
+    llvm::Function *_currentFunction;
+    
     ObjCCodeGen(Zone *zone){
         InitializeAstVisitor(zone);
         llvm::LLVMContext &Context = llvm::getGlobalContext();
         _builder = new llvm::IRBuilder<> (Context);
         _module = new llvm::Module("jit", Context);
-        _namedValues = new std::map<std::string, bool>;
+//        _namedValues = new std::map<std::string, bool>;
     }
     
 
@@ -114,7 +116,7 @@ public:
     void VisitCompareOperation(CompareOperation* node);
     void VisitThisFunction(ThisFunction* node) ;
     
-    void Literal(Handle<Object> value);
+    llvm::Value *CGLiteral( Handle<Object> value);
 
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };

@@ -25,6 +25,15 @@ static std::string stringFromV8AstRawString(const AstRawString *raw){
     }
     return str;
 }
+/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
+/// the function.  This is used for mutable variables etc.
+static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
+                                          const std::string &VarName) {
+    llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
+                     TheFunction->getEntryBlock().begin());
+    return TmpB.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
+                             VarName.c_str());
+}
 
 void ObjCCodeGen::dump(){
     _module->dump();
@@ -67,10 +76,9 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     
     //TODO : Enter into symbol table with scope..
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
-    _namedValues->insert(std::pair<std::string, bool>(str, false));
-
-    Literal(node->proxy()->name());
-    _builder->CreateLo
+    llvm::Function *f = _builder->GetInsertBlock()->getParent();
+    _namedValues[str] = CreateEntryBlockAlloca(f, str);
+    CGLiteral(node->proxy()->name());
 }
 
 
@@ -371,10 +379,10 @@ void ObjCCodeGen::VisitConditional(Conditional* node) {
 
 
 void ObjCCodeGen::VisitLiteral(class Literal* node) {
-    Literal(node->value());
+    CGLiteral(node->value());
 }
 
-void ObjCCodeGen::Literal( Handle<Object> value) {
+llvm::Value *ObjCCodeGen::CGLiteral( Handle<Object> value) {
   Object* object = *value;
   if (object->IsString()) {
     String* string = String::cast(object);
@@ -393,6 +401,7 @@ void ObjCCodeGen::Literal( Handle<Object> value) {
 //    Print("undefined");
   } else if (object->IsNumber()) {
 //    Print("%g", object->Number());
+      return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
   } else if (object->IsJSObject()) {
     // regular expression
     if (object->IsJSFunction()) {
@@ -409,6 +418,7 @@ void ObjCCodeGen::Literal( Handle<Object> value) {
   } else {
 //    Print("<unknown literal %p>", object);
   }
+    return NULL;
 }
 
 void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
@@ -448,11 +458,11 @@ void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
 //  PrintLiteral(node->name(), false);
 }
 
-
+//TODO : checkout full-codegen-x86.cc
 void ObjCCodeGen::VisitAssignment(Assignment* node) {
   Visit(node->target());
 //  Print(" %s ", Token::String(node->op()));
-    
+
   Visit(node->value());
 }
 
