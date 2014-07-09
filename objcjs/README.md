@@ -1,5 +1,13 @@
 # installing
 
+- install v8 with gyp
+https://code.google.com/p/v8/wiki/BuildingWithGYP
+
+make builddeps
+
+build/gyp_v8 -Dtarget_arch=x64
+
+
 FIXME: currently links stl and new apples new c++ lib
 
 - link llvm 
