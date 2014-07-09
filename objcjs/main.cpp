@@ -19,7 +19,7 @@
 #include <include/libplatform/libplatform.h>
 #include <vector>
 
-#define _DEBUG 0
+#define _DEBUG 1
 
 using namespace v8::internal;
 
@@ -44,7 +44,7 @@ CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_h
         abort();
     }
 #if _DEBUG
-    PrintF(AstPrinter(info.zone()).PrintProgram(program));
+    PrintF(AstPrinter(info->zone()).PrintProgram(info->function()));
 #endif
     return info;
 }
@@ -135,8 +135,8 @@ int main(int argc, const char * argv[])
 
     auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/test.js", isolate));
     auto codegen = ObjCCodeGen(module->zone());
-    
     codegen.Visit(module->function());
+    codegen.dump();
     
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();

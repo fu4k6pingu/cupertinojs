@@ -27,13 +27,17 @@ using namespace v8::internal;
 
 class ObjCCodeGen: public  v8::internal::AstVisitor {
 public:
-    llvm::IRBuilder<> _builder(llvm::LLVMContext &getGlobalContext());
+    llvm::IRBuilder<> *_builder;
     
     llvm::Module *_module;
-    std::map<std::string, llvm::Value*> _namedValues;
+    std::map<std::string, bool> *_namedValues;
 
     ObjCCodeGen(Zone *zone){
         InitializeAstVisitor(zone);
+        llvm::LLVMContext &Context = llvm::getGlobalContext();
+        _builder = new llvm::IRBuilder<> (Context);
+        _module = new llvm::Module("jit", Context);
+        _namedValues = new std::map<std::string, bool>;
     }
     
 
@@ -41,12 +45,25 @@ public:
     virtual~ObjCCodeGen(){
         
     }
-    DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
-    
-    void VisitDeclarations(ZoneList<Declaration*>* declarations){};
-    void VisitStatements(ZoneList<Statement*>* statements){};
-    void VisitExpressions(ZoneList<Expression*>* expressions){};
-    void VisitBlock(Block *block){}
+    void dump();
+
+   
+    void VisitDeclarations(ZoneList<Declaration*>* declarations){
+        if (declarations->length() > 0) {
+            for (int i = 0; i < declarations->length(); i++) {
+                Visit(declarations->at(i));
+            }
+        }
+    }
+    void VisitStatements(ZoneList<Statement*>* statements){
+        for (int i = 0; i < statements->length(); i++) {
+            Visit(statements->at(i));
+        }
+    }
+
+    void VisitBlock(Block *block){
+        VisitStatements(block->statements());
+    }
     
     void VisitVariableDeclaration(v8::internal::VariableDeclaration* node);
     void VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node);
@@ -79,6 +96,7 @@ public:
     void VisitNativeFunctionLiteral(NativeFunctionLiteral* node);
     void VisitConditional(Conditional* node);
     void VisitLiteral(Literal* node);
+    
     void VisitRegExpLiteral(RegExpLiteral* node) ;
     void VisitObjectLiteral(ObjectLiteral* node) ;
     void VisitArrayLiteral(ArrayLiteral* node) ;
@@ -95,6 +113,10 @@ public:
     void VisitBinaryOperation(BinaryOperation* node);
     void VisitCompareOperation(CompareOperation* node);
     void VisitThisFunction(ThisFunction* node) ;
+    
+    void Literal(Handle<Object> value);
+
+    DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };
 
 

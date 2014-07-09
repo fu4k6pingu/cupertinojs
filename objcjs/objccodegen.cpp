@@ -8,14 +8,36 @@
 
 #include "objccodegen.h"
 #include <llvm-c/Core.h>
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "src/scopes.h"
 
 using namespace v8::internal;
+
+static std::string stringFromV8AstRawString(const AstRawString *raw){
+    std::string str;
+    size_t size = raw->length();
+    const unsigned char *data = raw->raw_data();
+    for (int i = 0; i < size; i++) {
+        str += data[i];
+    }
+    return str;
+}
+
+void ObjCCodeGen::dump(){
+    _module->dump();
+}
 
 //
 //ObjCCodeGen::ObjCCodeGen(Zone* zone) {
 ////  InitializeAstVisitor(zone);
 //}
 
+//void ObjCCodeGen::Visit(v8::internal::AstNode *node){
+//    
+//}
 
 //ObjCCodeGen::~ObjCCodeGen() {
 ////  DeleteArray(output_);
@@ -32,19 +54,23 @@ using namespace v8::internal;
 //
 //}
 
-//void ObjCCodeGen::VisitBlock(Block* node) {
-//  if (!node->is_initializer_block()) Print("{ ");
-//  PrintStatements(node->statements());
-//  if (node->statements()->length() > 0) Print(" ");
-//  if (!node->is_initializer_block()) Print("}");
-//    ASSERT(node);
-//}
 
+//Value *CallExprAST() {
+//    // Look up the name in the global module table.
+//;
+//}
 
 void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
 //  Print("var ");
 //  PrintLiteral(node->proxy()->name(), false);
 //  Print(";");
+    
+    //TODO : Enter into symbol table with scope..
+    std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
+    _namedValues->insert(std::pair<std::string, bool>(str, false));
+
+    Literal(node->proxy()->name());
+    _builder->CreateLo
 }
 
 
@@ -55,7 +81,12 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
 //  PrintFunctionLiteral(node->fun());
 //  Print(";");
 
-    
+  
+    //TODO : this needs to assign the function
+//    VisitLiteral(node->proxy()->name());
+
+   
+    VisitFunctionLiteral(node->fun());
 }
 
 
@@ -116,7 +147,7 @@ void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
 
 
 void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
-//  Visit(node->expression());
+  Visit(node->expression());
 //  Print(";");
 }
 
@@ -292,8 +323,36 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
 //  Print("(");
 //  PrintFunctionLiteral(node);
 //  Print(")");
-}
 
+//
+//    v8::internal::Scope *scope = node->scope();
+//    int num_params = scope->num_parameters();
+//    VariableProxy *var = node->proxy();
+//    
+
+    
+    v8::internal::Scope *scope = node->scope();
+    int num_params = scope->num_parameters();
+
+    // Make the function type:  double(double,double) etc.
+    std::vector<llvm::Type*> Doubles(num_params,
+                               llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                                         Doubles, false);
+
+
+
+    std::string str = stringFromV8AstRawString(node->raw_name());
+    llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, str, _module);
+ 
+    
+    // Create a new basic block to start insertion into.
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
+    _builder->SetInsertPoint(BB);
+    
+    VisitDeclarations(node->scope()->declarations());
+    VisitStatements(node->body());
+}
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
 //  Print("(");
@@ -311,10 +370,46 @@ void ObjCCodeGen::VisitConditional(Conditional* node) {
 }
 
 
-void ObjCCodeGen::VisitLiteral(Literal* node) {
-//  PrintLiteral(node->value(), true);
+void ObjCCodeGen::VisitLiteral(class Literal* node) {
+    Literal(node->value());
 }
 
+void ObjCCodeGen::Literal( Handle<Object> value) {
+  Object* object = *value;
+  if (object->IsString()) {
+    String* string = String::cast(object);
+//    if (quote) Print("\"");
+    for (int i = 0; i < string->length(); i++) {
+//      Print("%c", string->Get(i));
+    }
+//    if (quote) Print("\"");
+  } else if (object->IsNull()) {
+//    Print("null");
+  } else if (object->IsTrue()) {
+//    Print("true");
+  } else if (object->IsFalse()) {
+//    Print("false");
+  } else if (object->IsUndefined()) {
+//    Print("undefined");
+  } else if (object->IsNumber()) {
+//    Print("%g", object->Number());
+  } else if (object->IsJSObject()) {
+    // regular expression
+    if (object->IsJSFunction()) {
+//      Print("JS-Function");
+    } else if (object->IsJSArray()) {
+//      Print("JS-array[%u]", JSArray::cast(object)->length());
+    } else if (object->IsJSObject()) {
+//      Print("JS-Object");
+    } else {
+//      Print("?UNKNOWN?");
+    }
+  } else if (object->IsFixedArray()) {
+//    Print("FixedArray");
+  } else {
+//    Print("<unknown literal %p>", object);
+  }
+}
 
 void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
 //  Print(" RegExp(");
@@ -355,9 +450,10 @@ void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
 
 
 void ObjCCodeGen::VisitAssignment(Assignment* node) {
-//  Visit(node->target());
+  Visit(node->target());
 //  Print(" %s ", Token::String(node->op()));
-//  Visit(node->value());
+    
+  Visit(node->value());
 }
 
 
@@ -393,6 +489,21 @@ void ObjCCodeGen::VisitProperty(Property* node) {
 void ObjCCodeGen::VisitCall(Call* node) {
 //  Visit(node->expression());
 //  PrintArguments(node->arguments());
+//    llvm::Function *CalleeF = _module->getFunction(NULL);
+//    if (CalleeF == 0)
+//    return ErrorV("Unknown function referenced");
+    
+    // If argument mismatch error.
+//    if (CalleeF->arg_size() != Args.size())
+//    return ErrorV("Incorrect # arguments passed");
+    
+//    std::vector<Value*> ArgsV;
+//    for (unsigned i = 0, e = Args.size(); i != e; ++i) {
+//        ArgsV.push_back(Args[i]->Codegen());
+//        if (ArgsV.back() == 0) return 0;
+//    }
+   
+//    _builder->CreateCall(CalleeF, NULL, "calltmp");
 }
 
 

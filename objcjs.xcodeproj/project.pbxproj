@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
+		C566B4D6196D057A00BAC438 /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };
@@ -180,6 +181,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C566B4D6196D057A00BAC438 /* libLLVM-3.4.dylib in Frameworks */,
 				C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */,
 				C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */,
 				C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */,
@@ -532,7 +534,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
-				FRAMEWORK_SEARCH_PATHS = "";
+				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -575,7 +577,7 @@
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
@@ -588,7 +590,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
-				FRAMEWORK_SEARCH_PATHS = "";
+				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -631,7 +633,7 @@
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = "-Wl,-search_paths_first";
+				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
