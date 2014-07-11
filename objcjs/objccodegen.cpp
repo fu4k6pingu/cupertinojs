@@ -202,9 +202,8 @@ void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
 
 
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
-//  Print("return ");
-//  Visit(node->expression());
-//  Print(";");
+    Visit(node->expression());
+
 }
 
 
@@ -328,17 +327,6 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
 
 
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
-//  Print("(");
-//  PrintFunctionLiteral(node);
-//  Print(")");
-
-//
-//    v8::internal::Scope *scope = node->scope();
-//    int num_params = scope->num_parameters();
-//    VariableProxy *var = node->proxy();
-//    
-
-    
     v8::internal::Scope *scope = node->scope();
     int num_params = scope->num_parameters();
 
@@ -349,17 +337,27 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
                                          Doubles, false);
 
 
-
     std::string str = stringFromV8AstRawString(node->raw_name());
     llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, str, _module);
  
-    
+  
+    _currentFunction = F;
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
     _builder->SetInsertPoint(BB);
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
+    
+    if (_retValue) {
+        _builder->CreateRet(_retValue);
+        _retValue = NULL;
+    } else {
+        _builder->CreateRetVoid();
+    }
+
+    _builder->saveAndClearIP();
+    _currentFunction = NULL;
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
@@ -384,40 +382,47 @@ void ObjCCodeGen::VisitLiteral(class Literal* node) {
 
 llvm::Value *ObjCCodeGen::CGLiteral( Handle<Object> value) {
   Object* object = *value;
+    llvm::Value *lvalue;
   if (object->IsString()) {
     String* string = String::cast(object);
-//    if (quote) Print("\"");
+//    if (quote) printf("\"");
     for (int i = 0; i < string->length(); i++) {
-//      Print("%c", string->Get(i));
+//      printf("%c", string->Get(i));
     }
-//    if (quote) Print("\"");
+//    if (quote) printf("\"");
   } else if (object->IsNull()) {
-//    Print("null");
+    printf("null");
   } else if (object->IsTrue()) {
-//    Print("true");
+    printf("true");
   } else if (object->IsFalse()) {
-//    Print("false");
+//    printf("false");
   } else if (object->IsUndefined()) {
-//    Print("undefined");
+    printf("undefined");
   } else if (object->IsNumber()) {
-//    Print("%g", object->Number());
-      return llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
+    printf("%g", object->Number());
+      lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
   } else if (object->IsJSObject()) {
     // regular expression
     if (object->IsJSFunction()) {
-//      Print("JS-Function");
+//      printf("JS-Function");
     } else if (object->IsJSArray()) {
-//      Print("JS-array[%u]", JSArray::cast(object)->length());
+//      printf("JS-array[%u]", JSArray::cast(object)->length());
     } else if (object->IsJSObject()) {
-//      Print("JS-Object");
+      printf("JS-Object");
     } else {
-//      Print("?UNKNOWN?");
+      printf("?UNKNOWN?");
     }
   } else if (object->IsFixedArray()) {
-//    Print("FixedArray");
+    printf("FixedArray");
   } else {
-//    Print("<unknown literal %p>", object);
+    printf("<unknown literal %p>", object);
   }
+ 
+    if (_accumulatorContext) {
+        _accumulatorContext->push_back(lvalue);
+    }
+    
+    _retValue = lvalue;
     return NULL;
 }
 
@@ -455,7 +460,17 @@ void ObjCCodeGen::VisitArrayLiteral(ArrayLiteral* node) {
 
 
 void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
-//  PrintLiteral(node->name(), false);
+    std::string str = stringFromV8AstRawString(node->raw_name());
+    
+    llvm::Value *var = _namedValues[str];
+    if (!var) {
+        assert(0 == "Unknown variable name");
+    }
+    
+    llvm::Value *load = _builder->CreateLoad(var, str);
+    if (_accumulatorContext) {
+        _accumulatorContext->push_back(load);
+    }
 }
 
 //TODO : checkout full-codegen-x86.cc
@@ -495,25 +510,60 @@ void ObjCCodeGen::VisitProperty(Property* node) {
 //  }
 }
 
+Call::CallType GetCallType(Call*call, Isolate* isolate) {
+    VariableProxy* proxy = call->expression()->AsVariableProxy();
+    if (proxy != NULL && proxy->var()) {
+        
+        if (proxy->var()->IsUnallocated()) {
+            return Call::GLOBAL_CALL;
+        } else if (proxy->var()->IsLookupSlot()) {
+            return Call::LOOKUP_SLOT_CALL;
+        }
+    }
+    
+    Property* property = call->expression()->AsProperty();
+    return property != NULL ? Call::PROPERTY_CALL : Call::OTHER_CALL;
+}
 
 void ObjCCodeGen::VisitCall(Call* node) {
 //  Visit(node->expression());
 //  PrintArguments(node->arguments());
-//    llvm::Function *CalleeF = _module->getFunction(NULL);
-//    if (CalleeF == 0)
-//    return ErrorV("Unknown function referenced");
-    
-    // If argument mismatch error.
-//    if (CalleeF->arg_size() != Args.size())
-//    return ErrorV("Incorrect # arguments passed");
-    
-//    std::vector<Value*> ArgsV;
-//    for (unsigned i = 0, e = Args.size(); i != e; ++i) {
-//        ArgsV.push_back(Args[i]->Codegen());
-//        if (ArgsV.back() == 0) return 0;
-//    }
+//   node->proxy()->raw_name())
    
-//    _builder->CreateCall(CalleeF, NULL, "calltmp");
+    Expression *callee = node->expression();
+    Call::CallType call_type = GetCallType(node, isolate());
+    std::string name;
+    if (call_type == Call::GLOBAL_CALL) {
+        assert(0 == "unimplemented");
+    } else if (call_type == Call::LOOKUP_SLOT_CALL) {
+        VariableProxy* proxy = callee->AsVariableProxy();
+         name = stringFromV8AstRawString(proxy->raw_name());
+    } else {
+        VariableProxy* proxy = callee->AsVariableProxy();
+        name = stringFromV8AstRawString(proxy->raw_name());
+    }
+   
+    llvm::Function *calleeF = _module->getFunction(name);
+    
+    if (calleeF == 0){
+        printf("Unknown function referenced");
+        _retValue = NULL;
+        return;
+    }
+
+// If argument mismatch error.
+//    if (CalleeF->arg_size() != Args.size()) {
+//
+//        return ErrorV("Incorrect # arguments passed");
+//
+//    }
+    ZoneList<Expression*>* args = node->arguments();
+    ASSERT(args->length() == 1);
+    VisitStartAccumulation(args->at(0));
+    std::vector<llvm::Value*> argsV = *_accumulatorContext;
+//    if (argsV.back() == 0) return;
+    _retValue = _builder->CreateCall(calleeF, argsV, "calltmp");
+    EndAccumulation();
 }
 
 
@@ -571,4 +621,18 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* node) {
 
 void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
 //  Print("<this-function>");
+}
+
+
+void ObjCCodeGen::VisitStartAccumulation(Expression *expr) {
+    //Start accumulation
+    _accumulatorContext = new std::vector<llvm::Value *>;
+    Visit(expr);
+   
+    //End accumulation
+}
+
+void ObjCCodeGen::EndAccumulation(){
+    delete _accumulatorContext;
+    _accumulatorContext = NULL;
 }

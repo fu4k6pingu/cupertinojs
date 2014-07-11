@@ -33,12 +33,19 @@ public:
     std::map<std::string, llvm::AllocaInst*> _namedValues;
 
     llvm::Function *_currentFunction;
+   
+    std::vector<llvm::Value *> *_accumulatorContext;
+    
+    //TODO : this needs to support scopes
+    // and nested functions and returning expressions!
+    llvm::Value *_retValue;
     
     ObjCCodeGen(Zone *zone){
         InitializeAstVisitor(zone);
         llvm::LLVMContext &Context = llvm::getGlobalContext();
         _builder = new llvm::IRBuilder<> (Context);
         _module = new llvm::Module("jit", Context);
+        _accumulatorContext = NULL;
 //        _namedValues = new std::map<std::string, bool>;
     }
     
@@ -118,6 +125,8 @@ public:
     
     llvm::Value *CGLiteral( Handle<Object> value);
 
+    void VisitStartAccumulation(Expression *expr);
+    void EndAccumulation();
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };
 
