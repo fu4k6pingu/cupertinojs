@@ -784,7 +784,31 @@ void ObjCCodeGen::VisitLogicalExpression(BinaryOperation* expr) {
 }
 
 void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
+    Token::Value op = expr->op();
+//    Comment cmnt(masm_, "[ ArithmeticExpression");
+    Expression* left = expr->left();
+    Expression* right = expr->right();
     
+    VisitStartAccumulation(left);
+    VisitStartAccumulation(right);
+
+    llvm::Value *l = _accumulatorContext->back();
+    _accumulatorContext->pop_back();
+    
+    llvm::Value *r = _accumulatorContext->back();
+    _accumulatorContext->pop_back();
+    
+    switch (op) {
+        case v8::internal::Token::ADD : _builder->CreateFAdd(l, r, "addtmp");
+        case v8::internal::Token::SUB : _builder->CreateFSub(l, r, "addtmp");
+//        case '*': return Builder.CreateFMul(L, R, "multmp");
+//        case '<':
+//            L = Builder.CreateFCmpULT(L, R, "cmptmp");
+            // Convert bool 0/1 to double 0.0 or 1.0
+//            return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
+//                                        "booltmp");
+        default: break;
+    }
 }
     
  
