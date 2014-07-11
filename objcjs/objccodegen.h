@@ -35,6 +35,7 @@ public:
     llvm::Function *_currentFunction;
    
     std::vector<llvm::Value *> *_accumulatorContext;
+    std::vector<llvm::Value *> *_stackAccumulatorContext;
     
     //TODO : this needs to support scopes
     // and nested functions and returning expressions!
@@ -122,11 +123,22 @@ public:
     void VisitBinaryOperation(BinaryOperation* node);
     void VisitCompareOperation(CompareOperation* node);
     void VisitThisFunction(ThisFunction* node) ;
+
+    void VisitComma(BinaryOperation* expr);
+    void VisitLogicalExpression(BinaryOperation* expr);
+    void VisitArithmeticExpression(BinaryOperation* expr);
+    
+   
     
     llvm::Value *CGLiteral( Handle<Object> value);
 
     void VisitStartAccumulation(Expression *expr);
     void EndAccumulation();
+    void VisitStartStackAccumulation(Expression *expr);
+    void EndStackAccumulation();
+    void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
+    
+    
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };
 

@@ -35,6 +35,25 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
                              VarName.c_str());
 }
 
+/// CreateArgumentAllocas - Create an alloca for each argument and register the
+/// argument in the symbol table so that references to it will succeed.
+void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+    llvm::Function::arg_iterator AI = F->arg_begin();
+    int num_params = scope->num_parameters();
+    for (unsigned Idx = 0, e = num_params; Idx != e; ++Idx, ++AI) {
+        // Create an alloca for this variable.
+        Variable *param = scope->parameter(Idx);
+        std::string str = stringFromV8AstRawString(param->raw_name());
+        llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(F, str);
+        
+        // Store the initial value into the alloca.
+        _builder->CreateStore(AI, Alloca);
+        
+        // Add arguments to variable symbol table.
+        _namedValues[str] = Alloca;
+    }
+}
+
 void ObjCCodeGen::dump(){
     _module->dump();
 }
@@ -77,7 +96,9 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     //TODO : Enter into symbol table with scope..
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *f = _builder->GetInsertBlock()->getParent();
-    _namedValues[str] = CreateEntryBlockAlloca(f, str);
+    llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
+    _namedValues[str] = alloca;
+
     CGLiteral(node->proxy()->name());
 }
 
@@ -93,8 +114,12 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     //TODO : this needs to assign the function
 //    VisitLiteral(node->proxy()->name());
 
-   
+    std::string name = stringFromV8AstRawString(node->fun()->raw_name());
+    llvm::Function *calleeF = _module->getFunction(name);
+    assert(!calleeF);
+    
     VisitFunctionLiteral(node->fun());
+
 }
 
 
@@ -339,12 +364,16 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
 
     std::string str = stringFromV8AstRawString(node->raw_name());
     llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, str, _module);
- 
-  
+
     _currentFunction = F;
+
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
     _builder->SetInsertPoint(BB);
+    
+    if (num_params){
+        CreateArgumentAllocas(F, node->scope());
+    }
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
@@ -382,14 +411,15 @@ void ObjCCodeGen::VisitLiteral(class Literal* node) {
 
 llvm::Value *ObjCCodeGen::CGLiteral( Handle<Object> value) {
   Object* object = *value;
-    llvm::Value *lvalue;
+    llvm::Value *lvalue = NULL;
   if (object->IsString()) {
     String* string = String::cast(object);
 //    if (quote) printf("\"");
-    for (int i = 0; i < string->length(); i++) {
+//    for (int i = 0; i < string->length(); i++) {
 //      printf("%c", string->Get(i));
-    }
+//    }
 //    if (quote) printf("\"");
+      printf("str");
   } else if (object->IsNull()) {
     printf("null");
   } else if (object->IsTrue()) {
@@ -462,23 +492,148 @@ void ObjCCodeGen::VisitArrayLiteral(ArrayLiteral* node) {
 void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
     std::string str = stringFromV8AstRawString(node->raw_name());
     
-    llvm::Value *var = _namedValues[str];
-    if (!var) {
-        assert(0 == "Unknown variable name");
-    }
+    Variable*var = node->var();
+    llvm::Value *varValue;
     
-    llvm::Value *load = _builder->CreateLoad(var, str);
+    if (!var) {
+        //TODO : investogate
+        //This is a weird edge case where there is no var!
+        varValue = _namedValues[str];
+    } else {
+        
+        // variables.
+        switch (var->location()) {
+            case Variable::UNALLOCATED: {
+                //      Comment cmnt(masm_, "[ Global variable");
+                //      __ Move(LoadIC::NameRegister(), var->name());
+                //      __ movp(LoadIC::ReceiverRegister(), GlobalObjectOperand());
+                //      CallLoadIC(CONTEXTUAL);
+                //      context()->Plug(rax);
+                break;
+            }
+                
+            case Variable::PARAMETER:
+            case Variable::LOCAL:
+            case Variable::CONTEXT: {
+                //      Comment cmnt(masm_, var->IsContextSlot() ? "[ Context slot"
+                //                                               : "[ Stack slot");
+                
+            }
+            case Variable::LOOKUP: {
+                
+                
+            }
+
+            varValue = _namedValues[str];
+        }
+    }
+
+    //TODO : abstract this out
+    llvm::Value *load = _builder->CreateLoad(varValue, str);
     if (_accumulatorContext) {
         _accumulatorContext->push_back(load);
     }
+    _retValue = load;
 }
 
 //TODO : checkout full-codegen-x86.cc
 void ObjCCodeGen::VisitAssignment(Assignment* node) {
-  Visit(node->target());
-//  Print(" %s ", Token::String(node->op()));
+    ASSERT(node->target()->IsValidReferenceExpression());
 
-  Visit(node->value());
+    enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
+    LhsKind assign_type = VARIABLE;
+    Property* property = node->target()->AsProperty();
+    
+      if (property != NULL) {
+    assign_type = (property->key()->IsPropertyName())
+        ? NAMED_PROPERTY
+          : KEYED_PROPERTY;
+      }
+    switch (assign_type) {
+        case VARIABLE:{
+            //Do nothing
+        }
+        case KEYED_PROPERTY:{
+            
+        }
+        case NAMED_PROPERTY:{
+            
+        }
+    }
+    
+  // For compound assignments we need another deoptimization point after the
+    // variable/property load.
+    if (node->is_compound()) {
+        {
+//            AccumulatorValueContext context(this);
+            switch (assign_type) {
+                case VARIABLE:
+//                    EmitVariableLoad(expr->target()->AsVariableProxy());
+//                    PrepareForBailout(expr->target(), TOS_REG);
+                    break;
+                case NAMED_PROPERTY:
+//                    EmitNamedPropertyLoad(property);
+//                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
+                    break;
+                case KEYED_PROPERTY:
+//                    EmitKeyedPropertyLoad(property);
+//                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
+                    break;
+            }
+        }
+        
+        Token::Value op = node->binary_op();
+//        __ Push(rax);  // Left operand goes on the stack.
+//        VisitForAccumulatorValue(expr->value());
+        
+//        OverwriteMode mode = node->value()->ResultOverwriteAllowed()
+//        ? OVERWRITE_RIGHT
+//        : NO_OVERWRITE;
+//        SetSourcePosition(expr->position() + 1);
+//        AccumulatorValueContext context(this);
+//        if (ShouldInlineSmiCase(op)) {
+//            EmitInlineSmiBinaryOp(expr->binary_operation(),
+//                                  op,
+//                                  mode,
+//                                  expr->target(),
+//                                  expr->value());
+//        } else {
+//            EmitBinaryOp(expr->binary_operation(), op, mode);
+//        }
+//        // Deoptimization point in case the binary operation may have side effects.
+//        PrepareForBailout(expr->binary_operation(), TOS_REG);
+    } else {
+        //TODO : Why do this?
+        VisitStartStackAccumulation(node->value());
+    }
+    
+    // Record source position before possible IC call.
+//    SetSourcePosition(expr->position());
+    
+    // Store the value.
+    switch (assign_type) {
+        case VARIABLE: {
+            VariableProxy *target = (VariableProxy *)node->target();
+            assert(target);
+            std::string str = stringFromV8AstRawString(target->raw_name());
+            llvm::Function *f = _builder->GetInsertBlock()->getParent();
+            _namedValues[str] = CreateEntryBlockAlloca(f, str);
+            
+//            EmitVariableAssignment(expr->target()->AsVariableProxy()->var(),
+//                                   expr->op());
+//            PrepareForBailoutForId(expr->AssignmentId(), TOS_REG);
+//            context()->Plug(rax);
+            break;
+        
+        } case NAMED_PROPERTY: {
+//            EmitNamedPropertyAssignment(expr);
+            break;
+        }
+        case KEYED_PROPERTY: {
+//            EmitKeyedPropertyAssignment(expr);
+            break;
+        }
+    }
 }
 
 
@@ -526,10 +681,6 @@ Call::CallType GetCallType(Call*call, Isolate* isolate) {
 }
 
 void ObjCCodeGen::VisitCall(Call* node) {
-//  Visit(node->expression());
-//  PrintArguments(node->arguments());
-//   node->proxy()->raw_name())
-   
     Expression *callee = node->expression();
     Call::CallType call_type = GetCallType(node, isolate());
     std::string name;
@@ -538,6 +689,10 @@ void ObjCCodeGen::VisitCall(Call* node) {
     } else if (call_type == Call::LOOKUP_SLOT_CALL) {
         VariableProxy* proxy = callee->AsVariableProxy();
          name = stringFromV8AstRawString(proxy->raw_name());
+    } else if (call_type == Call::OTHER_CALL){
+        VariableProxy* proxy = callee->AsVariableProxy();
+        name = stringFromV8AstRawString(proxy->raw_name());
+        
     } else {
         VariableProxy* proxy = callee->AsVariableProxy();
         name = stringFromV8AstRawString(proxy->raw_name());
@@ -546,21 +701,25 @@ void ObjCCodeGen::VisitCall(Call* node) {
     llvm::Function *calleeF = _module->getFunction(name);
     
     if (calleeF == 0){
+        //TODO: this would call an objc or c function in the future
         printf("Unknown function referenced");
         _retValue = NULL;
         return;
     }
 
-// If argument mismatch error.
-//    if (CalleeF->arg_size() != Args.size()) {
-//
-//        return ErrorV("Incorrect # arguments passed");
-//
-//    }
     ZoneList<Expression*>* args = node->arguments();
-    ASSERT(args->length() == 1);
-    VisitStartAccumulation(args->at(0));
+    // If argument mismatch error.
+    if (calleeF->arg_size() != args->length()) {
+        printf("Unknown function referenced");
+        abort();
+    }
+//    ASSERT(args->length() == 1);
+   
+    for (int i = 0; i <args->length(); i++) {
+        VisitStartAccumulation(args->at(i));
+    }
     std::vector<llvm::Value*> argsV = *_accumulatorContext;
+    
 //    if (argsV.back() == 0) return;
     _retValue = _builder->CreateCall(calleeF, argsV, "calltmp");
     EndAccumulation();
@@ -601,15 +760,40 @@ void ObjCCodeGen::VisitCountOperation(CountOperation* node) {
 }
 
 
-void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* node) {
+//void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* node) {
 //  Print("(");
 //  Visit(node->left());
 //  Print(" %s ", Token::String(node->op()));
 //  Visit(node->right());
 //  Print(")");
+//}
+
+//TODO : rename
+void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* expr) {
+  switch (expr->op()) {
+    case Token::COMMA:
+      return VisitComma(expr);
+    case Token::OR:
+    case Token::AND:
+      return VisitLogicalExpression(expr);
+    default:
+      return VisitArithmeticExpression(expr);
+  }
 }
 
+void ObjCCodeGen::VisitComma(BinaryOperation* expr) {
+    
+}
 
+void ObjCCodeGen::VisitLogicalExpression(BinaryOperation* expr) {
+    
+}
+
+void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
+    
+}
+    
+ 
 void ObjCCodeGen::VisitCompareOperation(CompareOperation* node) {
 //  Print("(");
 //  Visit(node->left());
@@ -626,7 +810,9 @@ void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
 
 void ObjCCodeGen::VisitStartAccumulation(Expression *expr) {
     //Start accumulation
-    _accumulatorContext = new std::vector<llvm::Value *>;
+    if (!_accumulatorContext) {
+        _accumulatorContext = new std::vector<llvm::Value *>;
+    }
     Visit(expr);
    
     //End accumulation
@@ -635,4 +821,17 @@ void ObjCCodeGen::VisitStartAccumulation(Expression *expr) {
 void ObjCCodeGen::EndAccumulation(){
     delete _accumulatorContext;
     _accumulatorContext = NULL;
+}
+
+void ObjCCodeGen::VisitStartStackAccumulation(Expression *expr) {
+    //Start accumulation
+    _stackAccumulatorContext = new std::vector<llvm::Value *>;
+    Visit(expr);
+   
+    //End accumulation
+}
+
+void ObjCCodeGen::EndStackAccumulation(){
+    delete _stackAccumulatorContext;
+    _stackAccumulatorContext = NULL;
 }
