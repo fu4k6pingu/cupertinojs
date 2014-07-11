@@ -33,7 +33,8 @@ public:
     std::map<std::string, llvm::AllocaInst*> _namedValues;
 
     llvm::Function *_currentFunction;
-   
+    bool _shouldReturn;
+    
     std::vector<llvm::Value *> *_accumulatorContext;
     std::vector<llvm::Value *> *_stackAccumulatorContext;
     
@@ -48,6 +49,7 @@ public:
         _module = new llvm::Module("jit", Context);
         _accumulatorContext = NULL;
 //        _namedValues = new std::map<std::string, bool>;
+        _shouldReturn = false;
     }
     
 
@@ -127,8 +129,6 @@ public:
     void VisitComma(BinaryOperation* expr);
     void VisitLogicalExpression(BinaryOperation* expr);
     void VisitArithmeticExpression(BinaryOperation* expr);
-    
-   
     
     llvm::Value *CGLiteral( Handle<Object> value);
 

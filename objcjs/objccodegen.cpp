@@ -104,14 +104,7 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
 
 
 void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
-//  Print("function ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(" = ");
-//  PrintFunctionLiteral(node->fun());
-//  Print(";");
-
-  
-    //TODO : this needs to assign the function
+//TODO : this needs to assign the function
 //    VisitLiteral(node->proxy()->name());
 
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
@@ -119,7 +112,6 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     assert(!calleeF);
     
     VisitFunctionLiteral(node->fun());
-
 }
 
 
@@ -180,6 +172,7 @@ void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
 
 
 void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
+    //TODO : look at visit for effect
   Visit(node->expression());
 //  Print(";");
 }
@@ -227,8 +220,8 @@ void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
 
 
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
+    _shouldReturn = true;
     Visit(node->expression());
-
 }
 
 
@@ -377,13 +370,17 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
-    
-    if (_retValue) {
-        _builder->CreateRet(_retValue);
-        _retValue = NULL;
-    } else {
-        _builder->CreateRetVoid();
+   
+    if (_shouldReturn) {
+        if (_retValue) {
+            _builder->CreateRet(_retValue);
+            _retValue = NULL;
+        } else {
+            _builder->CreateRetVoid();
+        }
     }
+    
+    _shouldReturn = false;
 
     _builder->saveAndClearIP();
     _currentFunction = NULL;
@@ -584,7 +581,7 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
         
         Token::Value op = node->binary_op();
 //        __ Push(rax);  // Left operand goes on the stack.
-//        VisitForAccumulatorValue(expr->value());
+        VisitStartStackAccumulation(node->value());
         
 //        OverwriteMode mode = node->value()->ResultOverwriteAllowed()
 //        ? OVERWRITE_RIGHT
@@ -603,14 +600,11 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
 //        // Deoptimization point in case the binary operation may have side effects.
 //        PrepareForBailout(expr->binary_operation(), TOS_REG);
     } else {
-        //TODO : Why do this?
+        //TODO : look into this:
         VisitStartStackAccumulation(node->value());
     }
     
-    // Record source position before possible IC call.
-//    SetSourcePosition(expr->position());
-    
-    // Store the value.
+    // store the value.
     switch (assign_type) {
         case VARIABLE: {
             VariableProxy *target = (VariableProxy *)node->target();
