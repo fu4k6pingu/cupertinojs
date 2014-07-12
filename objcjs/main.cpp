@@ -71,7 +71,7 @@ private:
     int length_;
 };
 
-v8::Handle<v8::String>SourceHandleWithName(char *sourceName, v8::Isolate *isolate){
+v8::Handle<v8::String>SourceHandleWithName(const char *sourceName, v8::Isolate *isolate){
     int length = 0;
     const byte* source = ReadFileAndRepeat(sourceName, &length, 1);
 
@@ -164,11 +164,11 @@ int main(int argc, const char * argv[])
     llvm::raw_string_ostream file(out);
     PM.add(createPrintModulePass(&file));
     PM.run(*codegen._module);
-
+ 
 //    llvm::WriteBitcodeToFile(codegen._module, file);
     std::ofstream myfile;
     myfile.open("/tmp/module.bc");
-    myfile << std::cout << out;
+    myfile << out;
     myfile.close();
     
     v8::V8::Dispose();
@@ -176,5 +176,3 @@ int main(int argc, const char * argv[])
     delete platform;
     return 0;
 }
-
-
