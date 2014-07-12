@@ -1,5 +1,5 @@
 function doAlert(x, y){
-    return x + y + 1;
+    return x + y;
 }
 
 doAlert(1,3);

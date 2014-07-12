@@ -547,6 +547,7 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             llvm::Function *f = _builder->GetInsertBlock()->getParent();
             llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
             _namedValues[str] = alloca;
+            
             EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
            
             llvm::Value *assignmentValue;
@@ -732,24 +733,11 @@ void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
     Expression *left = expr->left();
     Expression *right = expr->right();
    
-    llvm::Value *lhs;
-//    if (left->IsVariableProxy()) {
-//        lhs = _namedValues[stringFromV8AstRawString(((VariableProxy *)left)->raw_name())];
-//    } else {
-        VisitStartStackAccumulation(left);
-        lhs = _stackAccumulatorContext->back();
-        _stackAccumulatorContext->pop_back();
-//    }
+    VisitStartStackAccumulation(left);
+    auto lhs = PopContext();
     
-    
-    llvm::Value *rhs;
-//    if (right->IsVariableProxy()) {
-//        rhs = _namedValues[stringFromV8AstRawString(((VariableProxy *)right)->raw_name())];
-//    } else {
-        VisitStartAccumulation(right);
-        rhs = _accumulatorContext->back();
-        _accumulatorContext->pop_back();
-//    }
+    VisitStartAccumulation(right);
+    auto rhs = PopContext();
    
     llvm::Value *result = NULL;
     auto op = expr->op();
