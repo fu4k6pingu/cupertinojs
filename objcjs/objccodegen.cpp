@@ -13,8 +13,15 @@
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
 #include "src/scopes.h"
+#include "string.h"
 
 using namespace v8::internal;
+
+static auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
+
+static llvm::Type *ObjcPointerTy(){
+    return _ObjcPointerTy;
+}
 
 static std::string stringFromV8AstRawString(const AstRawString *raw){
     std::string str;
@@ -25,6 +32,7 @@ static std::string stringFromV8AstRawString(const AstRawString *raw){
     }
     return str;
 }
+
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 /// the function.  This is used for mutable variables etc.
 static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
@@ -33,6 +41,117 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
                      TheFunction->getEntryBlock().begin());
     return TmpB.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
                              VarName.c_str());
+}
+
+static llvm::Function *ObjcCodeGenMainPrototype(llvm::LLVMContext& ctx, llvm::Module *mod) {
+    std::vector<llvm::Type*> main_arg_types;
+    
+    llvm::FunctionType* main_type =
+    llvm::FunctionType::get(llvm::Type::getInt32Ty(ctx), main_arg_types, false);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  main_type, llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("main"),
+                                                  mod
+                                                  );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
+
+    
+// Make the function type:  double(double,double) etc.
+static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
+    std::vector<llvm::Type*> Doubles(num_params, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+    
+    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                                         Doubles, false);
+    return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
+}
+
+static llvm::Function *PrintFPrototype(llvm::LLVMContext& ctx, llvm::Module *mod) {
+    std::vector<llvm::Type*> printf_arg_types;
+    
+    printf_arg_types.push_back(llvm::Type::getInt8Ty(ctx));
+//    printf_arg_types.push_back(llvm::Type::getArrayType(llvm::Type::getDoubleTy(ctx)));
+    
+    llvm::FunctionType* printf_type =
+    llvm::FunctionType::get(llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  printf_type,
+                                                  llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("printf"),
+                                                  mod
+                                                  );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
+
+static llvm::Function*
+printf_prototype(llvm::LLVMContext& ctx, llvm::Module *mod)
+{
+    std::vector<llvm::Type*> printf_arg_types;
+    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
+    
+    llvm::FunctionType* printf_type =
+    llvm::FunctionType::get(
+                            llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  printf_type, llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("printf"),
+                                                  mod
+                                                  );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
+
+
+static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
+    std::vector<llvm::Type*> Doubles(1, ObjcPointerTy());
+//    std::vector<llvm::Type*> Doubles(1, llvm::ArrayType::get(ObjcPointerTy(), 4));
+    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                                         Doubles, false);
+   
+    
+    auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, llvm::Twine("objcjs_cout"), module);
+    
+    
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
+    _builder->SetInsertPoint(BB);
+    
+    llvm::Function::arg_iterator argIterator = function->arg_begin();
+    argIterator++;
+    
+    llvm::IRBuilder<> TmpB(&function->getEntryBlock(),
+                           function->getEntryBlock().begin());
+   
+    
+//    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4), 0, "varr");
+//    auto argType = llvm::ArrayType::get(ObjcPointerTy(), 4);
+//    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(argType, 0, "varr");
+//    _builder->CreateStore(argIterator, Alloca);
+
+//    _builder->saveAndClearIP();
+    auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+    _builder->CreateRet(zero);
+    return function;
+}
+
+ObjCCodeGen::ObjCCodeGen(Zone *zone){
+    InitializeAstVisitor(zone);
+    llvm::LLVMContext &Context = llvm::getGlobalContext();
+    _builder = new llvm::IRBuilder<> (Context);
+    _module = new llvm::Module("jit", Context);
+    
+    _accumulatorContext = NULL;
+    _stackAccumulatorContext = NULL;
+    _context = NULL;
+    _shouldReturn = false;
+
+//    PrintFPrototype(Context, _module);
+    ObjcCodeGenMainPrototype(Context, _module);
+    ObjcCOutPrototype(_builder, _module);
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
@@ -99,20 +218,17 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
     _namedValues[str] = alloca;
 
-    //TODO : this should declare the variable to whatever was the cg literal
-    CGLiteral(node->proxy()->name());
+    //TODO : ...
+    // if this is not pushed then it might not be needed (lool below)!!
+    CGLiteral(node->proxy()->name(), false);
 }
 
 
 void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
-    //Temporairly disable this
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
     if (!name.length()){
         printf("TODO: support unnamed functions");
     }
-    llvm::Function *calleeF = _module->getFunction(name);
-    assert(!calleeF);
-    
     VisitFunctionLiteral(node->fun());
 }
 
@@ -358,17 +474,9 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     v8::internal::Scope *scope = node->scope();
     int num_params = scope->num_parameters();
-
-    // Make the function type:  double(double,double) etc.
-    std::vector<llvm::Type*> Doubles(num_params,
-                               llvm::Type::getDoubleTy(llvm::getGlobalContext()));
-    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         Doubles, false);
-
-    auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, _module);
-
+    auto function = ObjcCodeGenFunction(num_params, name, _module);
+    
     _currentFunction = function;
-
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
@@ -409,20 +517,46 @@ void ObjCCodeGen::VisitConditional(Conditional* node) {
 
 
 void ObjCCodeGen::VisitLiteral(class Literal* node) {
-    CGLiteral(node->value());
+    CGLiteral(node->value(), true);
 }
 
-llvm::Value *ObjCCodeGen::CGLiteral( Handle<Object> value) {
+char *get(String *string) {
+    return string->ToAsciiArray();
+}
+
+llvm::Value *llvmNewLocalStringVar(const char* data, int len, llvm::Module *module)
+{
+    llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
+    //We are adding an extra space for the null terminator!
+    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
+
+    //.str needs to be incremented for every string in the module
+    llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
+                                                         type,
+                                                         true,
+                                                         //TODO: this should be private linkage
+                                                         llvm::GlobalValue::ExternalWeakLinkage,
+                                                         0,
+                                                         ".str");
+    std::vector<llvm::Constant*> const_ptr_16_indices;
+    llvm::ConstantInt* const_int32_17 =llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, llvm::StringRef("0"), 10));
+    const_ptr_16_indices.push_back(const_int32_17);
+    const_ptr_16_indices.push_back(const_int32_17);
+    llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
+    auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
+    return castedConst;
+}
+
+llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
         String* string = String::cast(object);
-//    if (quote) printf("\"");
-//    for (int i = 0; i < string->length(); i++) {
-//      printf("%c", string->Get(i));
-//    }
-//    if (quote) printf("\"");
-      printf("str");
+        char *name =  get(string);
+        if (name){
+            lvalue = llvmNewLocalStringVar(name, string->length(), _module);
+        }
+        printf("STRING VALUE%s", name);
     } else if (object->IsNull()) {
         printf("null");
     } else if (object->IsTrue()) {
@@ -450,7 +584,11 @@ llvm::Value *ObjCCodeGen::CGLiteral( Handle<Object> value) {
     } else {
         printf("<unknown literal %p>", object);
     }
-    PushValueToContext(lvalue);
+   
+    if (push && lvalue) {
+        PushValueToContext(lvalue);
+    }
+   
     return NULL;
 }
 
@@ -557,10 +695,11 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             _namedValues[str] = alloca;
             
             EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
-           
+          
+            //TODO : is this even needed!!~(look with above)
             llvm::Value *rhs = PopContext();
             if (rhs) {
-                _builder->CreateStore(rhs, alloca);
+//                _builder->CreateStore(rhs, alloca);
             } else {
                //TODO :
             }
@@ -664,11 +803,6 @@ void ObjCCodeGen::VisitCall(Call* node) {
 
     ZoneList<Expression*>* args = node->arguments();
    
-    if (calleeF->arg_size() != args->length()) {
-        printf("Unknown function referenced: airity mismatch");
-        abort();
-    }
-    
     for (int i = 0; i <args->length(); i++) {
         VisitStartAccumulation(args->at(i));
     }
@@ -676,10 +810,30 @@ void ObjCCodeGen::VisitCall(Call* node) {
     if (_accumulatorContext->back() == 0) {
         return;
     }
+   
+    if (!calleeF->isVarArg()) {
+        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+        
+        std::vector<llvm::Value *> finalArgs;
+        unsigned Idx = 0;
+        for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
+             ++AI, ++Idx){
+            llvm::Value *arg = PopContext();
+
+            llvm::Type *argTy = arg->getType();
+            llvm::Type *paramTy = AI->getType();
+            assert(argTy == paramTy);
+            
+            finalArgs.push_back(arg);
+        }
+        
+        std::reverse(finalArgs.begin(), finalArgs.end());
+        PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
+    } else {
+        assert(0);
+    }
     
-    PushValueToContext(_builder->CreateCall(calleeF, *_accumulatorContext, "calltmp"));
-    
-    EndAccumulation();
+//    EndAccumulation();
 }
 
 
@@ -808,7 +962,14 @@ void ObjCCodeGen::EndStackAccumulation(){
 }
 
 void ObjCCodeGen::PushValueToContext(llvm::Value *value) {
-    _context->push_back(value);
+    if (!_context) {
+        return;
+    }
+    if (value) {
+        _context->push_back(value);
+    } else {
+        printf("warning: tried to push null value");
+    }
 }
 
 llvm::Value *ObjCCodeGen::PopContext() {

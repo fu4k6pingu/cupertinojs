@@ -28,37 +28,25 @@ using namespace v8::internal;
 class ObjCCodeGen: public  v8::internal::AstVisitor {
 public:
     llvm::IRBuilder<> *_builder;
-    
     llvm::Module *_module;
     std::map<std::string, llvm::AllocaInst*> _namedValues;
-
     llvm::Function *_currentFunction;
+    llvm::Type *_pointerTy;
+    
     bool _shouldReturn;
 
+    ObjCCodeGen(Zone *zone);
+    
+    virtual~ObjCCodeGen(){
+    };
+    
     //TODO : remove or use?
     std::vector<llvm::Value *> *_oldBindings;
     
     std::vector<llvm::Value *> *_context;
     std::vector<llvm::Value *> *_accumulatorContext;
     std::vector<llvm::Value *> *_stackAccumulatorContext;
-    
-    ObjCCodeGen(Zone *zone){
-        InitializeAstVisitor(zone);
-        llvm::LLVMContext &Context = llvm::getGlobalContext();
-        _builder = new llvm::IRBuilder<> (Context);
-        _module = new llvm::Module("jit", Context);
-        _accumulatorContext = NULL;
-        _stackAccumulatorContext = NULL;
-        _context = NULL;
-//        _namedValues = new std::map<std::string, bool>;
-        _shouldReturn = false;
-    }
-    
 
-    //TODO : clean this shit up!
-    virtual~ObjCCodeGen(){
-        
-    }
     void dump();
 
    
@@ -139,7 +127,7 @@ public:
 
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
     
-    llvm::Value *CGLiteral( Handle<Object> value);
+    llvm::Value *CGLiteral( Handle<Object> value, bool push);
 
     void VisitStartAccumulation(Expression *expr);
     void EndAccumulation();

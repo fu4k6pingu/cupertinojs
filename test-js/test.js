@@ -1,8 +1,5 @@
-function doAlert(x, y){
-    return x + y + 100;
-}
-
-function main(a, b){
-    doAlert(1,3);
+function objcjs_main(a, b){
+//    var b = doAlert(1, 2);
+    objcjs_cout("sun");
     return 0;
 }

@@ -165,6 +165,9 @@
 
 /* Begin PBXFileReference section */
 		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "../../../../usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<group>"; };
+		C51CE3161971BC4000996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
+		C51CE3171971BC4000996E03 /* test1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test1.js; sourceTree = "<group>"; };
+		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
@@ -196,9 +199,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		C51CE3151971BC4000996E03 /* test-js */ = {
+			isa = PBXGroup;
+			children = (
+				C51CE3161971BC4000996E03 /* test.js */,
+				C51CE3171971BC4000996E03 /* test1.js */,
+				C51CE3181971BC4000996E03 /* test2.js */,
+			);
+			path = "test-js";
+			sourceTree = "<group>";
+		};
 		C5F83B021969155100A381F3 = {
 			isa = PBXGroup;
 			children = (
+				C51CE3151971BC4000996E03 /* test-js */,
 				C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */,
 				C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */,
 				C5F83B6E1969185A00A381F3 /* v8 */,

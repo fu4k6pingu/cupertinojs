@@ -128,6 +128,10 @@ std::vector<std::string> parseNames(int argc, const char * argv[]){
 }
 //
 
+void runModule(llvm::Module module){
+//    llvm::ExecutionEngine *engine = llvm::EngineBuilder(module).create();
+//    engine->runFunction(main_func, std::vector<llvm::GenericValue>());
+}
 
 int main(int argc, const char * argv[])
 {
@@ -149,7 +153,7 @@ int main(int argc, const char * argv[])
     auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/Projects/objcjs/test-js/test.js", isolate));
     auto codegen = ObjCCodeGen(module->zone());
     codegen.Visit(module->function());
-//    codegen.dump();
+    codegen.dump();
   
     llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);
     
