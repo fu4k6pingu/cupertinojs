@@ -108,9 +108,8 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Modul
     std::vector<llvm::Type*> Doubles(1, ObjcPointerTy());
 //    std::vector<llvm::Type*> Doubles(1, llvm::ArrayType::get(ObjcPointerTy(), 4));
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         Doubles, false);
+                                         Doubles, true);
    
-    
     auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, llvm::Twine("objcjs_cout"), module);
     
     
@@ -815,28 +814,23 @@ void ObjCCodeGen::VisitCall(Call* node) {
     if (_accumulatorContext->back() == 0) {
         return;
     }
-   
-    if (!calleeF->isVarArg()) {
-        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+//        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+    
+    std::vector<llvm::Value *> finalArgs;
+    unsigned Idx = 0;
+    for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
+         ++AI, ++Idx){
+        llvm::Value *arg = PopContext();
         
-        std::vector<llvm::Value *> finalArgs;
-        unsigned Idx = 0;
-        for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
-             ++AI, ++Idx){
-            llvm::Value *arg = PopContext();
-
-            llvm::Type *argTy = arg->getType();
-            llvm::Type *paramTy = AI->getType();
-            assert(argTy == paramTy);
-            
-            finalArgs.push_back(arg);
-        }
+        llvm::Type *argTy = arg->getType();
+        llvm::Type *paramTy = AI->getType();
+//        assert(argTy == paramTy);
         
-        std::reverse(finalArgs.begin(), finalArgs.end());
-        PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
-    } else {
-        assert(0);
+        finalArgs.push_back(arg);
     }
+    
+    std::reverse(finalArgs.begin(), finalArgs.end());
+    PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
     
 //    EndAccumulation();
 }
