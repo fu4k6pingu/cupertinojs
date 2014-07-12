@@ -18,6 +18,16 @@
 #include <src/prettyprinter.h>
 #include <include/libplatform/libplatform.h>
 #include <vector>
+#include <iostream>
+#include <fstream>
+
+#include "llvm/IR/Module.h"
+#include "llvm/IR/CallingConv.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/PassManager.h"
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Assembly/PrintModulePass.h"
+#include "llvm/Support/raw_ostream.h"
 
 #define _DEBUG 1
 
@@ -136,7 +146,22 @@ int main(int argc, const char * argv[])
     auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/Projects/objcjs/test-js/test.js", isolate));
     auto codegen = ObjCCodeGen(module->zone());
     codegen.Visit(module->function());
-    codegen.dump();
+//    codegen.dump();
+   
+    llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);
+    
+    llvm::PassManager PM;
+    std::string error;
+    std::string out;
+
+    llvm::raw_string_ostream file(out);
+    PM.add(createPrintModulePass(&file));
+    PM.run(*codegen._module);
+    
+    std::ofstream myfile;
+    myfile.open("/tmp/module.llc");
+    myfile << std::cout << out;
+    myfile.close();
     
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();

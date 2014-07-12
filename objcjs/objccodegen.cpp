@@ -105,10 +105,11 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
 
 
 void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
-//TODO : this needs to assign the function
-//    VisitLiteral(node->proxy()->name());
-
+    //Temporairly disable this
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
+    if (!name.length()){
+        printf("TODO: support unnamed functions");
+    }
     llvm::Function *calleeF = _module->getFunction(name);
     assert(!calleeF);
     
@@ -346,6 +347,15 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
 
 
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+    auto name = stringFromV8AstRawString(node->raw_name());
+    if (!name.length()){
+        printf("TODO: support unnamed functions");
+        VisitDeclarations(node->scope()->declarations());
+        VisitStatements(node->body());
+        
+        return;
+    }
+    
     v8::internal::Scope *scope = node->scope();
     int num_params = scope->num_parameters();
 
@@ -355,18 +365,16 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
                                          Doubles, false);
 
+    auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, _module);
 
-    std::string str = stringFromV8AstRawString(node->raw_name());
-    llvm::Function *F = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, str, _module);
-
-    _currentFunction = F;
+    _currentFunction = function;
 
     // Create a new basic block to start insertion into.
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", F);
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
     
     if (num_params){
-        CreateArgumentAllocas(F, node->scope());
+        CreateArgumentAllocas(function, node->scope());
     }
     
     VisitDeclarations(node->scope()->declarations());
