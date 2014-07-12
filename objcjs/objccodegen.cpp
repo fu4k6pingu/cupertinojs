@@ -43,22 +43,6 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
                              VarName.c_str());
 }
 
-static llvm::Function *ObjcCodeGenMainPrototype(llvm::LLVMContext& ctx, llvm::Module *mod) {
-    std::vector<llvm::Type*> main_arg_types;
-    
-    llvm::FunctionType* main_type =
-    llvm::FunctionType::get(llvm::Type::getInt32Ty(ctx), main_arg_types, false);
-    
-    llvm::Function *func = llvm::Function::Create(
-                                                  main_type, llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("main"),
-                                                  mod
-                                                  );
-    func->setCallingConv(llvm::CallingConv::C);
-    return func;
-}
-
-    
 // Make the function type:  double(double,double) etc.
 static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
     std::vector<llvm::Type*> Doubles(num_params, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
@@ -66,6 +50,36 @@ static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, 
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
                                          Doubles, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
+}
+
+static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
+    std::vector<llvm::Type*> main_arg_types;
+    
+    llvm::FunctionType* main_type =
+    llvm::FunctionType::get(llvm::Type::getInt32Ty(module->getContext()), main_arg_types, false);
+    
+    llvm::Function *function = llvm::Function::Create(
+                                                  main_type, llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("main"),
+                                                  module
+                                                  );
+    function->setCallingConv(llvm::CallingConv::C);
+    
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
+    _builder->SetInsertPoint(BB);
+    
+    ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
+    
+    auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(zero);
+    ArgsV.push_back(zero);
+    _builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
+
+    auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
+    _builder->CreateRet(zeroInt);
+    _builder->saveAndClearIP();
+    return function;
 }
 
 static llvm::Function *PrintFPrototype(llvm::LLVMContext& ctx, llvm::Module *mod) {
@@ -87,11 +101,11 @@ static llvm::Function *PrintFPrototype(llvm::LLVMContext& ctx, llvm::Module *mod
     return func;
 }
 
-static llvm::Function*
-printf_prototype(llvm::LLVMContext& ctx, llvm::Module *mod)
+static llvm::Function* ObjcPrintFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
 {
     std::vector<llvm::Type*> printf_arg_types;
-    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
+    printf_arg_types.push_back(ObjcPointerTy());
+//    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
     
     llvm::FunctionType* printf_type =
     llvm::FunctionType::get(
@@ -125,9 +139,15 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Modul
     llvm::IRBuilder<> TmpB(&function->getEntryBlock(),
                            function->getEntryBlock().begin());
    
-    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(ObjcPointerTy(), 0, "varr");
-    _builder->CreateStore(argIterator, Alloca);
+    auto *alloca  = TmpB.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
+    _builder->CreateStore(argIterator, alloca);
 
+    auto localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
+
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(localVarValue);
+    _builder->CreateCall(module->getFunction("printf"), ArgsV);
+    
     auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
     _builder->CreateRet(zero);
     _builder->saveAndClearIP();
@@ -139,14 +159,17 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module("jit", Context);
-    
+    //TODO : is this needed?
+    _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
+    _module->setTargetTriple("x86_64-apple-macosx10.9.0");
     _accumulatorContext = NULL;
     _stackAccumulatorContext = NULL;
     _context = NULL;
     _shouldReturn = false;
 
 //    PrintFPrototype(Context, _module);
-    ObjcCodeGenMainPrototype(Context, _module);
+    ObjcPrintFPrototye(Context, _module);
+    ObjcCodeGenMainPrototype(_builder, _module);
     ObjcCOutPrototype(_builder, _module);
 }
 
@@ -470,7 +493,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     v8::internal::Scope *scope = node->scope();
     int num_params = scope->num_parameters();
-    auto function = ObjcCodeGenFunction(num_params, name, _module);
+    auto function = _module->getFunction(name) ? _module->getFunction(name) : ObjcCodeGenFunction(num_params, name, _module);
     
     _currentFunction = function;
     // Create a new basic block to start insertion into.
@@ -531,15 +554,18 @@ llvm::Value *llvmNewLocalStringVar(const char* data, int len, llvm::Module *modu
                                                          type,
                                                          true,
                                                          //TODO: this should be private linkage
-                                                         llvm::GlobalValue::ExternalWeakLinkage,
+                                                         llvm::GlobalValue::PrivateLinkage,
                                                          0,
                                                          ".str");
+    var->setInitializer(constTy);
+    
     std::vector<llvm::Constant*> const_ptr_16_indices;
     llvm::ConstantInt* const_int32_17 =llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, llvm::StringRef("0"), 10));
     const_ptr_16_indices.push_back(const_int32_17);
     const_ptr_16_indices.push_back(const_int32_17);
     llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
     auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
+    
     return castedConst;
 }
 
