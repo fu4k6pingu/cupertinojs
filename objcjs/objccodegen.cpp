@@ -121,20 +121,16 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Modul
     _builder->SetInsertPoint(BB);
     
     llvm::Function::arg_iterator argIterator = function->arg_begin();
-    argIterator++;
     
     llvm::IRBuilder<> TmpB(&function->getEntryBlock(),
                            function->getEntryBlock().begin());
    
-    
-//    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4), 0, "varr");
-//    auto argType = llvm::ArrayType::get(ObjcPointerTy(), 4);
-//    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(argType, 0, "varr");
-//    _builder->CreateStore(argIterator, Alloca);
+    llvm::AllocaInst *Alloca  = TmpB.CreateAlloca(ObjcPointerTy(), 0, "varr");
+    _builder->CreateStore(argIterator, Alloca);
 
-//    _builder->saveAndClearIP();
     auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
     _builder->CreateRet(zero);
+    _builder->saveAndClearIP();
     return function;
 }
 
