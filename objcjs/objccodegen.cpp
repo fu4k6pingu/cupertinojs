@@ -82,25 +82,8 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
     return function;
 }
 
-static llvm::Function *PrintFPrototype(llvm::LLVMContext& ctx, llvm::Module *mod) {
-    std::vector<llvm::Type*> printf_arg_types;
-    
-    printf_arg_types.push_back(llvm::Type::getInt8Ty(ctx));
-//    printf_arg_types.push_back(llvm::Type::getArrayType(llvm::Type::getDoubleTy(ctx)));
-    
-    llvm::FunctionType* printf_type =
-    llvm::FunctionType::get(llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
-    
-    llvm::Function *func = llvm::Function::Create(
-                                                  printf_type,
-                                                  llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("printf"),
-                                                  mod
-                                                  );
-    func->setCallingConv(llvm::CallingConv::C);
-    return func;
-}
-
+//Define a printf function that accepts a char *
+//TODO : support var args
 static llvm::Function* ObjcPrintFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
 {
     std::vector<llvm::Type*> printf_arg_types;
