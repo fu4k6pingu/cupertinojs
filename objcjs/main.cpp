@@ -133,7 +133,7 @@ int main(int argc, const char * argv[])
     ASSERT(!context.IsEmpty());
     v8::Context::Scope scope(context);
 
-    auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/test.js", isolate));
+    auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/Projects/objcjs/test-js/test.js", isolate));
     auto codegen = ObjCCodeGen(module->zone());
     codegen.Visit(module->function());
     codegen.dump();
