@@ -550,12 +550,8 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             
             EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
            
-            llvm::Value *assignmentValue;
-            llvm::Value *rhs = _context->back();
-            _context->pop_back();
-            
+            llvm::Value *rhs = PopContext();
             if (rhs) {
-                assignmentValue = rhs;
                 _builder->CreateStore(rhs, alloca);
             } else {
                //TODO :
