@@ -34,13 +34,13 @@ public:
 
     llvm::Function *_currentFunction;
     bool _shouldReturn;
+
+    //TODO : remove or use?
+    std::vector<llvm::Value *> *_oldBindings;
     
+    std::vector<llvm::Value *> *_context;
     std::vector<llvm::Value *> *_accumulatorContext;
     std::vector<llvm::Value *> *_stackAccumulatorContext;
-    
-    //TODO : this needs to support scopes
-    // and nested functions and returning expressions!
-    llvm::Value *_retValue;
     
     ObjCCodeGen(Zone *zone){
         InitializeAstVisitor(zone);
@@ -48,6 +48,8 @@ public:
         _builder = new llvm::IRBuilder<> (Context);
         _module = new llvm::Module("jit", Context);
         _accumulatorContext = NULL;
+        _stackAccumulatorContext = NULL;
+        _context = NULL;
 //        _namedValues = new std::map<std::string, bool>;
         _shouldReturn = false;
     }
@@ -130,6 +132,13 @@ public:
     void VisitLogicalExpression(BinaryOperation* expr);
     void VisitArithmeticExpression(BinaryOperation* expr);
     
+    void EmitVariableAssignment(Variable* var,
+                                               Token::Value op) ;
+    
+    void EmitVariableLoad(VariableProxy* proxy);
+
+    void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
+    
     llvm::Value *CGLiteral( Handle<Object> value);
 
     void VisitStartAccumulation(Expression *expr);
@@ -137,7 +146,9 @@ public:
     void VisitStartStackAccumulation(Expression *expr);
     void EndStackAccumulation();
     void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
-    
+   
+    void PushValueToContext(llvm::Value *value);
+    llvm::Value *PopContext();
     
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };
