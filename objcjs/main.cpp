@@ -28,6 +28,7 @@
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/Assembly/PrintModulePass.h"
 #include "llvm/Support/raw_ostream.h"
+#include "llvm/Bitcode/ReaderWriter.h"
 
 #define _DEBUG 1
 
@@ -125,6 +126,8 @@ std::vector<std::string> parseNames(int argc, const char * argv[]){
     }
     return fnames;
 }
+//
+
 
 int main(int argc, const char * argv[])
 {
@@ -147,7 +150,7 @@ int main(int argc, const char * argv[])
     auto codegen = ObjCCodeGen(module->zone());
     codegen.Visit(module->function());
 //    codegen.dump();
-   
+  
     llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);
     
     llvm::PassManager PM;
@@ -157,9 +160,10 @@ int main(int argc, const char * argv[])
     llvm::raw_string_ostream file(out);
     PM.add(createPrintModulePass(&file));
     PM.run(*codegen._module);
-    
+
+//    llvm::WriteBitcodeToFile(codegen._module, file);
     std::ofstream myfile;
-    myfile.open("/tmp/module.llc");
+    myfile.open("/tmp/module.bc");
     myfile << std::cout << out;
     myfile.close();
     
@@ -168,3 +172,5 @@ int main(int argc, const char * argv[])
     delete platform;
     return 0;
 }
+
+

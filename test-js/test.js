@@ -1,6 +1,8 @@
 function doAlert(x, y){
-    return x + y + 1;
+    return x + y + 100;
 }
 
-doAlert(1,3);
-
+function main(a, b){
+    doAlert(1,3);
+    return 0;
+}
