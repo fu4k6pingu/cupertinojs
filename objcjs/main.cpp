@@ -170,6 +170,10 @@ int main(int argc, const char * argv[])
     myfile.open("/tmp/module.bc");
     myfile << out;
     myfile.close();
+
+    //run module
+    system("/usr/local/Cellar/llvm/3.4/bin/llc /tmp/module.bc");
+    system("clang /tmp/module.s -o /tmp/a.out");
     
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
