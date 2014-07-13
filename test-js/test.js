@@ -1,6 +1,6 @@
 function objcjs_main(a, b){
-//    var b = doAlert(1, 2);
-    NSLog("hello world! %f \n", 42.4);
+    var c = 42;
+    NSLog("hello world! %g \n", c);
 //    objcjs_cout("hello world! %@ \n", "foo");
     return 0;
 }

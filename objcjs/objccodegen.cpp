@@ -222,21 +222,15 @@ void ObjCCodeGen::dump(){
 //}
 
 void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
-//  Print("var ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(";");
-    
     //TODO : Enter into symbol table with scope..
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *f = _builder->GetInsertBlock()->getParent();
     llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
     _namedValues[str] = alloca;
 
-    //TODO : ...
-    // if this is not pushed then it might not be needed (lool below)!!
-    CGLiteral(node->proxy()->name(), false);
+    VariableProxy *var = node->proxy();
+    Visit(var);
 }
-
 
 void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
@@ -595,7 +589,7 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
             //TODO : use name!
             lvalue = newString(name);
         }
-        printf("STRING VALUE%s", name.c_str());
+        printf("STRING VALUE: %s", name.c_str());
         
     } else if (object->IsNull()) {
         printf("null");
@@ -606,8 +600,8 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     } else if (object->IsUndefined()) {
         printf("undefined");
     } else if (object->IsNumber()) {
-        printf("%g", object->Number());
         lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
+        printf("NUMBER VALUE %g", object->Number());
     } else if (object->IsJSObject()) {
         // regular expression
         if (object->IsJSFunction()) {
@@ -737,9 +731,9 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
           
             //TODO : is this even needed!!~(look with above)
-            llvm::Value *rhs = PopContext();
-            if (rhs) {
-//                _builder->CreateStore(rhs, alloca);
+            llvm::Value *value = PopContext();
+            if (value) {
+                _builder->CreateStore(value, alloca);
             } else {
                //TODO :
             }
