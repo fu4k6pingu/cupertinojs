@@ -15,6 +15,9 @@
 #include "src/scopes.h"
 #include "string.h"
 
+#define DEBUG 0
+#define ILOG(A, ...) if (DEBUG) printf(A,##__VA_ARGS__);
+
 using namespace v8::internal;
 
 static auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
@@ -34,38 +37,39 @@ static std::string stringFromV8AstRawString(const AstRawString *raw){
 
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 /// the function.  This is used for mutable variables etc.
-static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *TheFunction,
+static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                           const std::string &VarName) {
-    llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
-                     TheFunction->getEntryBlock().begin());
-    return TmpB.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
+    llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
+                     Function->getEntryBlock().begin());
+    return Builder.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
                              VarName.c_str());
 }
 
 // Make the function type:  double(double,double) etc.
 static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
-    std::vector<llvm::Type*> Doubles(num_params, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
-    
-    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         Doubles, false);
+    std::vector<llvm::Type*> Params(num_params, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), Params, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
-static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
-    std::vector<llvm::Type*> main_arg_types;
+static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm::Module *module){
+    std::vector<llvm::Type*> argumentTypes;
     
-    llvm::FunctionType* main_type =
-    llvm::FunctionType::get(llvm::Type::getInt32Ty(module->getContext()), main_arg_types, false);
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
+                                                        llvm::Type::getInt32Ty(module->getContext()),
+                                                        argumentTypes,
+                                                        false);
     
     llvm::Function *function = llvm::Function::Create(
-                                                  main_type, llvm::Function::ExternalLinkage,
+                                                  functionType,
+                                                  llvm::Function::ExternalLinkage,
                                                   llvm::Twine("main"),
-                                                  module
-                                                  );
+                                                  module);
+    
     function->setCallingConv(llvm::CallingConv::C);
     
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    _builder->SetInsertPoint(BB);
+    builder->SetInsertPoint(BB);
     
     ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
     
@@ -73,11 +77,11 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(zero);
     ArgsV.push_back(zero);
-    _builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
+    builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
 
     auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
-    _builder->CreateRet(zeroInt);
-    _builder->saveAndClearIP();
+    builder->CreateRet(zeroInt);
+    builder->saveAndClearIP();
     return function;
 }
 
@@ -98,27 +102,28 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
 //TODO : support var args
 static llvm::Function* ObjcNSLogFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
 {
-    std::vector<llvm::Type*> printf_arg_types;
-    printf_arg_types.push_back(ObjcPointerTy());
+    std::vector<llvm::Type*> ArgumentTypes;
+    ArgumentTypes.push_back(ObjcPointerTy());
     
     llvm::FunctionType* printf_type =
     llvm::FunctionType::get(
-                            llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
+                            llvm::Type::getInt32Ty(ctx), ArgumentTypes, true);
     
-    llvm::Function *func = llvm::Function::Create(
+    llvm::Function *function = llvm::Function::Create(
                                                   printf_type, llvm::Function::ExternalLinkage,
                                                   llvm::Twine("NSLog"),
                                                   mod
                                                   );
-    func->setCallingConv(llvm::CallingConv::C);
-    return func;
+    function->setCallingConv(llvm::CallingConv::C);
+    return function;
 }
 
+//TODO : move to native JS
 static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
-    std::vector<llvm::Type*> Doubles(1, ObjcPointerTy());
-//    std::vector<llvm::Type*> Doubles(1, llvm::ArrayType::get(ObjcPointerTy(), 4));
+    std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
+    
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         Doubles, true);
+                                         ArgumentTypes, true);
    
     auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, llvm::Twine("objcjs_cout"), module);
     
@@ -128,10 +133,10 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Modul
     
     llvm::Function::arg_iterator argIterator = function->arg_begin();
     
-    llvm::IRBuilder<> TmpB(&function->getEntryBlock(),
+    llvm::IRBuilder<> Builder(&function->getEntryBlock(),
                            function->getEntryBlock().begin());
    
-    auto *alloca  = TmpB.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
+    auto *alloca  = Builder.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
     _builder->CreateStore(argIterator, alloca);
 
     llvm::Value *localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
@@ -235,7 +240,7 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
 void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
     if (!name.length()){
-        printf("TODO: support unnamed functions");
+        ILOG("TODO: support unnamed functions");
     }
     VisitFunctionLiteral(node->fun());
 }
@@ -473,7 +478,7 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto name = stringFromV8AstRawString(node->raw_name());
     if (!name.length()){
-        printf("TODO: support unnamed functions");
+        ILOG("TODO: support unnamed functions");
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
         
@@ -586,37 +591,41 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
         String* string = String::cast(object);
         auto name = asciiStringWithV8String(string);
         if (name.length()){
-            //TODO : use name!
             lvalue = newString(name);
         }
-        printf("STRING VALUE: %s", name.c_str());
         
+        ILOG("STRING literal: %s", name.c_str());
     } else if (object->IsNull()) {
-        printf("null");
+        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+        ILOG("null literal");
+        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
     } else if (object->IsTrue()) {
-        printf("true");
+        ILOG("true literal");
+        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(1.0));
     } else if (object->IsFalse()) {
-        //    printf("false");
+        ILOG("false literal");
+        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
     } else if (object->IsUndefined()) {
-        printf("undefined");
+        ILOG("undefined");
     } else if (object->IsNumber()) {
         lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
-        printf("NUMBER VALUE %g", object->Number());
+        ILOG("NUMBER value %g", object->Number());
     } else if (object->IsJSObject()) {
+        assert(0 && "Not implmeneted");
         // regular expression
         if (object->IsJSFunction()) {
-            //      printf("JS-Function");
+            ILOG("JS-Function");
         } else if (object->IsJSArray()) {
-            //      printf("JS-array[%u]", JSArray::cast(object)->length());
+            ILOG("JS-array[%u]", JSArray::cast(object)->length());
         } else if (object->IsJSObject()) {
-            printf("JS-Object");
+            ILOG("JS-Object");
         } else {
-            printf("?UNKNOWN?");
+            ILOG("?UNKNOWN?");
         }
     } else if (object->IsFixedArray()) {
-        printf("FixedArray");
+        ILOG("FixedArray");
     } else {
-        printf("<unknown literal %p>", object);
+        ILOG("<unknown literal %p>", object);
     }
    
     if (push && lvalue) {
@@ -688,7 +697,8 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             
         }
     }
-    
+   
+    //TODO :
     // For compound assignments we need another deoptimization point after the
     // variable/property load.
     if (node->is_compound()) {
@@ -718,7 +728,7 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
     
     VisitStartAccumulation(node->value());
     
-    // store the value.
+    // Store the value.
     switch (assign_type) {
         case VARIABLE: {
             VariableProxy *target = (VariableProxy *)node->target();
