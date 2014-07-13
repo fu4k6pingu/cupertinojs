@@ -196,36 +196,6 @@ void ObjCCodeGen::dump(){
     _module->dump();
 }
 
-//
-//ObjCCodeGen::ObjCCodeGen(Zone* zone) {
-////  InitializeAstVisitor(zone);
-//}
-
-//void ObjCCodeGen::Visit(v8::internal::AstNode *node){
-//    
-//}
-
-//ObjCCodeGen::~ObjCCodeGen() {
-////  DeleteArray(output_);
-//}
-//virtual void ObjCCodeGen::VisitDeclarations(v8::internal::ZoneList<Declaration*>* declarations) {
-//
-//}
-//    
-//virtual void ObjCCodeGen::VisitStatements(ZoneList<v8::internal::Statement*>* statements) {
-//
-//}
-//    
-//void ObjCCodeGen::VisitExpressions(ZoneList<Expression*>* expressions) {
-//
-//}
-
-
-//Value *CallExprAST() {
-//    // Look up the name in the global module table.
-//;
-//}
-
 void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
     //TODO : Enter into symbol table with scope..
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
