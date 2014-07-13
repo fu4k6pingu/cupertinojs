@@ -128,10 +128,11 @@ public:
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
     
     llvm::Value *CGLiteral( Handle<Object> value, bool push);
+    void CGIfStatement(IfStatement *node, bool flag);
 
-    void VisitStartAccumulation(Expression *expr);
+    void VisitStartAccumulation(AstNode *expr);
     void EndAccumulation();
-    void VisitStartStackAccumulation(Expression *expr);
+    void VisitStartStackAccumulation(AstNode *expr);
     void EndStackAccumulation();
     void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
     llvm::Value *newString(std::string string);

@@ -15,7 +15,7 @@
 #include "src/scopes.h"
 #include "string.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #define ILOG(A, ...) if (DEBUG) printf(A,##__VA_ARGS__);
 
 using namespace v8::internal;
@@ -273,26 +273,92 @@ void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
 
 
 void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
-    //TODO : look at visit for effect
-  Visit(node->expression());
-//  Print(";");
+    Visit(node->expression());
 }
 
 
 void ObjCCodeGen::VisitEmptyStatement(EmptyStatement* node) {
-//  Print(";");
+//    PushValueToContext(llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
 }
 
 
 void ObjCCodeGen::VisitIfStatement(IfStatement* node) {
-//  Print("if (");
-//  Visit(node->condition());
-//  Print(") ");
-//  Visit(node->then_statement());
-//  if (node->HasElseStatement()) {
-//    Print(" else ");
-//    Visit(node->else_statement());
-//  }
+    CGIfStatement(node, true);
+}
+
+void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
+    VisitStartAccumulation(node->condition());
+    llvm::Value *condV = PopContext();
+    if (!condV) {
+        return;
+    }
+    
+    // Convert condition to a bool by comparing equal to 0.0.
+    condV = _builder->CreateFCmpONE(condV,
+                                    llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
+                                    "ifcond");
+    
+    auto function = _builder->GetInsertBlock()->getParent();
+    
+    // Create blocks for the then and else cases.  Insert the 'then' block at the
+    // end of the function.
+    llvm::BasicBlock *thenBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "then", function);
+    llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else");
+    llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "ifcont");
+    
+    _builder->CreateCondBr(condV, thenBB, elseBB);
+    
+    // Emit then value.
+    _builder->SetInsertPoint(thenBB);
+    
+    VisitStartAccumulation(node->then_statement());
+  
+    if (!node->HasThenStatement()){
+        return;
+    }
+    
+    llvm::Value *thenV = PopContext();
+    if (!thenV) {
+        return;
+    }
+    
+    _builder->CreateBr(mergeBB);
+    // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+    thenBB = _builder->GetInsertBlock();
+    
+    // Emit else block.
+    function->getBasicBlockList().push_back(elseBB);
+    _builder->SetInsertPoint(elseBB);
+    
+   
+    VisitStartAccumulation(node->else_statement());
+    
+    if (!node->HasElseStatement()) {
+        return;
+    }
+    
+    llvm::Value *elseV = PopContext();
+    if (!elseV) {
+        return;
+    }
+    
+    _builder->CreateBr(mergeBB);
+    // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+    elseBB = _builder->GetInsertBlock();
+    
+    // Emit merge block.
+    function->getBasicBlockList().push_back(mergeBB);
+    _builder->SetInsertPoint(mergeBB);
+   
+    llvm::PHINode *ph = _builder->CreatePHI(
+                                      llvm::Type::getDoubleTy(llvm::getGlobalContext()),
+                                      2,
+                                      "iftmp");
+    
+    ph->addIncoming(thenV, thenBB);
+    ph->addIncoming(elseV, elseBB);
+    
+    PushValueToContext(ph);
 }
 
 
@@ -491,7 +557,7 @@ void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
 
 
 void ObjCCodeGen::VisitConditional(Conditional* node) {
-//  Visit(node->condition());
+//  Visit(node->Star        ition());
 //  Print(" ? ");
 //  Visit(node->then_expression());
 //  Print(" : ");
@@ -944,7 +1010,7 @@ void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
 }
 
 
-void ObjCCodeGen::VisitStartAccumulation(Expression *expr) {
+void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
     if (!_accumulatorContext) {
         _accumulatorContext = new std::vector<llvm::Value *>;
     }
@@ -957,7 +1023,7 @@ void ObjCCodeGen::EndAccumulation() {
     _accumulatorContext = NULL;
 }
 
-void ObjCCodeGen::VisitStartStackAccumulation(Expression *expr) {
+void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
     if (!_stackAccumulatorContext) {
         _stackAccumulatorContext = new std::vector<llvm::Value *>;
     }
