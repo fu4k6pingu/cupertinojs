@@ -82,25 +82,7 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
     return function;
 }
 
-//#import <Foundation/Foundation.h>
-//#import <objc/runtime.h>
-//
-//void afunc(char *arg){
-//    printf(arg);
-//}
-//
-//int main(int argc, const char * argv[])
-//{
-//    Class NSStringClass = objc_getClass("NSString");
-//    SEL selector = sel_getUid("stringWithUTF8String:");
-//    void *aStr = objc_msgSend(NSStringClass, selector, "String");
-//    NSLog(aStr);
-//    return 0;
-//}
-//
-
-
-
+//TODO : explicitly specifiy varargs
 #define DefExternFucntion(name){\
 {\
     std::vector<llvm::Type*> argTypes; \
@@ -114,26 +96,6 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
 } \
 }
 
-//Define a printf function that accepts a char *
-//TODO : support var args
-static llvm::Function* ObjcPrintFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
-{
-    std::vector<llvm::Type*> printf_arg_types;
-    printf_arg_types.push_back(ObjcPointerTy());
-//    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
-    
-    llvm::FunctionType* printf_type =
-    llvm::FunctionType::get(
-                            llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
-    
-    llvm::Function *func = llvm::Function::Create(
-                                                  printf_type, llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("printf"),
-                                                  mod
-                                                  );
-    func->setCallingConv(llvm::CallingConv::C);
-    return func;
-}
 //TODO : support var args
 static llvm::Function* ObjcNSLogFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
 {
@@ -574,8 +536,9 @@ void ObjCCodeGen::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
 }
 
-char *get(String *string) {
-    return string->ToAsciiArray();
+std::string asciiStringWithV8String(String *string) {
+    char *ascii = string->ToAsciiArray();
+    return std::string(ascii);
 }
 
 llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module)
@@ -608,11 +571,10 @@ llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
     return llvmNewLocalStringVar(name->c_str(), name->size(), module);
 }
 
-llvm::Value *ObjCCodeGen::MsgSend(){
-    auto *string = new std::string("hello objc");
-    const char *name = string->c_str();
+llvm::Value *ObjCCodeGen::newString(std::string string){
+    const char *name = string.c_str();
    
-    llvm::Value *strGlobal = llvmNewLocalStringVar(name, string->length(), _module);
+    llvm::Value *strGlobal = llvmNewLocalStringVar(name, string.length(), _module);
     llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSString"), _module), "calltmp");
     llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("stringWithUTF8String:"), _module), "calltmp");
     
@@ -620,9 +582,8 @@ llvm::Value *ObjCCodeGen::MsgSend(){
     ArgsV.push_back(aClass);
     ArgsV.push_back(sel);
     ArgsV.push_back(strGlobal);
-    
-    auto f = _module->getFunction("objc_msgSend");
-    auto value = _builder->CreateCall(f, ArgsV, "");
+
+    auto value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "");
     return value;
 }
 
@@ -631,12 +592,13 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
         String* string = String::cast(object);
-        char *name =  get(string);
-        if (name){
+        auto name = asciiStringWithV8String(string);
+        if (name.length()){
             //TODO : use name!
-            lvalue = MsgSend();
+            lvalue = newString(name);
         }
-        printf("STRING VALUE%s", name);
+        printf("STRING VALUE%s", name.c_str());
+        
     } else if (object->IsNull()) {
         printf("null");
     } else if (object->IsTrue()) {
