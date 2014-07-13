@@ -134,6 +134,7 @@ public:
     void VisitStartStackAccumulation(Expression *expr);
     void EndStackAccumulation();
     void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
+    llvm::Value *MsgSend();
    
     void PushValueToContext(llvm::Value *value);
     llvm::Value *PopContext();

@@ -82,6 +82,38 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*_builder, llvm
     return function;
 }
 
+//#import <Foundation/Foundation.h>
+//#import <objc/runtime.h>
+//
+//void afunc(char *arg){
+//    printf(arg);
+//}
+//
+//int main(int argc, const char * argv[])
+//{
+//    Class NSStringClass = objc_getClass("NSString");
+//    SEL selector = sel_getUid("stringWithUTF8String:");
+//    void *aStr = objc_msgSend(NSStringClass, selector, "String");
+//    NSLog(aStr);
+//    return 0;
+//}
+//
+
+
+
+#define DefExternFucntion(name){\
+{\
+    std::vector<llvm::Type*> argTypes; \
+    argTypes.push_back(ObjcPointerTy()); \
+    llvm::FunctionType *ft = llvm::FunctionType::get(ObjcPointerTy(), argTypes, true); \
+    auto function = llvm::Function::Create( \
+        ft, llvm::Function::ExternalLinkage, \
+        llvm::Twine(name), \
+        _module );\
+    function->setCallingConv(llvm::CallingConv::C); \
+} \
+}
+
 //Define a printf function that accepts a char *
 //TODO : support var args
 static llvm::Function* ObjcPrintFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
@@ -102,7 +134,25 @@ static llvm::Function* ObjcPrintFPrototye(llvm::LLVMContext& ctx, llvm::Module *
     func->setCallingConv(llvm::CallingConv::C);
     return func;
 }
-
+//TODO : support var args
+static llvm::Function* ObjcNSLogFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
+{
+    std::vector<llvm::Type*> printf_arg_types;
+    printf_arg_types.push_back(ObjcPointerTy());
+//    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
+    
+    llvm::FunctionType* printf_type =
+    llvm::FunctionType::get(
+                            llvm::Type::getInt32Ty(ctx), printf_arg_types, true);
+    
+    llvm::Function *func = llvm::Function::Create(
+                                                  printf_type, llvm::Function::ExternalLinkage,
+                                                  llvm::Twine("NSLog"),
+                                                  mod
+                                                  );
+    func->setCallingConv(llvm::CallingConv::C);
+    return func;
+}
 
 static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
     std::vector<llvm::Type*> Doubles(1, ObjcPointerTy());
@@ -124,11 +174,11 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Modul
     auto *alloca  = TmpB.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
     _builder->CreateStore(argIterator, alloca);
 
-    auto localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
+    llvm::Value *localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
 
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(localVarValue);
-    _builder->CreateCall(module->getFunction("printf"), ArgsV);
+    _builder->CreateCall(module->getFunction("NSLog"), ArgsV);
     
     auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
     _builder->CreateRet(zero);
@@ -149,8 +199,11 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     _context = NULL;
     _shouldReturn = false;
 
-//    PrintFPrototype(Context, _module);
-    ObjcPrintFPrototye(Context, _module);
+    DefExternFucntion("objc_msgSend");
+    DefExternFucntion("sel_getUid");
+    DefExternFucntion("objc_getClass");
+    ObjcNSLogFPrototye(Context, _module);
+    ObjcCOutPrototype(_builder, _module);
     ObjcCodeGenMainPrototype(_builder, _module);
     ObjcCOutPrototype(_builder, _module);
 }
@@ -525,7 +578,7 @@ char *get(String *string) {
     return string->ToAsciiArray();
 }
 
-llvm::Value *llvmNewLocalStringVar(const char* data, int len, llvm::Module *module)
+llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module)
 {
     llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
     //We are adding an extra space for the null terminator!
@@ -547,8 +600,30 @@ llvm::Value *llvmNewLocalStringVar(const char* data, int len, llvm::Module *modu
     const_ptr_16_indices.push_back(const_int32_17);
     llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
     auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
-    
     return castedConst;
+}
+
+llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
+    std::string *name = new std::string(value);
+    return llvmNewLocalStringVar(name->c_str(), name->size(), module);
+}
+
+llvm::Value *ObjCCodeGen::MsgSend(){
+    auto *string = new std::string("hello objc");
+    const char *name = string->c_str();
+   
+    llvm::Value *strGlobal = llvmNewLocalStringVar(name, string->length(), _module);
+    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSString"), _module), "calltmp");
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("stringWithUTF8String:"), _module), "calltmp");
+    
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(aClass);
+    ArgsV.push_back(sel);
+    ArgsV.push_back(strGlobal);
+    
+    auto f = _module->getFunction("objc_msgSend");
+    auto value = _builder->CreateCall(f, ArgsV, "");
+    return value;
 }
 
 llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
@@ -558,7 +633,8 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
         String* string = String::cast(object);
         char *name =  get(string);
         if (name){
-            lvalue = llvmNewLocalStringVar(name, string->length(), _module);
+            //TODO : use name!
+            lvalue = MsgSend();
         }
         printf("STRING VALUE%s", name);
     } else if (object->IsNull()) {
