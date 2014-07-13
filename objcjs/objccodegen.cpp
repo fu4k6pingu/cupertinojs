@@ -18,7 +18,6 @@
 using namespace v8::internal;
 
 static auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
-
 static llvm::Type *ObjcPointerTy(){
     return _ObjcPointerTy;
 }
@@ -101,7 +100,6 @@ static llvm::Function* ObjcNSLogFPrototye(llvm::LLVMContext& ctx, llvm::Module *
 {
     std::vector<llvm::Type*> printf_arg_types;
     printf_arg_types.push_back(ObjcPointerTy());
-//    printf_arg_types.push_back(llvm::Type::getInt8PtrTy(ctx));
     
     llvm::FunctionType* printf_type =
     llvm::FunctionType::get(
