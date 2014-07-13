@@ -12,6 +12,7 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
+#include "llvm/Support/Casting.h"
 #include "src/scopes.h"
 #include "string.h"
 
@@ -162,7 +163,6 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     _accumulatorContext = NULL;
     _stackAccumulatorContext = NULL;
     _context = NULL;
-    _shouldReturn = false;
 
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
@@ -311,12 +311,12 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     // Emit then value.
     _builder->SetInsertPoint(thenBB);
     
-    VisitStartAccumulation(node->then_statement());
-  
     if (!node->HasThenStatement()){
         return;
     }
     
+    VisitStartAccumulation(node->then_statement());
+  
     llvm::Value *thenV = PopContext();
     if (!thenV) {
         return;
@@ -331,11 +331,11 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     _builder->SetInsertPoint(elseBB);
     
    
-    VisitStartAccumulation(node->else_statement());
-    
     if (!node->HasElseStatement()) {
         return;
     }
+    
+    VisitStartAccumulation(node->else_statement());
     
     llvm::Value *elseV = PopContext();
     if (!elseV) {
@@ -350,11 +350,11 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     function->getBasicBlockList().push_back(mergeBB);
     _builder->SetInsertPoint(mergeBB);
    
+  
+    auto doubleTy = llvm::Type::getDoubleTy(llvm::getGlobalContext());
     llvm::PHINode *ph = _builder->CreatePHI(
-                                      llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                      2,
-                                      "iftmp");
-    
+                                      doubleTy,
+                                      2);
     ph->addIncoming(thenV, thenBB);
     ph->addIncoming(elseV, elseBB);
     
@@ -387,8 +387,21 @@ void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
 
 
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
-    _shouldReturn = true;
     Visit(node->expression());
+    llvm::BasicBlock *block =  _builder->GetInsertBlock();
+  
+    if (block->getName() == llvm::StringRef("then") ||
+        block->getName() == llvm::StringRef("else")
+        ){
+    }
+   
+    llvm::Function *currentFunction = block->getParent();
+    if (currentFunction->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
+        PushValueToContext(_builder->CreateRetVoid());
+    } else {
+        auto retValue = PopContext();
+        PushValueToContext(_builder->CreateRet(retValue));
+    }
 }
 
 
@@ -525,7 +538,6 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     int num_params = scope->num_parameters();
     auto function = _module->getFunction(name) ? _module->getFunction(name) : ObjcCodeGenFunction(num_params, name, _module);
     
-    _currentFunction = function;
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
@@ -537,19 +549,18 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
    
-    if (_shouldReturn) {
-        if (_context->size()) {
-            auto retValue = PopContext();
-            _builder->CreateRet(retValue);
-        } else {
+    auto terminator = BB->getTerminator();
+    if (!terminator) {
+        if (function->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
             _builder->CreateRetVoid();
+        } else {
+            auto retValue = _context->size() ? PopContext() : llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+            _builder->CreateRet(retValue);
         }
     }
     
-    _shouldReturn = false;
-
     _builder->saveAndClearIP();
-    _currentFunction = NULL;
+    
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
@@ -616,7 +627,7 @@ llvm::Value *ObjCCodeGen::newString(std::string string){
     ArgsV.push_back(sel);
     ArgsV.push_back(strGlobal);
 
-    auto value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "");
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "");
     return value;
 }
 
@@ -734,33 +745,32 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
         }
     }
    
-    //TODO :
-    // For compound assignments we need another deoptimization point after the
-    // variable/property load.
-    if (node->is_compound()) {
-        //            AccumulatorValueContext context(this);
-        switch (assign_type) {
-            case VARIABLE:
-                EmitVariableLoad(node->target()->AsVariableProxy());
-                //                    PrepareForBailout(expr->target(), TOS_REG);
-                break;
-            case NAMED_PROPERTY:
-                //                    EmitNamedPropertyLoad(property);
-                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
-                break;
-            case KEYED_PROPERTY:
-                //                    EmitKeyedPropertyLoad(property);
-                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
-                break;
-        }
-        
-        Token::Value op = node->binary_op();
-        //        assert(op == v8::internal::Token::ADD);
-        //        __ Push(rax);  // Left operand goes on the stack.
-        VisitStartStackAccumulation(node->value());
-       //            EmitBinaryOp(expr->binary_operation(), op, mode);
-    }
-        //TODO : look into this:
+//TODO :
+// For compound assignments we need another deoptimization point after the
+// variable/property load.
+//    if (node->is_compound()) {
+//        //            AccumulatorValueContext context(this);
+//        switch (assign_type) {
+//            case VARIABLE:
+//                EmitVariableLoad(node->target()->AsVariableProxy());
+//                //                    PrepareForBailout(expr->target(), TOS_REG);
+//                break;
+//            case NAMED_PROPERTY:
+//                //                    EmitNamedPropertyLoad(property);
+//                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
+//                break;
+//            case KEYED_PROPERTY:
+//                //                    EmitKeyedPropertyLoad(property);
+//                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
+//                break;
+//        }
+//        
+//        Token::Value op = node->binary_op();
+//        //        assert(op == v8::internal::Token::ADD);
+//        //        __ Push(rax);  // Left operand goes on the stack.
+//        VisitStartStackAccumulation(node->value());
+//       //            EmitBinaryOp(expr->binary_operation(), op, mode);
+//    }
     
     VisitStartAccumulation(node->value());
     
@@ -770,18 +780,26 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             VariableProxy *target = (VariableProxy *)node->target();
             assert(target);
             std::string str = stringFromV8AstRawString(target->raw_name());
-            llvm::Function *f = _builder->GetInsertBlock()->getParent();
-            llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
-            _namedValues[str] = alloca;
-            
-            EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
+            //TODO : respect scopes!
+            llvm::AllocaInst *alloca;
+            if (!_namedValues[str]){
+                alloca = _builder->CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, str);
+                _namedValues[str] = alloca;
+            } else {
+                alloca = _namedValues[str];
+            }
+           
+//            EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
           
-            //TODO : is this even needed!!~(look with above)
             llvm::Value *value = PopContext();
             if (value) {
+                _builder->CreateLoad(alloca);
                 _builder->CreateStore(value, alloca);
+                //An assignment returns the value 0
+                auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+                PushValueToContext(zero);
             } else {
-               //TODO :
+                assert(0 && "TODO: not implemented!");
             }
             
             break;
@@ -1011,6 +1029,11 @@ void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
 
 
 void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
+    if (_context != NULL && _context == _accumulatorContext) {
+        Visit(expr);
+        return;
+    }
+    
     if (!_accumulatorContext) {
         _accumulatorContext = new std::vector<llvm::Value *>;
     }
@@ -1019,25 +1042,29 @@ void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
 }
 
 void ObjCCodeGen::EndAccumulation() {
+    assert(0);
     delete _accumulatorContext;
     _accumulatorContext = NULL;
 }
 
 void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
-    if (!_stackAccumulatorContext) {
-        _stackAccumulatorContext = new std::vector<llvm::Value *>;
-    }
-    _context = _stackAccumulatorContext;
-    Visit(expr);
+    assert(0);
+//    if (!_stackAccumulatorContext) {
+//        _stackAccumulatorContext = new std::vector<llvm::Value *>;
+//    }
+//    _context = _stackAccumulatorContext;
+//    Visit(expr);
 }
 
 void ObjCCodeGen::EndStackAccumulation(){
+    assert(0);
     delete _stackAccumulatorContext;
     _stackAccumulatorContext = NULL;
 }
 
 void ObjCCodeGen::PushValueToContext(llvm::Value *value) {
     if (!_context) {
+        _context = new std::vector<llvm::Value *>;
         return;
     }
     if (value) {
@@ -1048,7 +1075,10 @@ void ObjCCodeGen::PushValueToContext(llvm::Value *value) {
 }
 
 llvm::Value *ObjCCodeGen::PopContext() {
-    auto value = _context->back();
+    if (!_context || !_context->size()) {
+        return NULL;
+    }
+    llvm::Value *value = _context->back();
     _context->pop_back();
     return value;
 }

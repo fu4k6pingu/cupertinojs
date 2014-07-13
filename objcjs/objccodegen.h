@@ -30,10 +30,7 @@ public:
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
     std::map<std::string, llvm::AllocaInst*> _namedValues;
-    llvm::Function *_currentFunction;
     llvm::Type *_pointerTy;
-    
-    bool _shouldReturn;
 
     ObjCCodeGen(Zone *zone);
     
