@@ -649,7 +649,21 @@ llvm::Value *ObjCCodeGen::newString(std::string string){
     ArgsV.push_back(sel);
     ArgsV.push_back(strGlobal);
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "");
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return value;
+}
+
+llvm::Value *ObjCCodeGen::newNumber(double doubleValue){
+    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSNumber"), _module), "calltmp");
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("numberWithDouble:"), _module), "calltmp");
+    auto constValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(doubleValue));
+
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(aClass);
+    ArgsV.push_back(sel);
+    ArgsV.push_back(constValue);
+
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
     return value;
 }
 
