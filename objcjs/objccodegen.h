@@ -33,10 +33,14 @@ public:
     llvm::Type *_pointerTy;
 
     ObjCCodeGen(Zone *zone);
+
+    //this is incremented everytime a bailout
+    //is nested in a function!
+    int _bailout;
     
     virtual~ObjCCodeGen(){
     };
-    
+   
     //TODO : remove or use?
     std::vector<llvm::Value *> *_oldBindings;
     

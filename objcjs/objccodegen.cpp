@@ -15,6 +15,7 @@
 #include "llvm/Support/Casting.h"
 #include "src/scopes.h"
 #include "string.h"
+#include "llvm/Support/CFG.h"
 
 #define DEBUG 1
 #define ILOG(A, ...) if (DEBUG) printf(A,##__VA_ARGS__);
@@ -163,7 +164,8 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     _accumulatorContext = NULL;
     _stackAccumulatorContext = NULL;
     _context = NULL;
-
+    _bailout = 0;
+    
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
@@ -354,10 +356,10 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     auto doubleTy = llvm::Type::getDoubleTy(llvm::getGlobalContext());
     llvm::PHINode *ph = _builder->CreatePHI(
                                       doubleTy,
-                                      2);
+                                      2, "condphi");
     ph->addIncoming(thenV, thenBB);
     ph->addIncoming(elseV, elseBB);
-    
+   
     PushValueToContext(ph);
 }
 
@@ -385,22 +387,38 @@ void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
 //  Print(";");
 }
 
-
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
     Visit(node->expression());
-    llvm::BasicBlock *block =  _builder->GetInsertBlock();
-  
-    if (block->getName() == llvm::StringRef("then") ||
-        block->getName() == llvm::StringRef("else")
-        ){
-    }
+    llvm::BasicBlock *block = _builder->GetInsertBlock();
+    
    
+    auto blockName = block->getName();
+    if (blockName == llvm::StringRef("else")) {
+        _bailout++;
+    }
+    
+    if (blockName == llvm::StringRef("then") ||
+        blockName == llvm::StringRef("else")
+        ){
+        //In an if statement, the PHINode needs to have
+        //the type 0 assigned to it!
+        llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
+        _builder->CreateStore(PopContext(), alloca);
+        PushValueToContext(llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
+        return;
+    }
+
     llvm::Function *currentFunction = block->getParent();
     if (currentFunction->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
+        //TODO : shouldn't have void return types really
         PushValueToContext(_builder->CreateRetVoid());
     } else {
-        auto retValue = PopContext();
-        PushValueToContext(_builder->CreateRet(retValue));
+        if (_bailout == 0) {
+            llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
+            PushValueToContext(_builder->CreateStore(PopContext(), alloca));
+        } else {
+            _bailout--;
+        }
     }
 }
 
@@ -545,20 +563,22 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     if (num_params){
         CreateArgumentAllocas(function, node->scope());
     }
+   
+    _namedValues[std::string("RET")] = _builder->CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()));
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
-   
-    auto terminator = BB->getTerminator();
-    if (!terminator) {
-        if (function->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
-            _builder->CreateRetVoid();
-        } else {
-            auto retValue = _context->size() ? PopContext() : llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-            _builder->CreateRet(retValue);
-        }
+
+    if (function->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
+        _builder->CreateRetVoid();
+    } else {
+        //            auto retValue = _context->size() ? PopContext() : llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+        auto retValue = _builder->CreateLoad(_namedValues[std::string("RET")]);
+        _builder->CreateRet(retValue);
     }
-    
+   
+//    auto value = PopContext();
+//    assert(!value);
     _builder->saveAndClearIP();
     
 }

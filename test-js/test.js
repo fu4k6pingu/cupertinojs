@@ -1,11 +1,10 @@
 function test(condition){
-    var a;
     if (condition){
-        a = 1337;
+        return 1337;
     } else {
-        a = 44;
+        return 44;
     }
-    return a;
+    return 666;
 }
 
 function objcjs_main(a, b){
