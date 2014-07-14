@@ -27,6 +27,11 @@ static llvm::Type *ObjcPointerTy(){
     return _ObjcPointerTy;
 }
 
+static llvm::Value *ObjcNullPointer(){
+    auto ty = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
+    return llvm::ConstantPointerNull::get(ty);
+}
+
 static std::string stringFromV8AstRawString(const AstRawString *raw){
     std::string str;
     size_t size = raw->length();
@@ -43,14 +48,13 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                           const std::string &VarName) {
     llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
                      Function->getEntryBlock().begin());
-    return Builder.CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0,
-                             VarName.c_str());
+    return Builder.CreateAlloca(ObjcPointerTy(), 0, VarName.c_str());
 }
 
 // Make the function type:  double(double,double) etc.
 static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
-    std::vector<llvm::Type*> Params(num_params, llvm::Type::getDoubleTy(llvm::getGlobalContext()));
-    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()), Params, false);
+    std::vector<llvm::Type*> Params(num_params, ObjcPointerTy());
+    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
@@ -74,11 +78,12 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm:
     builder->SetInsertPoint(BB);
     
     ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
-    
-    auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+  
+    //TODO : pass arguments from main
     std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(zero);
-    ArgsV.push_back(zero);
+    ArgsV.push_back(ObjcNullPointer());
+    ArgsV.push_back(ObjcNullPointer());
+    
     builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
 
     auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
@@ -294,11 +299,12 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     if (!condV) {
         return;
     }
-    
-    // Convert condition to a bool by comparing equal to 0.0.
-    condV = _builder->CreateFCmpONE(condV,
-                                    llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)),
-                                    "ifcond");
+
+    // Convert condition to a bool by comparing equal to NullPointer.
+    // in JS land bools are represented as ints
+    // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
+    // so get the int value
+    condV = _builder->CreateICmpEQ(boolValue(condV), ObjcNullPointer(), "ifcond");
     
     auto function = _builder->GetInsertBlock()->getParent();
     
@@ -308,7 +314,7 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     llvm::BasicBlock *elseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "else");
     llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "ifcont");
     
-    _builder->CreateCondBr(condV, thenBB, elseBB);
+    _builder->CreateCondBr(condV, elseBB, thenBB);
     
     // Emit then value.
     _builder->SetInsertPoint(thenBB);
@@ -353,9 +359,8 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     _builder->SetInsertPoint(mergeBB);
    
   
-    auto doubleTy = llvm::Type::getDoubleTy(llvm::getGlobalContext());
     llvm::PHINode *ph = _builder->CreatePHI(
-                                      doubleTy,
+                                      ObjcPointerTy(),
                                       2, "condphi");
     ph->addIncoming(thenV, thenBB);
     ph->addIncoming(elseV, elseBB);
@@ -406,7 +411,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
         //the type 0 assigned to it!
         llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
         _builder->CreateStore(PopContext(), alloca);
-        PushValueToContext(llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
+        PushValueToContext(ObjcNullPointer());
         return;
     }
 
@@ -566,7 +571,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         CreateArgumentAllocas(function, node->scope());
     }
    
-    _namedValues[std::string("RET")] = _builder->CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()));
+    _namedValues[std::string("RET")] = _builder->CreateAlloca(ObjcPointerTy());
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
@@ -637,6 +642,8 @@ llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
     return llvmNewLocalStringVar(name->c_str(), name->size(), module);
 }
 
+#pragma mark - Objc factories
+
 llvm::Value *ObjCCodeGen::newString(std::string string){
     const char *name = string.c_str();
    
@@ -667,6 +674,42 @@ llvm::Value *ObjCCodeGen::newNumber(double doubleValue){
     return value;
 }
 
+llvm::Value *ObjCCodeGen::newNumberWithLLVMValue(llvm::Value *doubleValue){
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("numberWithDouble:"), _module), "calltmp");
+    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSNumber"), _module), "calltmp");
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(aClass);
+    ArgsV.push_back(sel);
+    ArgsV.push_back(doubleValue);
+    
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return value;
+}
+
+llvm::Value *ObjCCodeGen::floatValue(llvm::Value *llvmValue){
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("floatValue"), _module), "calltmp");
+
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(llvmValue);
+    ArgsV.push_back(sel);
+
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return value;
+}
+
+//Convert a llvm value to an bool
+//which is represented as an int in JS land
+llvm::Value *ObjCCodeGen::boolValue(llvm::Value *llvmValue){
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("intValue"), _module), "calltmp");
+
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(llvmValue);
+    ArgsV.push_back(sel);
+
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return value;
+}
+
 llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
@@ -679,19 +722,19 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
         
         ILOG("STRING literal: %s", name.c_str());
     } else if (object->IsNull()) {
-        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+        lvalue = newNumber(0);
         ILOG("null literal");
-        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+        lvalue = ObjcNullPointer();
     } else if (object->IsTrue()) {
         ILOG("true literal");
-        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(1.0));
+        lvalue = newNumber(1);
     } else if (object->IsFalse()) {
         ILOG("false literal");
-        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
+        lvalue = newNumber(0);
     } else if (object->IsUndefined()) {
         ILOG("undefined");
     } else if (object->IsNumber()) {
-        lvalue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(object->Number()));
+        lvalue = newNumber(object->Number());
         ILOG("NUMBER value %g", object->Number());
     } else if (object->IsJSObject()) {
         assert(0 && "Not implmeneted");
@@ -819,7 +862,7 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
             //TODO : respect scopes!
             llvm::AllocaInst *alloca;
             if (!_namedValues[str]){
-                alloca = _builder->CreateAlloca(llvm::Type::getDoubleTy(llvm::getGlobalContext()), 0, str);
+                alloca = _builder->CreateAlloca(ObjcPointerTy(), 0, str);
                 _namedValues[str] = alloca;
             } else {
                 alloca = _namedValues[str];
@@ -832,8 +875,7 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
                 _builder->CreateLoad(alloca);
                 _builder->CreateStore(value, alloca);
                 //An assignment returns the value 0
-                auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-                PushValueToContext(zero);
+                PushValueToContext(ObjcNullPointer());
             } else {
                 assert(0 && "TODO: not implemented!");
             }
@@ -1034,14 +1076,25 @@ void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
     auto op = expr->op();
     switch (op) {
         case v8::internal::Token::ADD : {
-            result = _builder->CreateFAdd(lhs, rhs, "addtmp");
+            llvm::Value *floatResult = _builder->CreateFAdd(floatValue(lhs), floatValue(rhs), "addtmp");
+            result = newNumberWithLLVMValue(floatResult);
             break;
         }
         case v8::internal::Token::SUB : {
-            result = _builder->CreateFSub(lhs, rhs, "subtmp");
+            llvm::Value *floatResult = _builder->CreateFSub(floatValue(lhs), floatValue(rhs), "subtmp");
+            result = newNumberWithLLVMValue(floatResult);
             break;
         }
-//        case '*': return Builder.CreateFMul(L, R, "multmp");
+        case v8::internal::Token::MUL : {
+            llvm::Value *floatResult = _builder->CreateFMul(floatValue(lhs), floatValue(rhs), "multmp");
+            result = newNumberWithLLVMValue(floatResult);
+            break;   
+        }
+        case v8::internal::Token::DIV : {
+            llvm::Value *floatResult = _builder->CreateFDiv(floatValue(lhs), floatValue(rhs), "divtmp");
+            result = newNumberWithLLVMValue(floatResult);
+            break;
+        }
 //        case '<':
 //            L = Builder.CreateFCmpULT(L, R, "cmptmp");
             // Convert bool 0/1 to double 0.0 or 1.0

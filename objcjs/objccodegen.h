@@ -136,9 +136,14 @@ public:
     void VisitStartStackAccumulation(AstNode *expr);
     void EndStackAccumulation();
     void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
+    
     llvm::Value *newString(std::string string);
     llvm::Value *newNumber(double value);
+    llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
     
+    llvm::Value *floatValue(llvm::Value *llvmValue);
+    llvm::Value *boolValue(llvm::Value *llvmValue);
+
     void PushValueToContext(llvm::Value *value);
     llvm::Value *PopContext();
     

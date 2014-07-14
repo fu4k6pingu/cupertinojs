@@ -1,14 +1,14 @@
 function test(condition){
-    if (condition){
-        return 1337;
+    if (condition) {
+        return 2;
     } else {
-        return 44;
+        return 0;
     }
-    return 666;
 }
 
 function objcjs_main(a, b){
-    NSLog("one: %f \n", test(1));
-    NSLog("zero: %f \n", test(0));
+    NSLog("one: %@ \n", test(1));
+    NSLog("zero: %@ \n", test(0));
+    NSLog("null %@ \n", test(null));
     return 0;
 }
