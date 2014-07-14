@@ -359,7 +359,9 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
                                       2, "condphi");
     ph->addIncoming(thenV, thenBB);
     ph->addIncoming(elseV, elseBB);
-   
+  
+    //TODO : this is creating an extra value
+    //but is needed for nested
     PushValueToContext(ph);
 }
 
@@ -415,7 +417,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
     } else {
         if (_bailout == 0) {
             llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
-            PushValueToContext(_builder->CreateStore(PopContext(), alloca));
+            _builder->CreateStore(PopContext(), alloca);
         } else {
             _bailout--;
         }
@@ -577,10 +579,10 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         _builder->CreateRet(retValue);
     }
    
-//    auto value = PopContext();
+    auto value = PopContext();
 //    assert(!value);
     _builder->saveAndClearIP();
-    
+    std::cout << "Context size:" << _context->size();
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
@@ -915,7 +917,7 @@ void ObjCCodeGen::VisitCall(Call* node) {
     
     if (calleeF == 0){
         //TODO: this would call an objc or c function in the future
-        printf("Unknown function referenced");
+        assert(0 && "Unknown function referenced");
         return;
     }
 
@@ -928,16 +930,20 @@ void ObjCCodeGen::VisitCall(Call* node) {
     if (_accumulatorContext->back() == 0) {
         return;
     }
-//        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+   
+    if (!calleeF->isVarArg()) {
+        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+    }
     
     std::vector<llvm::Value *> finalArgs;
     unsigned Idx = 0;
     for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
          ++AI, ++Idx){
         llvm::Value *arg = PopContext();
-        
-        llvm::Type *argTy = arg->getType();
-        llvm::Type *paramTy = AI->getType();
+    
+        // check param types
+//        llvm::Type *argTy = arg->getType();
+//        llvm::Type *paramTy = AI->getType();
 //        assert(argTy == paramTy);
         
         finalArgs.push_back(arg);
