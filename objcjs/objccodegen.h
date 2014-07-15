@@ -32,6 +32,9 @@ public:
     std::map<std::string, llvm::AllocaInst*> _namedValues;
     llvm::Type *_pointerTy;
 
+    llvm::BasicBlock *_setRetBB;
+    llvm::BasicBlock *_defaultRetBB;
+    
     ObjCCodeGen(Zone *zone);
 
     //this is incremented everytime a bailout

@@ -107,22 +107,41 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm:
 }
 
 //TODO : support var args
-static llvm::Function* ObjcNSLogFPrototye(llvm::LLVMContext& ctx, llvm::Module *mod)
+static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
 {
     std::vector<llvm::Type*> ArgumentTypes;
     ArgumentTypes.push_back(ObjcPointerTy());
     
     llvm::FunctionType* printf_type =
     llvm::FunctionType::get(
-                            llvm::Type::getInt32Ty(ctx), ArgumentTypes, true);
+                            llvm::Type::getInt32Ty(module->getContext()), ArgumentTypes, true);
     
     llvm::Function *function = llvm::Function::Create(
                                                   printf_type, llvm::Function::ExternalLinkage,
                                                   llvm::Twine("NSLog"),
-                                                  mod
+                                                  module
                                                   );
     function->setCallingConv(llvm::CallingConv::C);
     return function;
+}
+
+static llvm::Function *ObjcMallocPrototype(llvm::Module *module){
+    std::vector<llvm::Type*>FuncTy_7_args;
+    FuncTy_7_args.push_back(llvm::IntegerType::get(module->getContext(), 64));
+    llvm::FunctionType* FuncTy_7 = llvm::FunctionType::get(
+                                                           /*Result=*/ObjcPointerTy(),
+                                                           /*Params=*/FuncTy_7_args,
+                                                           /*isVarArg=*/false);
+    llvm::Function* func_malloc = module->getFunction("malloc");
+    if (!func_malloc) {
+        func_malloc = llvm::Function::Create(
+                                             /*Type=*/FuncTy_7,
+                                             /*Linkage=*/llvm::GlobalValue::ExternalLinkage,
+                                             /*Name=*/"malloc", module); // (external, no body)
+        func_malloc->setCallingConv(llvm::CallingConv::C);
+    }
+    
+    return func_malloc;
 }
 
 //TODO : move to native JS
@@ -174,7 +193,9 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
-    ObjcNSLogFPrototye(Context, _module);
+    
+    ObjcMallocPrototype(_module);
+    ObjcNSLogPrototye(_module);
     ObjcCOutPrototype(_builder, _module);
     ObjcCodeGenMainPrototype(_builder, _module);
     ObjcCOutPrototype(_builder, _module);
@@ -318,16 +339,17 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     
     // Emit then value.
     _builder->SetInsertPoint(thenBB);
-    
-    if (!node->HasThenStatement()){
-        return;
-    }
-    
-    VisitStartAccumulation(node->then_statement());
-  
-    llvm::Value *thenV = PopContext();
-    if (!thenV) {
-        return;
+
+    llvm::Value *thenV;
+    if (node->HasThenStatement()){
+        VisitStartAccumulation(node->then_statement());
+        thenV = PopContext();
+        if (!thenV){
+            thenV = ObjcNullPointer();
+        }
+    } else {
+        //no op
+        thenV = ObjcNullPointer();
     }
     
     _builder->CreateBr(mergeBB);
@@ -338,18 +360,19 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     function->getBasicBlockList().push_back(elseBB);
     _builder->SetInsertPoint(elseBB);
     
-   
-    if (!node->HasElseStatement()) {
-        return;
+
+    llvm::Value *elseV;
+    if (node->HasElseStatement()) {
+        VisitStartAccumulation(node->else_statement());
+        elseV = PopContext();
+        if (!elseV) {
+            elseV = ObjcNullPointer();
+        }
+    } else {
+        //no op
+        elseV = ObjcNullPointer();
     }
-    
-    VisitStartAccumulation(node->else_statement());
-    
-    llvm::Value *elseV = PopContext();
-    if (!elseV) {
-        return;
-    }
-    
+
     _builder->CreateBr(mergeBB);
     // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
     elseBB = _builder->GetInsertBlock();
@@ -395,37 +418,30 @@ void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
 }
 
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
-    Visit(node->expression());
+    VisitStartAccumulation(node->expression());
     llvm::BasicBlock *block = _builder->GetInsertBlock();
-    
    
     auto blockName = block->getName();
-    if (blockName == llvm::StringRef("else")) {
-        _bailout++;
-    }
-    
-    if (blockName == llvm::StringRef("then") ||
-        blockName == llvm::StringRef("else")
+    if (blockName.startswith(llvm::StringRef("then")) ||
+        blockName.startswith(llvm::StringRef("else"))
         ){
         //In an if statement, the PHINode needs to have
         //the type 0 assigned to it!
-        llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
+        llvm::AllocaInst *alloca = _namedValues[std::string("SET_RET_ALLOCA")];
         _builder->CreateStore(PopContext(), alloca);
         PushValueToContext(ObjcNullPointer());
         return;
     }
 
     llvm::Function *currentFunction = block->getParent();
-    if (currentFunction->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
+    if (currentFunction->getReturnType() == ObjcPointerTy() && _context->size()) {
+        llvm::AllocaInst *alloca = _namedValues[std::string("DEFAULT_RET_ALLOCA")];
+        auto retValue = PopContext();
+        assert(retValue && "requires return value");
+        _builder->CreateStore(retValue, alloca);
+    } else {
         //TODO : shouldn't have void return types really
         PushValueToContext(_builder->CreateRetVoid());
-    } else {
-        if (_bailout == 0) {
-            llvm::AllocaInst *alloca = _namedValues[std::string("RET")];
-            _builder->CreateStore(PopContext(), alloca);
-        } else {
-            _bailout--;
-        }
     }
 }
 
@@ -548,7 +564,6 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
 //  Print("debugger ");
 }
 
-
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto name = stringFromV8AstRawString(node->raw_name());
     if (!name.length()){
@@ -571,23 +586,56 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         CreateArgumentAllocas(function, node->scope());
     }
    
-    _namedValues[std::string("RET")] = _builder->CreateAlloca(ObjcPointerTy());
+    //Return types
+    
+    //TODO : don't malloc a return sentenenial everytime
+    auto sentenialReturnAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("sentential"));
+    llvm::ConstantInt* const_int64_10 = llvm::ConstantInt::get(_module->getContext(), llvm::APInt(64, llvm::StringRef("8"), 10));
+    auto retPtr = _builder->CreateCall(_module->getFunction("malloc"), const_int64_10, "calltmp");
+    _builder->CreateStore(retPtr, sentenialReturnAlloca);
+    auto sentenialReturnValue = _builder->CreateLoad(sentenialReturnAlloca);
+    
+    
+    //end ret alloca is the return value at the end of a function
+    auto endRetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("endret"));
+    //TODO : instead of returnig a null pointer, return a 'undefined' sentenial
+    _builder->CreateStore(ObjcNullPointer(), endRetAlloca);
+    _namedValues[std::string("DEFAULT_RET_ALLOCA")] = endRetAlloca;
+   
+    auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
+    _builder->CreateStore(sentenialReturnValue, retAlloca);
+    _namedValues[std::string("SET_RET_ALLOCA")] = retAlloca;
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
 
-    if (function->getReturnType() == llvm::Type::getVoidTy(_module->getContext()) && _context->size()) {
-        _builder->CreateRetVoid();
+    if (function->getReturnType() == ObjcPointerTy()) {
+        auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
+        auto condV = _builder->CreateICmpEQ(retValue, sentenialReturnValue, "ifsetreturn");
+        
+        _setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret", function);
+        _defaultRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "endret");
+        
+        _builder->CreateCondBr(condV, _defaultRetBB, _setRetBB);
+        
+        function->getBasicBlockList().push_back(_defaultRetBB);
+        _builder->SetInsertPoint(_defaultRetBB);
+        auto endRetValue = _builder->CreateLoad(_namedValues[std::string("DEFAULT_RET_ALLOCA")], "endretalloca");
+        _builder->CreateRet(endRetValue);
+        
+        _builder->SetInsertPoint(_setRetBB);
+        _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
     } else {
-        //            auto retValue = _context->size() ? PopContext() : llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-        auto retValue = _builder->CreateLoad(_namedValues[std::string("RET")]);
-        _builder->CreateRet(retValue);
+        _builder->CreateRetVoid();
     }
-   
-    auto value = PopContext();
+  
+//    _builder->SetInsertPoint(BB);
+//    auto value = PopContext();
 //    assert(!value);
     _builder->saveAndClearIP();
-    std::cout << "Context size:" << _context->size();
+    if (_context) {
+        std::cout << "Context size:" << _context->size();
+    }
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
