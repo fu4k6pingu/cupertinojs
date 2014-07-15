@@ -144,7 +144,7 @@ public:
     llvm::Value *newNumber(double value);
     llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
     
-    llvm::Value *floatValue(llvm::Value *llvmValue);
+    llvm::Value *doubleValue(llvm::Value *llvmValue);
     llvm::Value *boolValue(llvm::Value *llvmValue);
 
     void PushValueToContext(llvm::Value *value);

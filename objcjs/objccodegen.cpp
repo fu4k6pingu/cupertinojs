@@ -106,6 +106,19 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm:
 } \
 }
 
+static llvm::Function *ObjcMsgSendFPret(llvm::Module *module){
+        std::vector<llvm::Type*> argTypes;
+    argTypes.push_back(ObjcPointerTy());
+    auto doubleTy  = llvm::Type::getDoubleTy(llvm::getGlobalContext());
+    llvm::FunctionType *ft = llvm::FunctionType::get(doubleTy, argTypes, true); \
+    auto function = llvm::Function::Create(
+        ft, llvm::Function::ExternalLinkage,
+                                           llvm::Twine("objc_msgSend_fpret"), \
+        module );\
+    function->setCallingConv(llvm::CallingConv::C);
+    return function;
+}
+
 //TODO : support var args
 static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
 {
@@ -193,7 +206,8 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
-    
+   
+    ObjcMsgSendFPret(_module);
     ObjcMallocPrototype(_module);
     ObjcNSLogPrototye(_module);
     ObjcCOutPrototype(_builder, _module);
@@ -387,10 +401,6 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
                                       2, "condphi");
     ph->addIncoming(thenV, thenBB);
     ph->addIncoming(elseV, elseBB);
-  
-    //TODO : this is creating an extra value
-    //but is needed for nested
-    PushValueToContext(ph);
 }
 
 
@@ -429,20 +439,17 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
         //the type 0 assigned to it!
         llvm::AllocaInst *alloca = _namedValues[std::string("SET_RET_ALLOCA")];
         _builder->CreateStore(PopContext(), alloca);
+        //TODO : remove this!
         PushValueToContext(ObjcNullPointer());
         return;
     }
 
     llvm::Function *currentFunction = block->getParent();
-    if (currentFunction->getReturnType() == ObjcPointerTy() && _context->size()) {
-        llvm::AllocaInst *alloca = _namedValues[std::string("DEFAULT_RET_ALLOCA")];
-        auto retValue = PopContext();
-        assert(retValue && "requires return value");
-        _builder->CreateStore(retValue, alloca);
-    } else {
-        //TODO : shouldn't have void return types really
-        PushValueToContext(_builder->CreateRetVoid());
-    }
+    assert(currentFunction->getReturnType() == ObjcPointerTy() && _context->size());
+    llvm::AllocaInst *alloca = _namedValues[std::string("DEFAULT_RET_ALLOCA")];
+    auto retValue = PopContext();
+    assert(retValue && "requires return value");
+    _builder->CreateStore(retValue, alloca);
 }
 
 
@@ -609,29 +616,25 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
 
-    if (function->getReturnType() == ObjcPointerTy()) {
-        auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
-        auto condV = _builder->CreateICmpEQ(retValue, sentenialReturnValue, "ifsetreturn");
-        
-        _setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret", function);
-        _defaultRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "endret");
-        
-        _builder->CreateCondBr(condV, _defaultRetBB, _setRetBB);
-        
-        function->getBasicBlockList().push_back(_defaultRetBB);
-        _builder->SetInsertPoint(_defaultRetBB);
-        auto endRetValue = _builder->CreateLoad(_namedValues[std::string("DEFAULT_RET_ALLOCA")], "endretalloca");
-        _builder->CreateRet(endRetValue);
-        
-        _builder->SetInsertPoint(_setRetBB);
-        _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
-    } else {
-        _builder->CreateRetVoid();
-    }
+    assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
+    
+    auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
+   
+    //If the return value was set, then return what it was set to
+    auto condV = _builder->CreateICmpEQ(retValue, sentenialReturnValue, "ifsetreturn");
+   
+    auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret", function);
+    auto defaultRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "endret");
+    _builder->CreateCondBr(condV, defaultRetBB, setRetBB);
+    
+    function->getBasicBlockList().push_back(defaultRetBB);
+    _builder->SetInsertPoint(defaultRetBB);
+    auto endRetValue = _builder->CreateLoad(_namedValues[std::string("DEFAULT_RET_ALLOCA")], "endretalloca");
+    _builder->CreateRet(endRetValue);
+    
+    _builder->SetInsertPoint(setRetBB);
+    _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
   
-//    _builder->SetInsertPoint(BB);
-//    auto value = PopContext();
-//    assert(!value);
     _builder->saveAndClearIP();
     if (_context) {
         std::cout << "Context size:" << _context->size();
@@ -639,6 +642,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
+    UNIMPLEMENTED();
 }
 
 
@@ -665,12 +669,9 @@ llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *m
     llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
     //We are adding an extra space for the null terminator!
     auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
-
-    //.str needs to be incremented for every string in the module
     llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
                                                          type,
                                                          true,
-                                                         //TODO: this should be private linkage
                                                          llvm::GlobalValue::PrivateLinkage,
                                                          0,
                                                          ".str");
@@ -734,14 +735,14 @@ llvm::Value *ObjCCodeGen::newNumberWithLLVMValue(llvm::Value *doubleValue){
     return value;
 }
 
-llvm::Value *ObjCCodeGen::floatValue(llvm::Value *llvmValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("floatValue"), _module), "calltmp");
+llvm::Value *ObjCCodeGen::doubleValue(llvm::Value *llvmValue){
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("doubleValue"), _module), "calltmp");
 
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(llvmValue);
     ArgsV.push_back(sel);
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "objc_msgSend_fpret");
     return value;
 }
 
@@ -920,8 +921,9 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
           
             llvm::Value *value = PopContext();
             if (value) {
-                _builder->CreateLoad(alloca);
+//                _builder->CreateLoad(alloca);
                 _builder->CreateStore(value, alloca);
+                //TODO : remove because it is unneeded?
                 //An assignment returns the value 0
                 PushValueToContext(ObjcNullPointer());
             } else {
@@ -1049,14 +1051,17 @@ void ObjCCodeGen::VisitCall(Call* node) {
 //        llvm::Type *argTy = arg->getType();
 //        llvm::Type *paramTy = AI->getType();
 //        assert(argTy == paramTy);
-        
         finalArgs.push_back(arg);
+    }
+   
+    if (_context) {
+        std::cout << '\n' << __PRETTY_FUNCTION__ << "Context size:" << _context->size();
     }
     
     std::reverse(finalArgs.begin(), finalArgs.end());
+    //TODO : a function call that is not assigned will push
+    //an unnecessary value to the stack!
     PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
-    
-//    EndAccumulation();
 }
 
 
@@ -1124,22 +1129,22 @@ void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
     auto op = expr->op();
     switch (op) {
         case v8::internal::Token::ADD : {
-            llvm::Value *floatResult = _builder->CreateFAdd(floatValue(lhs), floatValue(rhs), "addtmp");
+            llvm::Value *floatResult = _builder->CreateFAdd(doubleValue(lhs), doubleValue(rhs), "addtmp");
             result = newNumberWithLLVMValue(floatResult);
             break;
         }
         case v8::internal::Token::SUB : {
-            llvm::Value *floatResult = _builder->CreateFSub(floatValue(lhs), floatValue(rhs), "subtmp");
+            llvm::Value *floatResult = _builder->CreateFSub(doubleValue(lhs), doubleValue(rhs), "subtmp");
             result = newNumberWithLLVMValue(floatResult);
             break;
         }
         case v8::internal::Token::MUL : {
-            llvm::Value *floatResult = _builder->CreateFMul(floatValue(lhs), floatValue(rhs), "multmp");
+            llvm::Value *floatResult = _builder->CreateFMul(doubleValue(lhs), doubleValue(rhs), "multmp");
             result = newNumberWithLLVMValue(floatResult);
             break;   
         }
         case v8::internal::Token::DIV : {
-            llvm::Value *floatResult = _builder->CreateFDiv(floatValue(lhs), floatValue(rhs), "divtmp");
+            llvm::Value *floatResult = _builder->CreateFDiv(doubleValue(lhs), doubleValue(rhs), "divtmp");
             result = newNumberWithLLVMValue(floatResult);
             break;
         }
@@ -1189,12 +1194,11 @@ void ObjCCodeGen::EndAccumulation() {
 }
 
 void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
-    assert(0);
-//    if (!_stackAccumulatorContext) {
-//        _stackAccumulatorContext = new std::vector<llvm::Value *>;
-//    }
-//    _context = _stackAccumulatorContext;
-//    Visit(expr);
+    if (!_stackAccumulatorContext) {
+        _stackAccumulatorContext = new std::vector<llvm::Value *>;
+    }
+    _context = _stackAccumulatorContext;
+    Visit(expr);
 }
 
 void ObjCCodeGen::EndStackAccumulation(){
