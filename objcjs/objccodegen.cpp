@@ -259,6 +259,7 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
 
 
 void ObjCCodeGen::VisitModuleDeclaration(ModuleDeclaration* node) {
+    UNIMPLEMENTED();
 //  Print("module ");
 //  PrintLiteral(node->proxy()->name(), false);
 //  Print(" = ");
@@ -268,6 +269,7 @@ void ObjCCodeGen::VisitModuleDeclaration(ModuleDeclaration* node) {
 
 
 void ObjCCodeGen::VisitImportDeclaration(ImportDeclaration* node) {
+    UNIMPLEMENTED();
 //  Print("import ");
 //  PrintLiteral(node->proxy()->name(), false);
 //  Print(" from ");
@@ -277,6 +279,7 @@ void ObjCCodeGen::VisitImportDeclaration(ImportDeclaration* node) {
 
 
 void ObjCCodeGen::VisitExportDeclaration(ExportDeclaration* node) {
+    UNIMPLEMENTED();
 //  Print("export ");
 //  PrintLiteral(node->proxy()->name(), false);
 //  Print(";");
@@ -284,16 +287,19 @@ void ObjCCodeGen::VisitExportDeclaration(ExportDeclaration* node) {
 
 
 void ObjCCodeGen::VisitModuleLiteral(ModuleLiteral* node) {
+    UNIMPLEMENTED();
 //  VisitBlock(node->body());
 }
 
 
 void ObjCCodeGen::VisitModuleVariable(ModuleVariable* node) {
+    UNIMPLEMENTED();
 //  Visit(node->proxy());
 }
 
 
 void ObjCCodeGen::VisitModulePath(ModulePath* node) {
+    UNIMPLEMENTED();
 //  Visit(node->module());
 //  Print(".");
 //  PrintLiteral(node->name(), false);
@@ -301,12 +307,14 @@ void ObjCCodeGen::VisitModulePath(ModulePath* node) {
 
 
 void ObjCCodeGen::VisitModuleUrl(ModuleUrl* node) {
+    UNIMPLEMENTED();
 //  Print("at ");
 //  PrintLiteral(node->url(), true);
 }
 
 
 void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
+    UNIMPLEMENTED();
 //  Print("module ");
 //  PrintLiteral(node->proxy()->name(), false);
 //  Print(" ");
@@ -320,7 +328,7 @@ void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
 
 
 void ObjCCodeGen::VisitEmptyStatement(EmptyStatement* node) {
-//    PushValueToContext(llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0)));
+    UNIMPLEMENTED();
 }
 
 
@@ -454,6 +462,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
 
 
 void ObjCCodeGen::VisitWithStatement(WithStatement* node) {
+    UNIMPLEMENTED();
 //  Print("with (");
 //  Visit(node->expression());
 //  Print(") ");
@@ -462,6 +471,7 @@ void ObjCCodeGen::VisitWithStatement(WithStatement* node) {
 
 
 void ObjCCodeGen::VisitSwitchStatement(SwitchStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("switch (");
 //  Visit(node->tag());
@@ -474,6 +484,7 @@ void ObjCCodeGen::VisitSwitchStatement(SwitchStatement* node) {
 
 
 void ObjCCodeGen::VisitCaseClause(CaseClause* clause) {
+    UNIMPLEMENTED();
 //  if (clause->is_default()) {
 //    Print("default");
 //  } else {
@@ -488,6 +499,7 @@ void ObjCCodeGen::VisitCaseClause(CaseClause* clause) {
 
 
 void ObjCCodeGen::VisitDoWhileStatement(DoWhileStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("do ");
 //  Visit(node->body());
@@ -498,6 +510,7 @@ void ObjCCodeGen::VisitDoWhileStatement(DoWhileStatement* node) {
 
 
 void ObjCCodeGen::VisitWhileStatement(WhileStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("while (");
 //  Visit(node->cond());
@@ -507,6 +520,7 @@ void ObjCCodeGen::VisitWhileStatement(WhileStatement* node) {
 
 
 void ObjCCodeGen::VisitForStatement(ForStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("for (");
 //  if (node->init() != NULL) {
@@ -527,6 +541,7 @@ void ObjCCodeGen::VisitForStatement(ForStatement* node) {
 
 
 void ObjCCodeGen::VisitForInStatement(ForInStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("for (");
 //  Visit(node->each());
@@ -538,6 +553,7 @@ void ObjCCodeGen::VisitForInStatement(ForInStatement* node) {
 
 
 void ObjCCodeGen::VisitForOfStatement(ForOfStatement* node) {
+    UNIMPLEMENTED();
 //  PrintLabels(node->labels());
 //  Print("for (");
 //  Visit(node->each());
@@ -560,6 +576,7 @@ void ObjCCodeGen::VisitTryCatchStatement(TryCatchStatement* node) {
 
 
 void ObjCCodeGen::VisitTryFinallyStatement(TryFinallyStatement* node) {
+    UNIMPLEMENTED();
 //  Print("try ");
 //  Visit(node->try_block());
 //  Print(" finally ");
@@ -568,6 +585,7 @@ void ObjCCodeGen::VisitTryFinallyStatement(TryFinallyStatement* node) {
 
 
 void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
+    UNIMPLEMENTED();
 //  Print("debugger ");
 }
 
@@ -647,6 +665,7 @@ void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
 
 
 void ObjCCodeGen::VisitConditional(Conditional* node) {
+    UNIMPLEMENTED();
 //  Visit(node->Star        ition());
 //  Print(" ? ");
 //  Visit(node->then_expression());
@@ -811,6 +830,7 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
 }
 
 void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
+    UNIMPLEMENTED();
 //  Print(" RegExp(");
 //  PrintLiteral(node->pattern(), false);
 //  Print(",");
@@ -820,6 +840,7 @@ void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
 
 
 void ObjCCodeGen::VisitObjectLiteral(ObjectLiteral* node) {
+    UNIMPLEMENTED();
 //  Print("{ ");
 //  for (int i = 0; i < node->properties()->length(); i++) {
 //    if (i != 0) Print(",");
@@ -834,6 +855,7 @@ void ObjCCodeGen::VisitObjectLiteral(ObjectLiteral* node) {
 
 
 void ObjCCodeGen::VisitArrayLiteral(ArrayLiteral* node) {
+    UNIMPLEMENTED();
 //  Print("[ ");
 //  for (int i = 0; i < node->values()->length(); i++) {
 //    if (i != 0) Print(",");
@@ -957,18 +979,21 @@ void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
 }
 
 void ObjCCodeGen::VisitYield(Yield* node) {
+    UNIMPLEMENTED();
 //  Print("yield ");
 //  Visit(node->expression());
 }
 
 
 void ObjCCodeGen::VisitThrow(Throw* node) {
+    UNIMPLEMENTED();
 //  Print("throw ");
 //  Visit(node->exception());
 }
 
 
 void ObjCCodeGen::VisitProperty(Property* node) {
+    UNIMPLEMENTED();
 //  Expression* key = node->key();
 //  Literal* literal = key->AsLiteral();
 //  if (literal != NULL && literal->value()->IsInternalizedString()) {
@@ -1066,6 +1091,7 @@ void ObjCCodeGen::VisitCall(Call* node) {
 
 
 void ObjCCodeGen::VisitCallNew(CallNew* node) {
+    UNIMPLEMENTED();
 //  Print("new (");
 //  Visit(node->expression());
 //  Print(")");
@@ -1074,6 +1100,7 @@ void ObjCCodeGen::VisitCallNew(CallNew* node) {
 
 
 void ObjCCodeGen::VisitCallRuntime(CallRuntime* node) {
+    UNIMPLEMENTED();
 //  Print("%%");
 //  PrintLiteral(node->name(), false);
 //  PrintArguments(node->arguments());
@@ -1081,6 +1108,7 @@ void ObjCCodeGen::VisitCallRuntime(CallRuntime* node) {
 
 
 void ObjCCodeGen::VisitUnaryOperation(UnaryOperation* node) {
+    UNIMPLEMENTED();
 //  Token::Value op = node->op();
 //  bool needsSpace =
 //      op == Token::DELETE || op == Token::TYPEOF || op == Token::VOID;
@@ -1091,7 +1119,7 @@ void ObjCCodeGen::VisitUnaryOperation(UnaryOperation* node) {
 
 
 void ObjCCodeGen::VisitCountOperation(CountOperation* node) {
-
+    UNIMPLEMENTED();
 }
 
 
@@ -1108,11 +1136,11 @@ void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* expr) {
 }
 
 void ObjCCodeGen::VisitComma(BinaryOperation* expr) {
-    
+    UNIMPLEMENTED();
 }
 
 void ObjCCodeGen::VisitLogicalExpression(BinaryOperation* expr) {
-    
+    UNIMPLEMENTED();
 }
 
 void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
@@ -1148,28 +1176,114 @@ void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
             result = newNumberWithLLVMValue(floatResult);
             break;
         }
-//        case '<':
-//            L = Builder.CreateFCmpULT(L, R, "cmptmp");
-            // Convert bool 0/1 to double 0.0 or 1.0
-//            return Builder.CreateUIToFP(L, Type::getDoubleTy(getGlobalContext()),
-//                                        "booltmp");
+
         default: break;
     }
     
     PushValueToContext(result);
 }
-    
+
+// Check for the form (%_ClassOf(foo) === 'BarClass').
+static bool IsClassOfTest(CompareOperation* expr) {
+    if (expr->op() != Token::EQ_STRICT) return false;
+    CallRuntime* call = expr->left()->AsCallRuntime();
+    if (call == NULL) return false;
+    Literal* literal = expr->right()->AsLiteral();
+    if (literal == NULL) return false;
+    if (!literal->value()->IsString()) return false;
+    if (!call->name()->IsOneByteEqualTo(STATIC_ASCII_VECTOR("_ClassOf"))) {
+        return false;
+    }
+    ASSERT(call->arguments()->length() == 1);
+    return true;
+}
  
-void ObjCCodeGen::VisitCompareOperation(CompareOperation* node) {
-//  Print("(");
-//  Visit(node->left());
-//  Print(" %s ", Token::String(node->op()));
-//  Visit(node->right());
-//  Print(")");
+void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
+      ASSERT(!HasStackOverflow());
+    llvm::Value *resultValue = NULL;
+//    ASSERT(current_block() != NULL);
+//    ASSERT(current_block()->HasPredecessor());
+    
+//    if (!FLAG_hydrogen_track_positions) SetSourcePosition(expr->position());
+    
+    // Check for a few fast cases. The AST visiting behavior must be in sync
+    // with the full codegen: We don't push both left and right values onto
+    // the expression stack when one side is a special-case literal.
+    Expression* sub_expr = NULL;
+    Handle<String> check;
+    if (expr->IsLiteralCompareTypeof(&sub_expr, &check)) {
+        UNIMPLEMENTED();
+//        return HandleLiteralCompareTypeof(expr, sub_expr, check);
+    }
+    if (expr->IsLiteralCompareUndefined(&sub_expr, isolate())) {
+        UNIMPLEMENTED();
+//        return HandleLiteralCompareNil(expr, sub_expr, kUndefinedValue);
+    }
+    if (expr->IsLiteralCompareNull(&sub_expr)) {
+        UNIMPLEMENTED();
+//        return HandleLiteralCompareNil(expr, sub_expr, kNullValue);
+    }
+    
+    if (IsClassOfTest(expr)) {
+        UNIMPLEMENTED();
+//        CallRuntime* call = expr->left()->AsCallRuntime();
+//        ASSERT(call->arguments()->length() == 1);
+//        CHECK_ALIVE(VisitForValue(call->arguments()->at(0)));
+//        HValue* value = Pop();
+//        Literal* literal = expr->right()->AsLiteral();
+//        Handle<String> rhs = Handle<String>::cast(literal->value());
+//        HClassOfTestAndBranch* instr = New<HClassOfTestAndBranch>(value, rhs);
+//        return ast_context()->ReturnControl(instr, expr->id());
+    }
+
+    
+//    if (IsLiteralCompareBool(isolate(), left, op, right)) {
+//    UNIMPLEMENTED();
+//    }
+
+    
+    VisitStartAccumulation(expr->left());
+    auto left = PopContext();
+    VisitStartAccumulation(expr->right());
+    auto right = PopContext();
+    
+    Token::Value op = expr->op();
+    Handle<JSFunction> target = Handle<JSFunction>::null();
+    if (op == Token::INSTANCEOF) {
+        UNIMPLEMENTED();
+        // Check to see if the rhs of the instanceof is a global function not
+        // residing in new space. If it is we assume that the function will stay the
+        // same.
+        
+        // If the target is not null we have found a known global function that is
+        // assumed to stay the same for this instanceof.
+        if (target.is_null()) {
+            UNIMPLEMENTED();
+        } else {
+            UNIMPLEMENTED();
+        }
+        
+        // Code below assumes that we don't fall through.
+        UNREACHABLE();
+    } else if (op == Token::IN) {
+        UNIMPLEMENTED();
+    } else if (op == Token::LT) {
+        //TODO : abstract out!
+        llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("isLessThan:"), _module), "calltmp");
+        std::vector<llvm::Value*> ArgsV;
+        ArgsV.push_back(left);
+        ArgsV.push_back(sel);
+        ArgsV.push_back(right);
+        resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    }
+    
+    assert(resultValue);
+    PushValueToContext(resultValue);
 }
 
 
 void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
+    UNIMPLEMENTED();
 //  Print("<this-function>");
 }
 
