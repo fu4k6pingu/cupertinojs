@@ -33,6 +33,14 @@ public:
     std::map<std::string, llvm::AllocaInst*> _namedValues;
     CGContext(){
     }
+    
+    CGContext *Extend(){
+        auto extended = new CGContext();
+        extended->_context = _context;
+        extended->_namedValues = _namedValues;
+        return extended;
+    }
+    
     size_t size(){
         return _context.size();
     }
@@ -165,18 +173,26 @@ public:
     void CGIfStatement(IfStatement *node, bool flag);
 
     void VisitStartAccumulation(AstNode *expr);
+    void VisitStartAccumulation(AstNode *expr, bool extendContext);
+    
     void EndAccumulation();
     void VisitStartStackAccumulation(AstNode *expr);
     void EndStackAccumulation();
     void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
-    
+    void CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
+   
+#pragma mark - Runtime calls
     llvm::Value *newString(std::string string);
     llvm::Value *newNumber(double value);
     llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
-    
     llvm::Value *doubleValue(llvm::Value *llvmValue);
     llvm::Value *boolValue(llvm::Value *llvmValue);
-
+    llvm::Value *messageSend(llvm::Value *receiver, const char *selector, std::vector<llvm::Value *>ArgsV);
+    llvm::Value *messageSend(llvm::Value *receiver, const char *selector, llvm::Value *Arg);
+    llvm::Value *messageSend(llvm::Value *receiver, const char *selector);
+    llvm::Value *messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV);
+    llvm::Value *classNamed(const char *name);
+    
     void PushValueToContext(llvm::Value *value);
     llvm::Value *PopContext();
     

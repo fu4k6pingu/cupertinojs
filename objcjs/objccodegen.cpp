@@ -51,9 +51,33 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
     return Builder.CreateAlloca(ObjcPointerTy(), 0, VarName.c_str());
 }
 
-// Make the function type:  double(double,double) etc.
+static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
+                                                const std::string &VarName,
+                                                llvm::Type *ty) {
+    
+    llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
+                     Function->getEntryBlock().begin());
+    return Builder.CreateAlloca(ty, 0, VarName.c_str());
+}
+
 static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
     std::vector<llvm::Type*> Params(num_params, ObjcPointerTy());
+    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
+    return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
+}
+static std::string CMD_NAME("__cmd__");
+
+static llvm::Function *ObjcCodeGenJSFunction(size_t num_params, std::string name, llvm::Module *mod){
+    std::vector<llvm::Type*> Params;
+    Params.push_back(ObjcPointerTy());
+    Params.push_back(ObjcPointerTy());
+//    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), CMD_NAME.length() + 1);
+//    Params.push_back(type);
+    
+    for (int i = 0; i < num_params; i++) {
+        Params.push_back(ObjcPointerTy());
+    }
+    
     llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
@@ -157,6 +181,42 @@ static llvm::Function *ObjcMallocPrototype(llvm::Module *module){
     return func_malloc;
 }
 
+std::string asciiStringWithV8String(String *string) {
+    char *ascii = string->ToAsciiArray();
+    return std::string(ascii);
+}
+
+llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module)
+{
+    auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
+    if (exisitingString){
+        return exisitingString;
+    }
+    llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
+    //We are adding an extra space for the null terminator!
+    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
+    llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
+                                                         type,
+                                                         true,
+                                                         llvm::GlobalValue::PrivateLinkage,
+                                                         0,
+                                                         ".str");
+    var->setInitializer(constTy);
+    
+    std::vector<llvm::Constant*> const_ptr_16_indices;
+    llvm::ConstantInt* const_int32_17 =llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, llvm::StringRef("0"), 10));
+    const_ptr_16_indices.push_back(const_int32_17);
+    const_ptr_16_indices.push_back(const_int32_17);
+    llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
+    auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
+    return castedConst;
+}
+
+llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
+    std::string *name = new std::string(value);
+    return llvmNewLocalStringVar(name->c_str(), name->size(), module);
+}
+
 //TODO : move to native JS
 static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
     std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
@@ -203,13 +263,17 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
-   
+
+    //JSRuntime
+    DefExternFucntion("defineJSFunction");
+    
     ObjcMsgSendFPret(_module);
     ObjcMallocPrototype(_module);
     ObjcNSLogPrototye(_module);
     ObjcCOutPrototype(_builder, _module);
-    ObjcCodeGenMainPrototype(_builder, _module);
     ObjcCOutPrototype(_builder, _module);
+
+    ObjcCodeGenMainPrototype(_builder, _module);
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
@@ -227,6 +291,43 @@ void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* 
         _builder->CreateStore(AI, alloca);
         _context->setValue(str, alloca);
     }
+}
+
+/// CreateArgumentAllocas - Create an alloca for each argument and register the
+/// argument in the symbol table so that references to it will succeed.
+void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+    llvm::Function::arg_iterator AI = F->arg_begin();
+    llvm::Value *argSelf = AI++;
+    int num_params = scope->num_parameters();
+   
+    std::string allocaThisName("__this");
+    llvmNewLocalStringVar(allocaThisName, _module);
+    llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, allocaThisName);
+    _builder->CreateStore(argSelf, allocaThis);
+    _context->setValue(allocaThisName, allocaThis);
+   
+    auto cmdVal = llvmNewLocalStringVar(CMD_NAME, _module);
+    //We are adding an extra space for the null terminator!
+//    auto cmdType = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), CMD_NAME.length() + 1);
+    
+    llvm::AllocaInst *allocaCMD = CreateEntryBlockAlloca(F, CMD_NAME, ObjcPointerTy());
+    llvm::Value *argCMD = AI++;
+    _builder->CreateStore(argCMD, allocaCMD);
+    _context->setValue(CMD_NAME, allocaCMD);
+    
+    for (unsigned Idx = 0, e = num_params; Idx != e; ++Idx, ++AI) {
+        // Create an alloca for this variable.
+        int i = Idx;
+        Variable *param = scope->parameter(i);
+        std::string str = stringFromV8AstRawString(param->raw_name());
+        llvm::AllocaInst *alloca = CreateEntryBlockAlloca(F, str);
+        
+        // Store the initial value into the alloca.
+        _builder->CreateStore(AI, alloca);
+        _context->setValue(str, alloca);
+    }
+    
+    
 }
 
 void ObjCCodeGen::dump(){
@@ -478,19 +579,37 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     v8::internal::Scope *scope = node->scope();
     int num_params = scope->num_parameters();
-    auto function = _module->getFunction(name) ? _module->getFunction(name) : ObjcCodeGenFunction(num_params, name, _module);
+    auto function = _module->getFunction(name) ? _module->getFunction(name) : ObjcCodeGenJSFunction(num_params, name, _module);
+  
+   
+    if (name == std::string("larryf")){
+//        llvm::Constant *fPointer = llvm::ConstantExpr::getCast(llvm::Instruction::BitCast, function, function->getType());
+        //Add define JSFunction to front of main
+        llvm::Function *main = _module->getFunction("main");
+        auto nameAlloca = llvmNewLocalStringVar(name.c_str(), name.length(), _module);
+        std::vector<llvm::Value*> ArgsV;
+        ArgsV.push_back(nameAlloca);
+        ArgsV.push_back(function);
+        auto call = _builder->CreateCall(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
+        llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
+        mainBB->getInstList().push_front(call);
+    }
     
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
-    
+   
     if (num_params){
-        CreateArgumentAllocas(function, node->scope());
+        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+        if (isJSFunction) {
+            CreateJSArgumentAllocas(function, node->scope());
+        } else {
+            CreateArgumentAllocas(function, node->scope());
+        }
     }
    
     //Return types
-    
-    //TODO : don't malloc a return sentenenial everytime
+//    //TODO : don't malloc a return sentenenial everytime
     auto sentenialReturnAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("sentential"));
     llvm::ConstantInt* const_int64_10 = llvm::ConstantInt::get(_module->getContext(), llvm::APInt(64, llvm::StringRef("8"), 10));
     auto retPtr = _builder->CreateCall(_module->getFunction("malloc"), const_int64_10, "calltmp");
@@ -548,80 +667,26 @@ void ObjCCodeGen::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
 }
 
-std::string asciiStringWithV8String(String *string) {
-    char *ascii = string->ToAsciiArray();
-    return std::string(ascii);
-}
 
-llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module)
-{
-    llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
-    //We are adding an extra space for the null terminator!
-    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
-    llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
-                                                         type,
-                                                         true,
-                                                         llvm::GlobalValue::PrivateLinkage,
-                                                         0,
-                                                         ".str");
-    var->setInitializer(constTy);
-    
-    std::vector<llvm::Constant*> const_ptr_16_indices;
-    llvm::ConstantInt* const_int32_17 =llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, llvm::StringRef("0"), 10));
-    const_ptr_16_indices.push_back(const_int32_17);
-    const_ptr_16_indices.push_back(const_int32_17);
-    llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
-    auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
-    return castedConst;
-}
-
-llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
-    std::string *name = new std::string(value);
-    return llvmNewLocalStringVar(name->c_str(), name->size(), module);
-}
-
-#pragma mark - Objc factories
+#pragma mark - Runtime calls
 
 llvm::Value *ObjCCodeGen::newString(std::string string){
     const char *name = string.c_str();
-   
     llvm::Value *strGlobal = llvmNewLocalStringVar(name, string.length(), _module);
-    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSString"), _module), "calltmp");
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("stringWithUTF8String:"), _module), "calltmp");
-    
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(aClass);
-    ArgsV.push_back(sel);
-    ArgsV.push_back(strGlobal);
+    return messageSend(classNamed("NSString"), "stringWithUTF8String:", strGlobal);
+}
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return value;
+llvm::Value *ObjCCodeGen::classNamed(const char *name){
+    return _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string(name), _module), "calltmp-getclass");
 }
 
 llvm::Value *ObjCCodeGen::newNumber(double doubleValue){
-    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSNumber"), _module), "calltmp");
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("numberWithDouble:"), _module), "calltmp");
     auto constValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(doubleValue));
-
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(aClass);
-    ArgsV.push_back(sel);
-    ArgsV.push_back(constValue);
-
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return value;
+    return messageSend(classNamed("NSNumber"), "numberWithDouble:", constValue);
 }
 
 llvm::Value *ObjCCodeGen::newNumberWithLLVMValue(llvm::Value *doubleValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("numberWithDouble:"), _module), "calltmp");
-    llvm::Value *aClass = _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string("NSNumber"), _module), "calltmp");
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(aClass);
-    ArgsV.push_back(sel);
-    ArgsV.push_back(doubleValue);
-    
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return value;
+    return messageSend(classNamed("NSNumber"), "numberWithDouble:", doubleValue);
 }
 
 llvm::Value *ObjCCodeGen::doubleValue(llvm::Value *llvmValue){
@@ -631,8 +696,66 @@ llvm::Value *ObjCCodeGen::doubleValue(llvm::Value *llvmValue){
     ArgsV.push_back(llvmValue);
     ArgsV.push_back(sel);
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "objc_msgSend_fpret");
+    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "calltmp-objc_msgSend_fpret");
     return value;
+}
+
+llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName, llvm::Value *Arg) {
+    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(receiver);
+    ArgsV.push_back(selector);
+    ArgsV.push_back(Arg);
+    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
+    return resultValue;
+}
+
+llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName, std::vector<llvm::Value *>ArgsV) {
+    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
+    std::vector<llvm::Value*> Args;
+    Args.push_back(receiver);
+    Args.push_back(selector);
+    assert(ArgsV.size() == 1);
+    Args.push_back(ArgsV.back());
+
+    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
+    return resultValue;
+}
+
+llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName) {
+    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
+    std::vector<llvm::Value*> ArgsV;
+    ArgsV.push_back(receiver);
+    ArgsV.push_back(selector);
+    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return resultValue;
+}
+
+llvm::Value *ObjCCodeGen::messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV) {
+    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("body:"), _module), "calltmp");
+    std::vector<llvm::Value*> Args;
+    Args.push_back(instance);
+    Args.push_back(selector);
+    assert(ArgsV.size() == 1);
+    Args.push_back(ArgsV.back());
+    
+//    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "call-tmpobjc_msgSend");
+    unsigned Idx = 0;
+    auto function = _module->getFunction(llvm::StringRef("larryf"));
+    for (llvm::Function::arg_iterator AI = function->arg_begin(); Idx != ArgsV.size();
+         ++AI, ++Idx){
+        llvm::Value *arg = Args.at(Idx);
+        
+        // check param types
+        llvm::Type *argTy = arg->getType();
+        llvm::Type *paramTy = AI->getType();
+        assert(argTy == paramTy);
+        //
+    }
+    
+    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "objc_msgSend");
+//    auto resultValue = _builder->CreateCall(function, Args);
+    return resultValue;
 }
 
 //Convert a llvm value to an bool
@@ -894,7 +1017,7 @@ void ObjCCodeGen::VisitCall(Call* node) {
     }
    
     if (!calleeF->isVarArg()) {
-        assert(calleeF->arg_size() == args->length() && "Unknown function referenced: airity mismatch");
+        assert(calleeF->arg_size() == args->length() + 2 && "Unknown function referenced: airity mismatch");
     }
     
     std::vector<llvm::Value *> finalArgs;
@@ -907,17 +1030,25 @@ void ObjCCodeGen::VisitCall(Call* node) {
 //        llvm::Type *argTy = arg->getType();
 //        llvm::Type *paramTy = AI->getType();
 //        assert(argTy == paramTy);
+        //
         finalArgs.push_back(arg);
     }
-   
+    std::reverse(finalArgs.begin(), finalArgs.end());
+
     if (_context) {
         std::cout << '\n' << __PRETTY_FUNCTION__ << "Context size:" << _context->size();
     }
-    
-    std::reverse(finalArgs.begin(), finalArgs.end());
-    //TODO : a function call that is not assigned will push
-    //an unnecessary value to the stack!
-    PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
+
+    bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+    if (isJSFunction) {
+        //Create a new instance and invoke the body
+        llvm::Value *instance = messageSend(classNamed(name.c_str()), "new");
+        
+        auto value = messageSendJSFunction(instance, finalArgs);
+        PushValueToContext(value);
+    } else {
+        PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
+    }
 }
 
 void ObjCCodeGen::VisitCallNew(CallNew* node) {
@@ -1065,7 +1196,6 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
     Token::Value op = expr->op();
     Handle<JSFunction> target = Handle<JSFunction>::null();
     if (op == Token::INSTANCEOF) {
-        UNIMPLEMENTED();
         // Check to see if the rhs of the instanceof is a global function not
         // residing in new space. If it is we assume that the function will stay the
         // same.
@@ -1083,13 +1213,13 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
     } else if (op == Token::IN) {
         UNIMPLEMENTED();
     } else if (op == Token::LT) {
-        //TODO : abstract out!
-        llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("isLessThan:"), _module), "calltmp");
-        std::vector<llvm::Value*> ArgsV;
-        ArgsV.push_back(left);
-        ArgsV.push_back(sel);
-        ArgsV.push_back(right);
-        resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+        resultValue = messageSend(left, "isLessThan:",  right);
+    } else if (op == Token::GT){
+        resultValue = messageSend(left, "isGreaterThan:",  right);
+    } else if (op == Token::LTE){
+        resultValue = messageSend(left, "isLessThanOrEqualTo:",  right);
+    } else if (op == Token::GTE){
+        resultValue = messageSend(left, "isGreaterThanOrEqualTo:",  right);
     }
     
     assert(resultValue);
@@ -1100,12 +1230,21 @@ void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
-    auto context = new CGContext();
+void ObjCCodeGen::VisitStartAccumulation(AstNode *expr, bool extendContext) {
+    CGContext *context;
+    if (extendContext) {
+        context = _context->Extend();
+    } else {
+        context = new CGContext();
+    }
+    
     Contexts.push_back(context);
     _context = context;
-    
     Visit(expr);
+}
+
+void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
+    VisitStartAccumulation(expr, false);
 }
 
 void ObjCCodeGen::EndAccumulation() {
@@ -1116,11 +1255,8 @@ void ObjCCodeGen::EndAccumulation() {
 }
 
 void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
-    auto context = new CGContext();
-    Contexts.push_back(context);
-    _context = context;
-    
-    Visit(expr);
+    //TODO : retain values
+    VisitStartAccumulation(expr, false);
 }
 
 void ObjCCodeGen::EndStackAccumulation(){

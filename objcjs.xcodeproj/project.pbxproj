@@ -8,7 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
+		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		C53C8BFD197664AD00335186 /* objcjs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* objcjs-runtime.dylib */; };
 		C566B4D6196D057A00BAC438 /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */; };
+		C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
+		C5686244197637B0001C8B45 /* objcjs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686243197637B0001C8B45 /* objcjs_runtime.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
+		C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
+		C5686255197637B0001C8B45 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5686253197637B0001C8B45 /* InfoPlist.strings */; };
+		C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };
@@ -22,6 +30,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C568624D197637B0001C8B45 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B031969155100A381F3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C5686236197637B0001C8B45;
+			remoteInfo = "objcjs-runtime";
+		};
 		C5D6F08919692EF900BB9050 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
@@ -170,6 +185,22 @@
 		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
 		C51CE3281971F2ED00996E03 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C51CE3291971F2ED00996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
+		C568622519763041001C8B45 /* test3.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test3.js; sourceTree = "<group>"; };
+		C568622619763041001C8B45 /* test4.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test4.js; sourceTree = "<group>"; };
+		C568622719763041001C8B45 /* test6.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test6.js; sourceTree = "<group>"; };
+		C5686237197637B0001C8B45 /* objcjs-runtime.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "objcjs-runtime.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5686239197637B0001C8B45 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
+		C568623C197637B0001C8B45 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		C568623D197637B0001C8B45 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
+		C568623E197637B0001C8B45 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
+		C5686241197637B0001C8B45 /* objcjs-runtime-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "objcjs-runtime-Prefix.pch"; sourceTree = "<group>"; };
+		C5686242197637B0001C8B45 /* objcjs_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = objcjs_runtime.h; sourceTree = "<group>"; };
+		C5686243197637B0001C8B45 /* objcjs_runtime.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtime.m; sourceTree = "<group>"; };
+		C5686249197637B0001C8B45 /* objcjs-runtimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "objcjs-runtimeTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C568624A197637B0001C8B45 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
+		C5686252197637B0001C8B45 /* objcjs-runtimeTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "objcjs-runtimeTests-Info.plist"; sourceTree = "<group>"; };
+		C5686254197637B0001C8B45 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtimeTests.m; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
@@ -182,6 +213,24 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		C5686234197637B0001C8B45 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5686246197637B0001C8B45 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C53C8BFD197664AD00335186 /* objcjs-runtime.dylib in Frameworks */,
+				C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */,
+				C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C5F83B081969155100A381F3 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -204,6 +253,9 @@
 		C51CE3151971BC4000996E03 /* test-js */ = {
 			isa = PBXGroup;
 			children = (
+				C568622519763041001C8B45 /* test3.js */,
+				C568622619763041001C8B45 /* test4.js */,
+				C568622719763041001C8B45 /* test6.js */,
 				C51CE3161971BC4000996E03 /* test.js */,
 				C51CE3171971BC4000996E03 /* test1.js */,
 				C51CE3181971BC4000996E03 /* test2.js */,
@@ -220,6 +272,62 @@
 			path = examples;
 			sourceTree = "<group>";
 		};
+		C5686238197637B0001C8B45 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C5686239197637B0001C8B45 /* Cocoa.framework */,
+				C568624A197637B0001C8B45 /* XCTest.framework */,
+				C568623B197637B0001C8B45 /* Other Frameworks */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C568623B197637B0001C8B45 /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				C568623C197637B0001C8B45 /* Foundation.framework */,
+				C568623D197637B0001C8B45 /* CoreData.framework */,
+				C568623E197637B0001C8B45 /* AppKit.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		C568623F197637B0001C8B45 /* objcjs-runtime */ = {
+			isa = PBXGroup;
+			children = (
+				C5686242197637B0001C8B45 /* objcjs_runtime.h */,
+				C5686243197637B0001C8B45 /* objcjs_runtime.m */,
+				C5686240197637B0001C8B45 /* Supporting Files */,
+			);
+			path = "objcjs-runtime";
+			sourceTree = "<group>";
+		};
+		C5686240197637B0001C8B45 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C5686241197637B0001C8B45 /* objcjs-runtime-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C5686250197637B0001C8B45 /* objcjs-runtimeTests */ = {
+			isa = PBXGroup;
+			children = (
+				C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */,
+				C5686251197637B0001C8B45 /* Supporting Files */,
+			);
+			path = "objcjs-runtimeTests";
+			sourceTree = "<group>";
+		};
+		C5686251197637B0001C8B45 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C5686252197637B0001C8B45 /* objcjs-runtimeTests-Info.plist */,
+				C5686253197637B0001C8B45 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
 		C5F83B021969155100A381F3 = {
 			isa = PBXGroup;
 			children = (
@@ -229,6 +337,9 @@
 				C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */,
 				C5F83B6E1969185A00A381F3 /* v8 */,
 				C5F83B0D1969155100A381F3 /* objcjs */,
+				C568623F197637B0001C8B45 /* objcjs-runtime */,
+				C5686250197637B0001C8B45 /* objcjs-runtimeTests */,
+				C5686238197637B0001C8B45 /* Frameworks */,
 				C5F83B0C1969155100A381F3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -237,6 +348,8 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0B1969155100A381F3 /* objcjs */,
+				C5686237197637B0001C8B45 /* objcjs-runtime.dylib */,
+				C5686249197637B0001C8B45 /* objcjs-runtimeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -288,7 +401,53 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXHeadersBuildPhase section */
+		C5686235197637B0001C8B45 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
 /* Begin PBXNativeTarget section */
+		C5686236197637B0001C8B45 /* objcjs-runtime */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C5686258197637B0001C8B45 /* Build configuration list for PBXNativeTarget "objcjs-runtime" */;
+			buildPhases = (
+				C5686233197637B0001C8B45 /* Sources */,
+				C5686234197637B0001C8B45 /* Frameworks */,
+				C5686235197637B0001C8B45 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "objcjs-runtime";
+			productName = "objcjs-runtime";
+			productReference = C5686237197637B0001C8B45 /* objcjs-runtime.dylib */;
+			productType = "com.apple.product-type.library.dynamic";
+		};
+		C5686248197637B0001C8B45 /* objcjs-runtimeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C568625B197637B0001C8B45 /* Build configuration list for PBXNativeTarget "objcjs-runtimeTests" */;
+			buildPhases = (
+				C5686245197637B0001C8B45 /* Sources */,
+				C5686246197637B0001C8B45 /* Frameworks */,
+				C5686247197637B0001C8B45 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C568624E197637B0001C8B45 /* PBXTargetDependency */,
+			);
+			name = "objcjs-runtimeTests";
+			productName = "objcjs-runtimeTests";
+			productReference = C5686249197637B0001C8B45 /* objcjs-runtimeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		C5F83B0A1969155100A381F3 /* objcjs */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C5F83B141969155100A381F3 /* Build configuration list for PBXNativeTarget "objcjs" */;
@@ -322,6 +481,11 @@
 			attributes = {
 				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Jerry Marino";
+				TargetAttributes = {
+					C5686248197637B0001C8B45 = {
+						TestTargetID = C5686236197637B0001C8B45;
+					};
+				};
 			};
 			buildConfigurationList = C5F83B061969155100A381F3 /* Build configuration list for PBXProject "objcjs" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -346,6 +510,8 @@
 			projectRoot = "";
 			targets = (
 				C5F83B0A1969155100A381F3 /* objcjs */,
+				C5686236197637B0001C8B45 /* objcjs-runtime */,
+				C5686248197637B0001C8B45 /* objcjs-runtimeTests */,
 			);
 		};
 /* End PBXProject section */
@@ -423,7 +589,34 @@
 		};
 /* End PBXReferenceProxy section */
 
+/* Begin PBXResourcesBuildPhase section */
+		C5686247197637B0001C8B45 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5686255197637B0001C8B45 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
+		C5686233197637B0001C8B45 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5686244197637B0001C8B45 /* objcjs_runtime.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5686245197637B0001C8B45 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C5F83B071969155100A381F3 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -436,6 +629,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		C568624E197637B0001C8B45 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
+			targetProxy = C568624D197637B0001C8B45 /* PBXContainerItemProxy */;
+		};
 		C5D6F08A19692EF900BB9050 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = js2c;
@@ -478,7 +676,82 @@
 		};
 /* End PBXTargetDependency section */
 
+/* Begin PBXVariantGroup section */
+		C5686253197637B0001C8B45 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C5686254197637B0001C8B45 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
 /* Begin XCBuildConfiguration section */
+		C5686259197637B0001C8B45 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C568625A197637B0001C8B45 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		C568625C197637B0001C8B45 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		C568625D197637B0001C8B45 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
 		C5F83B121969155100A381F3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -670,6 +943,24 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		C5686258197637B0001C8B45 /* Build configuration list for PBXNativeTarget "objcjs-runtime" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C5686259197637B0001C8B45 /* Debug */,
+				C568625A197637B0001C8B45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C568625B197637B0001C8B45 /* Build configuration list for PBXNativeTarget "objcjs-runtimeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C568625C197637B0001C8B45 /* Debug */,
+				C568625D197637B0001C8B45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C5F83B061969155100A381F3 /* Build configuration list for PBXProject "objcjs" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

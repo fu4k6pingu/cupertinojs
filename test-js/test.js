@@ -1,13 +1,13 @@
-function test(a){
-    if(a < 10){
-        return test(a+1);
-    }
-    return a
+function larryf(argument){
+    NSLog("LARRYFFROMJS");
+    return 4;
 }
 
 
 function objcjs_main(a, b){
-    NSLog("null %@ \n", test(0))
-    NSLog("null %@ \n", test(11))
-    return 1;
+    //seg faults when called with an arg
+    NSLog("MAINBEFORE %@", 0);
+    NSLog("zero: %@", larryf(1));
+    NSLog("MAINAFTER %@", 0);
+    return 0;
 }
