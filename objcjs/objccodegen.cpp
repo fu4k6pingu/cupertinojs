@@ -198,10 +198,7 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     //TODO : is this needed?
     _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
     _module->setTargetTriple("x86_64-apple-macosx10.9.0");
-    _accumulatorContext = NULL;
-    _stackAccumulatorContext = NULL;
     _context = NULL;
-    _bailout = 0;
     
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
@@ -224,13 +221,11 @@ void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* 
         // Create an alloca for this variable.
         Variable *param = scope->parameter(Idx);
         std::string str = stringFromV8AstRawString(param->raw_name());
-        llvm::AllocaInst *Alloca = CreateEntryBlockAlloca(F, str);
+        llvm::AllocaInst *alloca = CreateEntryBlockAlloca(F, str);
         
         // Store the initial value into the alloca.
-        _builder->CreateStore(AI, Alloca);
-        
-        // Add arguments to variable symbol table.
-        _namedValues[str] = Alloca;
+        _builder->CreateStore(AI, alloca);
+        _context->setValue(str, alloca);
     }
 }
 
@@ -243,7 +238,7 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *f = _builder->GetInsertBlock()->getParent();
     llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
-    _namedValues[str] = alloca;
+    _context->setValue(str, alloca);
 
     VariableProxy *var = node->proxy();
     Visit(var);
@@ -254,90 +249,63 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
     }
-    VisitFunctionLiteral(node->fun());
+    
+    //VisitFunctionLiteral
+    VisitStartAccumulation(node->fun());
+    //Ends scope
+    EndAccumulation();
 }
 
+#pragma mark - Modules
 
 void ObjCCodeGen::VisitModuleDeclaration(ModuleDeclaration* node) {
     UNIMPLEMENTED();
-//  Print("module ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(" = ");
-//  Visit(node->module());
-//  Print(";");
 }
-
 
 void ObjCCodeGen::VisitImportDeclaration(ImportDeclaration* node) {
     UNIMPLEMENTED();
-//  Print("import ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(" from ");
-//  Visit(node->module());
-//  Print(";");
 }
-
 
 void ObjCCodeGen::VisitExportDeclaration(ExportDeclaration* node) {
     UNIMPLEMENTED();
-//  Print("export ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(";");
 }
-
 
 void ObjCCodeGen::VisitModuleLiteral(ModuleLiteral* node) {
     UNIMPLEMENTED();
-//  VisitBlock(node->body());
 }
-
 
 void ObjCCodeGen::VisitModuleVariable(ModuleVariable* node) {
     UNIMPLEMENTED();
-//  Visit(node->proxy());
 }
-
 
 void ObjCCodeGen::VisitModulePath(ModulePath* node) {
     UNIMPLEMENTED();
-//  Visit(node->module());
-//  Print(".");
-//  PrintLiteral(node->name(), false);
 }
-
 
 void ObjCCodeGen::VisitModuleUrl(ModuleUrl* node) {
     UNIMPLEMENTED();
-//  Print("at ");
-//  PrintLiteral(node->url(), true);
 }
-
 
 void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
     UNIMPLEMENTED();
-//  Print("module ");
-//  PrintLiteral(node->proxy()->name(), false);
-//  Print(" ");
-//  Visit(node->body());
 }
 
+#pragma mark - Statements
 
 void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
     Visit(node->expression());
 }
 
-
 void ObjCCodeGen::VisitEmptyStatement(EmptyStatement* node) {
     UNIMPLEMENTED();
 }
-
 
 void ObjCCodeGen::VisitIfStatement(IfStatement* node) {
     CGIfStatement(node, true);
 }
 
 void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
-    VisitStartAccumulation(node->condition());
+    Visit(node->condition());
     llvm::Value *condV = PopContext();
     if (!condV) {
         return;
@@ -364,7 +332,8 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
 
     llvm::Value *thenV;
     if (node->HasThenStatement()){
-        VisitStartAccumulation(node->then_statement());
+        //TODO : new scope
+        Visit(node->then_statement());
         thenV = PopContext();
         if (!thenV){
             thenV = ObjcNullPointer();
@@ -385,7 +354,8 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
 
     llvm::Value *elseV;
     if (node->HasElseStatement()) {
-        VisitStartAccumulation(node->else_statement());
+        //TODO : new scope
+        Visit(node->else_statement());
         elseV = PopContext();
         if (!elseV) {
             elseV = ObjcNullPointer();
@@ -413,30 +383,15 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
 
 
 void ObjCCodeGen::VisitContinueStatement(ContinueStatement* node) {
-//  Print("continue");
-//  ZoneList<const AstRawString*>* labels = node->target()->labels();
-//  if (labels != NULL) {
-//    Print(" ");
-//    ASSERT(labels->length() > 0);  // guaranteed to have at least one entry
-//    PrintLiteral(labels->at(0), false);  // any label from the list is fine
-//  }
-//  Print(";");
+    UNIMPLEMENTED();
 }
 
-
 void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
-//  Print("break");
-//  ZoneList<const AstRawString*>* labels = node->target()->labels();
-//  if (labels != NULL) {
-//    Print(" ");
-//    ASSERT(labels->length() > 0);  // guaranteed to have at least one entry
-//    PrintLiteral(labels->at(0), false);  // any label from the list is fine
-//  }
-//  Print(";");
+    UNIMPLEMENTED();
 }
 
 void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
-    VisitStartAccumulation(node->expression());
+    Visit(node->expression());
     llvm::BasicBlock *block = _builder->GetInsertBlock();
    
     auto blockName = block->getName();
@@ -445,7 +400,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
         ){
         //In an if statement, the PHINode needs to have
         //the type 0 assigned to it!
-        llvm::AllocaInst *alloca = _namedValues[std::string("SET_RET_ALLOCA")];
+        llvm::AllocaInst *alloca = _context->valueForKey(STR("SET_RET_ALLOCA"));
         _builder->CreateStore(PopContext(), alloca);
         //TODO : remove this!
         PushValueToContext(ObjcNullPointer());
@@ -454,7 +409,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
 
     llvm::Function *currentFunction = block->getParent();
     assert(currentFunction->getReturnType() == ObjcPointerTy() && _context->size());
-    llvm::AllocaInst *alloca = _namedValues[std::string("DEFAULT_RET_ALLOCA")];
+    llvm::AllocaInst *alloca = _context->valueForKey(STR("DEFAULT_RET_ALLOCA"));
     auto retValue = PopContext();
     assert(retValue && "requires return value");
     _builder->CreateStore(retValue, alloca);
@@ -462,131 +417,53 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
 
 
 void ObjCCodeGen::VisitWithStatement(WithStatement* node) {
-    UNIMPLEMENTED();
-//  Print("with (");
-//  Visit(node->expression());
-//  Print(") ");
-//  Visit(node->statement());
+    UNIMPLEMENTED(); //Deprecated
 }
 
+
+#pragma mark - Switch
 
 void ObjCCodeGen::VisitSwitchStatement(SwitchStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("switch (");
-//  Visit(node->tag());
-//  Print(") { ");
-//  ZoneList<CaseClause*>* cases = node->cases();
-//  for (int i = 0; i < cases->length(); i++)
-//    Visit(cases->at(i));
-//  Print("}");
 }
-
 
 void ObjCCodeGen::VisitCaseClause(CaseClause* clause) {
     UNIMPLEMENTED();
-//  if (clause->is_default()) {
-//    Print("default");
-//  } else {
-//    Print("case ");
-//    Visit(clause->label());
-//  }
-//  Print(": ");
-//  PrintStatements(clause->statements());
-//  if (clause->statements()->length() > 0)
-//    Print(" ");
 }
 
+#pragma mark - Loops
 
 void ObjCCodeGen::VisitDoWhileStatement(DoWhileStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("do ");
-//  Visit(node->body());
-//  Print(" while (");
-//  Visit(node->cond());
-//  Print(");");
 }
-
 
 void ObjCCodeGen::VisitWhileStatement(WhileStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("while (");
-//  Visit(node->cond());
-//  Print(") ");
-//  Visit(node->body());
 }
-
 
 void ObjCCodeGen::VisitForStatement(ForStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("for (");
-//  if (node->init() != NULL) {
-//    Visit(node->init());
-//    Print(" ");
-//  } else {
-//    Print("; ");
-//  }
-//  if (node->cond() != NULL) Visit(node->cond());
-//  Print("; ");
-//  if (node->next() != NULL) {
-//    Visit(node->next());  // prints extra ';', unfortunately
-//    // to fix: should use Expression for next
-//  }
-//  Print(") ");
-//  Visit(node->body());
 }
-
 
 void ObjCCodeGen::VisitForInStatement(ForInStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("for (");
-//  Visit(node->each());
-//  Print(" in ");
-//  Visit(node->enumerable());
-//  Print(") ");
-//  Visit(node->body());
 }
-
 
 void ObjCCodeGen::VisitForOfStatement(ForOfStatement* node) {
     UNIMPLEMENTED();
-//  PrintLabels(node->labels());
-//  Print("for (");
-//  Visit(node->each());
-//  Print(" of ");
-//  Visit(node->iterable());
-//  Print(") ");
-//  Visit(node->body());
 }
 
-
+#pragma mark - Try
 void ObjCCodeGen::VisitTryCatchStatement(TryCatchStatement* node) {
-//  Print("try ");
-//  Visit(node->try_block());
-//  Print(" catch (");
-//  const bool quote = false;
-//  PrintLiteral(node->variable()->name(), quote);
-//  Print(") ");
-//  Visit(node->catch_block());
+    UNIMPLEMENTED();
 }
-
 
 void ObjCCodeGen::VisitTryFinallyStatement(TryFinallyStatement* node) {
     UNIMPLEMENTED();
-//  Print("try ");
-//  Visit(node->try_block());
-//  Print(" finally ");
-//  Visit(node->finally_block());
 }
-
 
 void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
-//  Print("debugger ");
 }
 
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
@@ -625,11 +502,11 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto endRetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("endret"));
     //TODO : instead of returnig a null pointer, return a 'undefined' sentenial
     _builder->CreateStore(ObjcNullPointer(), endRetAlloca);
-    _namedValues[std::string("DEFAULT_RET_ALLOCA")] = endRetAlloca;
-   
+    _context->setValue(STR("DEFAULT_RET_ALLOCA") , endRetAlloca);
+    
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
     _builder->CreateStore(sentenialReturnValue, retAlloca);
-    _namedValues[std::string("SET_RET_ALLOCA")] = retAlloca;
+    _context->setValue(STR("SET_RET_ALLOCA"), retAlloca);
     
     VisitDeclarations(node->scope()->declarations());
     VisitStatements(node->body());
@@ -647,7 +524,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     function->getBasicBlockList().push_back(defaultRetBB);
     _builder->SetInsertPoint(defaultRetBB);
-    auto endRetValue = _builder->CreateLoad(_namedValues[std::string("DEFAULT_RET_ALLOCA")], "endretalloca");
+    auto endRetValue = _builder->CreateLoad(_context->valueForKey(STR("DEFAULT_RET_ALLOCA")), "endretalloca");
     _builder->CreateRet(endRetValue);
     
     _builder->SetInsertPoint(setRetBB);
@@ -663,16 +540,9 @@ void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
     UNIMPLEMENTED();
 }
 
-
 void ObjCCodeGen::VisitConditional(Conditional* node) {
     UNIMPLEMENTED();
-//  Visit(node->Star        ition());
-//  Print(" ? ");
-//  Visit(node->then_expression());
-//  Print(" : ");
-//  Visit(node->else_expression());
 }
-
 
 void ObjCCodeGen::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
@@ -778,6 +648,8 @@ llvm::Value *ObjCCodeGen::boolValue(llvm::Value *llvmValue){
     return value;
 }
 
+#pragma mark - Literals
+
 llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
@@ -831,39 +703,15 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
 
 void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
     UNIMPLEMENTED();
-//  Print(" RegExp(");
-//  PrintLiteral(node->pattern(), false);
-//  Print(",");
-//  PrintLiteral(node->flags(), false);
-//  Print(") ");
 }
-
 
 void ObjCCodeGen::VisitObjectLiteral(ObjectLiteral* node) {
     UNIMPLEMENTED();
-//  Print("{ ");
-//  for (int i = 0; i < node->properties()->length(); i++) {
-//    if (i != 0) Print(",");
-//    ObjectLiteral::Property* property = node->properties()->at(i);
-//    Print(" ");
-//    Visit(property->key());
-//    Print(": ");
-//    Visit(property->value());
-//  }
-//  Print(" }");
 }
-
 
 void ObjCCodeGen::VisitArrayLiteral(ArrayLiteral* node) {
     UNIMPLEMENTED();
-//  Print("[ ");
-//  for (int i = 0; i < node->values()->length(); i++) {
-//    if (i != 0) Print(",");
-//    Visit(node->values()->at(i));
-//  }
-//  Print(" ]");
 }
-
 
 void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
@@ -921,22 +769,23 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
 //        VisitStartStackAccumulation(node->value());
 //       //            EmitBinaryOp(expr->binary_operation(), op, mode);
 //    }
-    
-    VisitStartAccumulation(node->value());
+   
+    //TODO : new scope
+    Visit(node->value());
     
     // Store the value.
     switch (assign_type) {
         case VARIABLE: {
             VariableProxy *target = (VariableProxy *)node->target();
             assert(target);
-            std::string str = stringFromV8AstRawString(target->raw_name());
+            std::string targetName = stringFromV8AstRawString(target->raw_name());
             //TODO : respect scopes!
             llvm::AllocaInst *alloca;
-            if (!_namedValues[str]){
-                alloca = _builder->CreateAlloca(ObjcPointerTy(), 0, str);
-                _namedValues[str] = alloca;
+            if (!_context->valueForKey(targetName)){
+                alloca = _builder->CreateAlloca(ObjcPointerTy(), 0, targetName);
+                _context->setValue(targetName, alloca);
             } else {
-                alloca = _namedValues[str];
+                alloca = _context->valueForKey(targetName);
             }
            
 //            EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
@@ -973,40 +822,21 @@ void ObjCCodeGen::EmitVariableAssignment(Variable* var, Token::Value op) {
 }
 
 void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
-    std::string str = stringFromV8AstRawString(node->raw_name());
-    auto varValue = _namedValues[str];
-    PushValueToContext(_builder->CreateLoad(varValue, str));
+    std::string variableName = stringFromV8AstRawString(node->raw_name());
+    auto varValue = _context->valueForKey(variableName);
+    PushValueToContext(_builder->CreateLoad(varValue, variableName));
 }
 
 void ObjCCodeGen::VisitYield(Yield* node) {
-    UNIMPLEMENTED();
-//  Print("yield ");
-//  Visit(node->expression());
+    UNIMPLEMENTED(); //Deprecated
 }
-
 
 void ObjCCodeGen::VisitThrow(Throw* node) {
     UNIMPLEMENTED();
-//  Print("throw ");
-//  Visit(node->exception());
 }
-
 
 void ObjCCodeGen::VisitProperty(Property* node) {
     UNIMPLEMENTED();
-//  Expression* key = node->key();
-//  Literal* literal = key->AsLiteral();
-//  if (literal != NULL && literal->value()->IsInternalizedString()) {
-//    Print("(");
-//    Visit(node->obj());
-//    Print(").");
-//    PrintLiteral(literal->value(), false);
-//  } else {
-//    Visit(node->obj());
-//    Print("[");
-//    Visit(key);
-//    Print("]");
-//  }
 }
 
 Call::CallType GetCallType(Call*call, Isolate* isolate) {
@@ -1055,10 +885,11 @@ void ObjCCodeGen::VisitCall(Call* node) {
     ZoneList<Expression*>* args = node->arguments();
    
     for (int i = 0; i <args->length(); i++) {
-        VisitStartAccumulation(args->at(i));
+        //TODO : this would likely retain the values
+        Visit(args->at(i));
     }
    
-    if (_accumulatorContext->back() == 0) {
+    if (_context->size() == 0) {
         return;
     }
    
@@ -1089,39 +920,21 @@ void ObjCCodeGen::VisitCall(Call* node) {
     PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
 }
 
-
 void ObjCCodeGen::VisitCallNew(CallNew* node) {
     UNIMPLEMENTED();
-//  Print("new (");
-//  Visit(node->expression());
-//  Print(")");
-//  PrintArguments(node->arguments());
 }
-
 
 void ObjCCodeGen::VisitCallRuntime(CallRuntime* node) {
     UNIMPLEMENTED();
-//  Print("%%");
-//  PrintLiteral(node->name(), false);
-//  PrintArguments(node->arguments());
 }
-
 
 void ObjCCodeGen::VisitUnaryOperation(UnaryOperation* node) {
     UNIMPLEMENTED();
-//  Token::Value op = node->op();
-//  bool needsSpace =
-//      op == Token::DELETE || op == Token::TYPEOF || op == Token::VOID;
-//  Print("(%s%s", Token::String(op), needsSpace ? " " : "");
-//  Visit(node->expression());
-//  Print(")");
 }
-
 
 void ObjCCodeGen::VisitCountOperation(CountOperation* node) {
     UNIMPLEMENTED();
 }
-
 
 void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* expr) {
   switch (expr->op()) {
@@ -1146,11 +959,13 @@ void ObjCCodeGen::VisitLogicalExpression(BinaryOperation* expr) {
 void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
     Expression *left = expr->left();
     Expression *right = expr->right();
-   
-    VisitStartStackAccumulation(left);
+  
+    //TODO : stack scope
+    Visit(left);
     auto lhs = PopContext();
     
-    VisitStartAccumulation(right);
+    //TODO : stack scope
+    Visit(right);
     auto rhs = PopContext();
    
     llvm::Value *result = NULL;
@@ -1242,9 +1057,9 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
 //    }
 
     
-    VisitStartAccumulation(expr->left());
+    Visit(expr->left());
     auto left = PopContext();
-    VisitStartAccumulation(expr->right());
+    Visit(expr->right());
     auto right = PopContext();
     
     Token::Value op = expr->op();
@@ -1281,63 +1096,45 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
     PushValueToContext(resultValue);
 }
 
-
 void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
     UNIMPLEMENTED();
-//  Print("<this-function>");
 }
 
-
 void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
-    if (_context != NULL && _context == _accumulatorContext) {
-        Visit(expr);
-        return;
-    }
+    auto context = new CGContext();
+    Contexts.push_back(context);
+    _context = context;
     
-    if (!_accumulatorContext) {
-        _accumulatorContext = new std::vector<llvm::Value *>;
-    }
-    _context = _accumulatorContext;
     Visit(expr);
 }
 
 void ObjCCodeGen::EndAccumulation() {
-    assert(0);
-    delete _accumulatorContext;
-    _accumulatorContext = NULL;
+    delete _context;
+    auto context = Contexts.back();
+    Contexts.pop_back();
+    _context = context;
 }
 
 void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
-    if (!_stackAccumulatorContext) {
-        _stackAccumulatorContext = new std::vector<llvm::Value *>;
-    }
-    _context = _stackAccumulatorContext;
+    auto context = new CGContext();
+    Contexts.push_back(context);
+    _context = context;
+    
     Visit(expr);
 }
 
 void ObjCCodeGen::EndStackAccumulation(){
     assert(0);
-    delete _stackAccumulatorContext;
-    _stackAccumulatorContext = NULL;
+    delete _context;
+    auto context = Contexts.back();
+    Contexts.pop_back();
+    _context = context;
 }
 
 void ObjCCodeGen::PushValueToContext(llvm::Value *value) {
-    if (!_context) {
-        _context = new std::vector<llvm::Value *>;
-        return;
-    }
-    if (value) {
-        _context->push_back(value);
-    } else {
-        printf("warning: tried to push null value");
-    }
+    _context->Push(value);
 }
 
 llvm::Value *ObjCCodeGen::PopContext() {
-    if (!_context || !_context->size()) {
-        return NULL;
-    }
-    llvm::Value *value = _context->back();
-    _context->pop_back();
-    return value;
+    return _context->Pop();
 }

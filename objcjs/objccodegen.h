@@ -24,12 +24,55 @@
 #include <vector>
 
 using namespace v8::internal;
+#define STR(v) std::string(v)
+
+class CGContext {
+public:
+    Scope *_scope;
+    std::vector<llvm::Value *> _context;
+    std::map<std::string, llvm::AllocaInst*> _namedValues;
+    CGContext(){
+    }
+    size_t size(){
+        return _context.size();
+    }
+    
+    void setValue(std::string key, llvm::AllocaInst *value) {
+        _namedValues[key] = value;
+    }
+   
+    llvm::AllocaInst *valueForKey(std::string key) {
+        return _namedValues[key];
+    }
+    
+    void Push(llvm::Value *value) {
+        if (value) {
+            _context.push_back(value);
+        } else {
+            printf("warning: tried to push null value");
+        }   
+    }
+    
+    llvm::Value *Pop(){
+        if (!_context.size()) {
+            return NULL;
+        }
+        llvm::Value *value = _context.back();
+        _context.pop_back();
+        return value;
+    };
+};
+
 
 class ObjCCodeGen: public  v8::internal::AstVisitor {
 public:
+    CGContext *_context;
+    
+    std::vector<CGContext *> Contexts;
+    
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
-    std::map<std::string, llvm::AllocaInst*> _namedValues;
+    
     llvm::Type *_pointerTy;
 
     llvm::BasicBlock *_setRetBB;
@@ -37,22 +80,9 @@ public:
     
     ObjCCodeGen(Zone *zone);
 
-    //this is incremented everytime a bailout
-    //is nested in a function!
-    int _bailout;
-    
-    virtual~ObjCCodeGen(){
-    };
-   
-    //TODO : remove or use?
-    std::vector<llvm::Value *> *_oldBindings;
-    
-    std::vector<llvm::Value *> *_context;
-    std::vector<llvm::Value *> *_accumulatorContext;
-    std::vector<llvm::Value *> *_stackAccumulatorContext;
+    virtual~ObjCCodeGen(){};
 
     void dump();
-
    
     void VisitDeclarations(ZoneList<Declaration*>* declarations){
         if (declarations->length() > 0) {
