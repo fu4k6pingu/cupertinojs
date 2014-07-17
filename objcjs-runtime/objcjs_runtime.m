@@ -36,17 +36,17 @@ void *defineJSFunction(const char *name, JSFunctionBodyIMP body){
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
    
     Method superBody = class_getInstanceMethod(superClass, @selector(body:));
-    IMP impl = imp_implementationWithBlock(^(id arg, SEL cmd, ...){
+//    IMP impl = imp_implementationWithBlock(^(id arg, SEL cmd, ...){
 //        NSLog(@"Added imp: %s %s", __PRETTY_FUNCTION__, sel_getName(cmd));
 //        va_list args;
 //        va_start(args, arg);
 //        return body((__bridge id)arg, cmd, @"hello");
-        return @"hello";
+//        return @"hello";
 //        va_end(args);
-    });
+//    });
+    
     const char *enc = method_getTypeEncoding(superBody);
-//    bool status = class_addMethod(jsClass, @selector(body:), body, enc);
-    bool status = class_addMethod(jsClass, @selector(body:), impl, enc);
+    assert(class_addMethod(jsClass, @selector(body:), (IMP)body, enc));
     objc_registerClassPair(jsClass);
     return NULL;
 }

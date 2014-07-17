@@ -27,12 +27,12 @@ static llvm::Type *ObjcPointerTy(){
     return _ObjcPointerTy;
 }
 
-static llvm::Value *ObjcNullPointer(){
+static llvm::Value *ObjcNullPointer() {
     auto ty = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
     return llvm::ConstantPointerNull::get(ty);
 }
 
-static std::string stringFromV8AstRawString(const AstRawString *raw){
+static std::string stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
     size_t size = raw->length();
     const unsigned char *data = raw->raw_data();
@@ -51,28 +51,20 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
     return Builder.CreateAlloca(ObjcPointerTy(), 0, VarName.c_str());
 }
 
-static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
-                                                const std::string &VarName,
-                                                llvm::Type *ty) {
-    
-    llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
-                     Function->getEntryBlock().begin());
-    return Builder.CreateAlloca(ty, 0, VarName.c_str());
-}
-
-static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod){
+static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod) {
     std::vector<llvm::Type*> Params(num_params, ObjcPointerTy());
     llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
-static std::string CMD_NAME("__cmd__");
 
-static llvm::Function *ObjcCodeGenJSFunction(size_t num_params, std::string name, llvm::Module *mod){
+static std::string FUNCTION_CMD_ARG_NAME("__cmd__");
+static std::string FUNCTION_THIS_ARG_NAME("__this");
+
+static llvm::Function *ObjcCodeGenJSFunction(size_t num_params, std::string name, llvm::Module *mod) {
     std::vector<llvm::Type*> Params;
+
     Params.push_back(ObjcPointerTy());
     Params.push_back(ObjcPointerTy());
-//    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), CMD_NAME.length() + 1);
-//    Params.push_back(type);
     
     for (int i = 0; i < num_params; i++) {
         Params.push_back(ObjcPointerTy());
@@ -82,7 +74,7 @@ static llvm::Function *ObjcCodeGenJSFunction(size_t num_params, std::string name
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
-static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm::Module *module){
+static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm::Module *module) {
     std::vector<llvm::Type*> argumentTypes;
     
     llvm::FunctionType *functionType = llvm::FunctionType::get(
@@ -130,7 +122,7 @@ static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm:
 } \
 }
 
-static llvm::Function *ObjcMsgSendFPret(llvm::Module *module){
+static llvm::Function *ObjcMsgSendFPret(llvm::Module *module) {
         std::vector<llvm::Type*> argTypes;
     argTypes.push_back(ObjcPointerTy());
     auto doubleTy  = llvm::Type::getDoubleTy(llvm::getGlobalContext());
@@ -143,7 +135,6 @@ static llvm::Function *ObjcMsgSendFPret(llvm::Module *module){
     return function;
 }
 
-//TODO : support var args
 static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
 {
     std::vector<llvm::Type*> ArgumentTypes;
@@ -162,7 +153,7 @@ static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
     return function;
 }
 
-static llvm::Function *ObjcMallocPrototype(llvm::Module *module){
+static llvm::Function *ObjcMallocPrototype(llvm::Module *module) {
     std::vector<llvm::Type*>FuncTy_7_args;
     FuncTy_7_args.push_back(llvm::IntegerType::get(module->getContext(), 64));
     llvm::FunctionType* FuncTy_7 = llvm::FunctionType::get(
@@ -186,8 +177,7 @@ std::string asciiStringWithV8String(String *string) {
     return std::string(ascii);
 }
 
-llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module)
-{
+llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module) {
     auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
     if (exisitingString){
         return exisitingString;
@@ -212,13 +202,13 @@ llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *m
     return castedConst;
 }
 
-llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module){
+llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module) {
     std::string *name = new std::string(value);
     return llvmNewLocalStringVar(name->c_str(), name->size(), module);
 }
 
 //TODO : move to native JS
-static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module){
+static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module) {
     std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
     
     llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
@@ -255,7 +245,7 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module("jit", Context);
-    //TODO : is this needed?
+    //TODO : use llvm to generate this
     _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
     _module->setTargetTriple("x86_64-apple-macosx10.9.0");
     _context = NULL;
@@ -300,20 +290,16 @@ void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope
     llvm::Value *argSelf = AI++;
     int num_params = scope->num_parameters();
    
-    std::string allocaThisName("__this");
-    llvmNewLocalStringVar(allocaThisName, _module);
-    llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, allocaThisName);
+    llvmNewLocalStringVar(FUNCTION_THIS_ARG_NAME, _module);
+    llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, FUNCTION_THIS_ARG_NAME);
     _builder->CreateStore(argSelf, allocaThis);
-    _context->setValue(allocaThisName, allocaThis);
+    _context->setValue(FUNCTION_THIS_ARG_NAME, allocaThis);
    
-    auto cmdVal = llvmNewLocalStringVar(CMD_NAME, _module);
-    //We are adding an extra space for the null terminator!
-//    auto cmdType = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), CMD_NAME.length() + 1);
-    
-    llvm::AllocaInst *allocaCMD = CreateEntryBlockAlloca(F, CMD_NAME, ObjcPointerTy());
+    llvmNewLocalStringVar(FUNCTION_CMD_ARG_NAME, _module);
+    llvm::AllocaInst *allocaCMD = CreateEntryBlockAlloca(F, FUNCTION_CMD_ARG_NAME);
     llvm::Value *argCMD = AI++;
     _builder->CreateStore(argCMD, allocaCMD);
-    _context->setValue(CMD_NAME, allocaCMD);
+    _context->setValue(FUNCTION_CMD_ARG_NAME, allocaCMD);
     
     for (unsigned Idx = 0, e = num_params; Idx != e; ++Idx, ++AI) {
         // Create an alloca for this variable.
@@ -326,8 +312,6 @@ void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope
         _builder->CreateStore(AI, alloca);
         _context->setValue(str, alloca);
     }
-    
-    
 }
 
 void ObjCCodeGen::dump(){
@@ -666,7 +650,6 @@ void ObjCCodeGen::VisitConditional(Conditional* node) {
 void ObjCCodeGen::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
 }
-
 
 #pragma mark - Runtime calls
 

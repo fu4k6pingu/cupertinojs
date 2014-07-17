@@ -1,6 +1,6 @@
 function larryf(argument){
     NSLog("LARRYFFROMJS");
-    return 4;
+    return argument;
 }
 
 
