@@ -51,8 +51,8 @@ static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
     return Builder.CreateAlloca(ObjcPointerTy(), 0, VarName.c_str());
 }
 
-static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, llvm::Module *mod) {
-    std::vector<llvm::Type*> Params(num_params, ObjcPointerTy());
+static llvm::Function *ObjcCodeGenFunction(size_t numParams, std::string name, llvm::Module *mod) {
+    std::vector<llvm::Type*> Params(numParams, ObjcPointerTy());
     llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
@@ -60,13 +60,13 @@ static llvm::Function *ObjcCodeGenFunction(size_t num_params, std::string name, 
 static std::string FUNCTION_CMD_ARG_NAME("__cmd__");
 static std::string FUNCTION_THIS_ARG_NAME("__this");
 
-static llvm::Function *ObjcCodeGenJSFunction(size_t num_params, std::string name, llvm::Module *mod) {
+static llvm::Function *ObjcCodeGenJSFunction(size_t numParams, std::string name, llvm::Module *mod) {
     std::vector<llvm::Type*> Params;
 
     Params.push_back(ObjcPointerTy());
     Params.push_back(ObjcPointerTy());
     
-    for (int i = 0; i < num_params; i++) {
+    for (int i = 0; i < numParams; i++) {
         Params.push_back(ObjcPointerTy());
     }
     
@@ -270,8 +270,8 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
 /// argument in the symbol table so that references to it will succeed.
 void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
-    int num_params = scope->num_parameters();
-    for (unsigned Idx = 0, e = num_params; Idx != e; ++Idx, ++AI) {
+    int numParams = scope->num_parameters();
+    for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
         // Create an alloca for this variable.
         Variable *param = scope->parameter(Idx);
         std::string str = stringFromV8AstRawString(param->raw_name());
@@ -288,7 +288,7 @@ void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* 
 void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     llvm::Value *argSelf = AI++;
-    int num_params = scope->num_parameters();
+    int numParams = scope->num_parameters();
    
     llvmNewLocalStringVar(FUNCTION_THIS_ARG_NAME, _module);
     llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, FUNCTION_THIS_ARG_NAME);
@@ -301,7 +301,7 @@ void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope
     _builder->CreateStore(argCMD, allocaCMD);
     _context->setValue(FUNCTION_CMD_ARG_NAME, allocaCMD);
     
-    for (unsigned Idx = 0, e = num_params; Idx != e; ++Idx, ++AI) {
+    for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
         // Create an alloca for this variable.
         int i = Idx;
         Variable *param = scope->parameter(i);
@@ -334,10 +334,31 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
     }
+
+    bool isJSFunction = name != std::string("objcjs_main") && name != std::string("NSLog");
+    if (isJSFunction) {
+        assert(!_module->getFunction(name) && "function is already declared");
+    }
+    
+    int numParams = node->fun()->scope()->num_parameters();
+    auto function = ObjcCodeGenJSFunction(numParams, name, _module);
+    
+    if (isJSFunction){
+        //Add define JSFunction to front of main
+        llvm::Function *main = _module->getFunction("main");
+        auto nameAlloca = llvmNewLocalStringVar(name.c_str(), name.length(), _module);
+        std::vector<llvm::Value*> ArgsV;
+        ArgsV.push_back(nameAlloca);
+        ArgsV.push_back(function);
+        auto call = llvm::CallInst::Create(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
+//        auto call = _builder->CreateCall(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
+        llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
+        mainBB->getInstList().push_front(call);
+    }
     
     //VisitFunctionLiteral
     VisitStartAccumulation(node->fun());
-    //Ends scope
+    
     EndAccumulation();
 }
 
@@ -551,8 +572,10 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
 }
 
+//Define the body of the function
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto name = stringFromV8AstRawString(node->raw_name());
+    
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
         VisitDeclarations(node->scope()->declarations());
@@ -561,35 +584,17 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         return;
     }
     
-    v8::internal::Scope *scope = node->scope();
-    int num_params = scope->num_parameters();
-    auto function = _module->getFunction(name) ? _module->getFunction(name) : ObjcCodeGenJSFunction(num_params, name, _module);
-  
-   
-    if (name == std::string("larryf")){
-//        llvm::Constant *fPointer = llvm::ConstantExpr::getCast(llvm::Instruction::BitCast, function, function->getType());
-        //Add define JSFunction to front of main
-        llvm::Function *main = _module->getFunction("main");
-        auto nameAlloca = llvmNewLocalStringVar(name.c_str(), name.length(), _module);
-        std::vector<llvm::Value*> ArgsV;
-        ArgsV.push_back(nameAlloca);
-        ArgsV.push_back(function);
-        auto call = _builder->CreateCall(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
-        llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
-        mainBB->getInstList().push_front(call);
-    }
-    
+    auto function = _module->getFunction(name);
+
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
    
-    if (num_params){
-        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
-        if (isJSFunction) {
-            CreateJSArgumentAllocas(function, node->scope());
-        } else {
-            CreateArgumentAllocas(function, node->scope());
-        }
+    bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+    if (isJSFunction) {
+        CreateJSArgumentAllocas(function, node->scope());
+    } else {
+        CreateArgumentAllocas(function, node->scope());
     }
    
     //Return types
@@ -610,10 +615,14 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
     _builder->CreateStore(sentenialReturnValue, retAlloca);
     _context->setValue(STR("SET_RET_ALLOCA"), retAlloca);
-    
+  
+    _builder->saveIP();
     VisitDeclarations(node->scope()->declarations());
-    VisitStatements(node->body());
 
+    _builder->SetInsertPoint(BB);
+    VisitStatements(node->body());
+    
+    _builder->SetInsertPoint(BB);
     assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
     
     auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
@@ -625,15 +634,18 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto defaultRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "endret");
     _builder->CreateCondBr(condV, defaultRetBB, setRetBB);
     
+    _builder->saveIP();
+    
     function->getBasicBlockList().push_back(defaultRetBB);
     _builder->SetInsertPoint(defaultRetBB);
     auto endRetValue = _builder->CreateLoad(_context->valueForKey(STR("DEFAULT_RET_ALLOCA")), "endretalloca");
     _builder->CreateRet(endRetValue);
-    
+    _builder->saveAndClearIP();
+
     _builder->SetInsertPoint(setRetBB);
     _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
-  
     _builder->saveAndClearIP();
+    
     if (_context) {
         std::cout << "Context size:" << _context->size();
     }
@@ -714,30 +726,20 @@ llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selecto
     return resultValue;
 }
 
+//Sends a message to a JSFunction instance
 llvm::Value *ObjCCodeGen::messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV) {
     llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("body:"), _module), "calltmp");
     std::vector<llvm::Value*> Args;
+   
     Args.push_back(instance);
     Args.push_back(selector);
-    assert(ArgsV.size() == 1);
-    Args.push_back(ArgsV.back());
     
-//    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "call-tmpobjc_msgSend");
-    unsigned Idx = 0;
-    auto function = _module->getFunction(llvm::StringRef("larryf"));
-    for (llvm::Function::arg_iterator AI = function->arg_begin(); Idx != ArgsV.size();
-         ++AI, ++Idx){
-        llvm::Value *arg = Args.at(Idx);
-        
-        // check param types
-        llvm::Type *argTy = arg->getType();
-        llvm::Type *paramTy = AI->getType();
-        assert(argTy == paramTy);
-        //
+    if (ArgsV.size() > 0) {
+        assert(ArgsV.size() == 1);
+        Args.push_back(ArgsV.back());
     }
     
     auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "objc_msgSend");
-//    auto resultValue = _builder->CreateCall(function, Args);
     return resultValue;
 }
 
@@ -1231,9 +1233,9 @@ void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
 }
 
 void ObjCCodeGen::EndAccumulation() {
+    Contexts.pop_back();
     delete _context;
     auto context = Contexts.back();
-    Contexts.pop_back();
     _context = context;
 }
 

@@ -29,9 +29,13 @@ using namespace v8::internal;
 class CGContext {
 public:
     Scope *_scope;
-    std::vector<llvm::Value *> _context;
+    std::vector<llvm::Value *> *_context;
     std::map<std::string, llvm::AllocaInst*> _namedValues;
     CGContext(){
+        _context = new std::vector<llvm::Value *>();
+    }
+    ~CGContext(){
+        _context = NULL;
     }
     
     CGContext *Extend(){
@@ -42,7 +46,8 @@ public:
     }
     
     size_t size(){
-        return _context.size();
+        assert(_context);
+        return _context->size();
     }
     
     void setValue(std::string key, llvm::AllocaInst *value) {
@@ -55,18 +60,18 @@ public:
     
     void Push(llvm::Value *value) {
         if (value) {
-            _context.push_back(value);
+            _context->push_back(value);
         } else {
             printf("warning: tried to push null value");
         }   
     }
     
     llvm::Value *Pop(){
-        if (!_context.size()) {
+        if (!size()) {
             return NULL;
         }
-        llvm::Value *value = _context.back();
-        _context.pop_back();
+        llvm::Value *value = _context->back();
+        _context->pop_back();
         return value;
     };
 };
