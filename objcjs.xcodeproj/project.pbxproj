@@ -16,7 +16,7 @@
 		C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
 		C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
 		C5686255197637B0001C8B45 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5686253197637B0001C8B45 /* InfoPlist.strings */; };
-		C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */; };
+		C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };

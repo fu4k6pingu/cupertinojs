@@ -7,6 +7,7 @@
 //
 
 #import "objcjs_runtime.h"
+#import <objc/message.h>
 
 @implementation JSFunction
 
@@ -24,26 +25,23 @@ static NSMutableDictionary *Parents = NULL;
 + (id)parent {
     return Parents[NSStringFromClass(self.class)];
 }
+
 - (id)init {
     self = [super init];
     self.ivars = [[[NSMutableDictionary alloc] init] retain];
     return self;
 }
+
 - (id)body:(id)args {
-//    NSLog(@"%s",__PRETTY_FUNCTION__);
-    return @"JSFunction-default-return";
+    return @"JSFUNCTION-DEFAULT-BODY-RETURN";
 }
 
 - (NSNumber *)length {
     return @0;
 }
 
-- (NSString *)identifier{
-    return @"IDENTIFIER";
-}
-
 - (NSString *)description {
-    return @"JSFunc";
+    return @"JSFUNCTION";
 }
 
 + (instancetype)new{
@@ -55,7 +53,6 @@ static NSMutableDictionary *Parents = NULL;
     
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
         id value = objc_getAssociatedObject(_self, propertyName);
-        inspectValue(_self);
         return [value retain];
     });
     
@@ -73,9 +70,6 @@ static NSMutableDictionary *Parents = NULL;
     setterName[nameLen + 4] = '\0';
     
     IMP setter = imp_implementationWithBlock(^(JSFunction *_self, SEL cmd, id value){
-//        if (!value)return;
-        inspectValue(value);
-//        objc_setAssociatedObject(_self, propertyName, @1, OBJC_ASSOCIATION_RETAIN);
         objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_COPY);
     });
     
@@ -86,20 +80,15 @@ static NSMutableDictionary *Parents = NULL;
     free(setterName);
 }
 
-- (void)setValue:(id)value forKey:(NSString *)key {
+- (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
     _ivars[[key copy]] = [value copy];
 }
 
-- (id)valueForKey:(NSString *)key {
+- (id)_objcjs_env_valueForKey:(NSString *)key {
     return _ivars[key];
 }
 
-void inspectValue(id value){
-    
-}
-
 @end
-
 //an imp signature is id name(_strong id, SEL, ...);
 void *defineJSFunction(const char *name, JSFunctionBodyIMP body){
     NSLog(@"%s %s %p",__PRETTY_FUNCTION__, name, body);
@@ -107,17 +96,47 @@ void *defineJSFunction(const char *name, JSFunctionBodyIMP body){
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
    
     Method superBody = class_getInstanceMethod(superClass, @selector(body:));
-//    IMP impl = imp_implementationWithBlock(^(id arg, SEL cmd, ...){
-//        NSLog(@"Added imp: %s %s", __PRETTY_FUNCTION__, sel_getName(cmd));
-//        va_list args;
-//        va_start(args, arg);
-//        return body((__bridge id)arg, cmd, @"hello");
-//        return @"hello";
-//        va_end(args);
-//    });
-    
     const char *enc = method_getTypeEncoding(superBody);
     assert(class_addMethod(jsClass, @selector(body:), (IMP)body, enc));
     objc_registerClassPair(jsClass);
     return jsClass;
+}
+
+void *objcjs_invoke(void *target, ...){
+    Class targetClass;
+    if (![(id)target isKindOfClass:[JSFunction class]]){
+        targetClass = target;
+        target = class_createInstance(target, 0);
+    } else {
+        targetClass = object_getClass(target);
+    }
+    
+    SEL bodySel = @selector(body:);
+    va_list args;
+    va_start(args, target);
+    
+    Method m = class_getInstanceMethod(targetClass, @selector(body:));
+    int nArgs = method_getNumberOfArguments(m);
+    IMP imp = method_getImplementation(m);
+    
+    id result;
+    switch (nArgs) {
+        case 2: {
+            result = imp(target, bodySel);
+            break;
+        }
+        case 3: {
+            id arg1 = va_arg(args, id);
+            result = imp(target, bodySel, arg1);
+            break;
+        }
+        case 4: {
+            id arg1 = va_arg(args, id);
+            id arg2 = va_arg(args, id);
+            result = imp(target, bodySel, arg1, arg2);
+            break;
+        }
+    }
+    va_end(args);
+    return result;
 }

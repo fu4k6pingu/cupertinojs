@@ -203,8 +203,7 @@ llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *m
 }
 
 llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module) {
-    std::string *name = new std::string(value);
-    return llvmNewLocalStringVar(name->c_str(), name->size(), module);
+    return llvmNewLocalStringVar(value.c_str(), value.size(), module);
 }
 
 //TODO : move to native JS
@@ -253,6 +252,7 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
+    DefExternFucntion("objcjs_invoke");
 
     //JSRuntime
     DefExternFucntion("defineJSFunction");
@@ -606,7 +606,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     }
    
     //Return types
-//    //TODO : don't malloc a return sentenenial everytime
+//TODO : don't malloc a return sentenenial everytime and use builtin malloc func
     auto sentenialReturnAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("sentential"));
     llvm::ConstantInt* const_int64_10 = llvm::ConstantInt::get(_module->getContext(), llvm::APInt(64, llvm::StringRef("8"), 10));
     auto retPtr = _builder->CreateCall(_module->getFunction("malloc"), const_int64_10, "calltmp");
@@ -746,18 +746,15 @@ llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selecto
 
 //Sends a message to a JSFunction instance
 llvm::Value *ObjCCodeGen::messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("body:"), _module), "calltmp");
     std::vector<llvm::Value*> Args;
-   
     Args.push_back(instance);
-    Args.push_back(selector);
     
     if (ArgsV.size() > 0) {
         assert(ArgsV.size() == 1);
         Args.push_back(ArgsV.back());
     }
     
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "objc_msgSend");
+    auto resultValue = _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
     return resultValue;
 }
 
@@ -875,55 +872,45 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
     // Store the value.
     switch (assign_type) {
         case VARIABLE: {
-            VariableProxy *target = (VariableProxy *)node->target();
-            assert(target);
-            std::string targetName = stringFromV8AstRawString(target->raw_name());
-            //TODO : respect scopes!
-            llvm::AllocaInst *alloca;
+            VariableProxy *targetProxy = (VariableProxy *)node->target();
+            assert(targetProxy && "target for assignment required");
+            
+            std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
+            
+            llvm::AllocaInst *targetAlloca;
             if (!_context->valueForKey(targetName)){
-                alloca = _builder->CreateAlloca(ObjcPointerTy(), 0, targetName);
-                _context->setValue(targetName, alloca);
+                targetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, targetName);
+                _context->setValue(targetName, targetAlloca);
             } else {
-                alloca = _context->valueForKey(targetName);
+                targetAlloca = _context->valueForKey(targetName);
             }
-           
-
+            
             llvm::Value *value = PopContext();
-            if (value) {
-                if (targetName == STR("a")) {
-                    //Set the environment property
-//                    auto jsThis = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
-                    auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME));
-//                    messageSend(jsThis, "defineProperty:", llvmNewLocalStringVar(STR("a"), _module));
-//                    messageSend(jsThis, "a");
-                    std::vector<llvm::Value *>Args;
-//                    Args.push_back(llvmNewLocalStringVar(targetName, _module));
-//                    Args.push_back(llvmNewLocalStringVar(targetName, _module));
-                    
-                    auto alloca1 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca1");
-                    _builder->CreateStore(newNumber(20), alloca1);
-                    auto arg1 = _builder->CreateLoad(alloca1);
-                    
-                    auto alloca2 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca2");
-                    _builder->CreateStore(newNumber(23), alloca2);
-                    auto arg2 = _builder->CreateLoad(alloca2);
-                    Args.push_back(arg1);
-                    Args.push_back(arg2);
-                    messageSend(jsThis, "setValue:forKey:", Args);
-                    
-                    _builder->CreateStore(value, alloca);
-                } else {
-                    _builder->CreateStore(value, alloca);
-                }
+            assert(value && "missing value - not implemented");
+            
+            _builder->CreateStore(value, targetAlloca);
+
+            //assignment returns 0
+            PushValueToContext(ObjcNullPointer());
+            
+            //Store all assignements in environment if present
+            auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+            
+            if (jsThisAlloca) {
+                auto jsThis = _builder->CreateLoad(jsThisAlloca);
+                // messageSend(jsThis, "defineProperty:", llvmNewLocalStringVar(STR("a"), _module));
                 
-                //assignment returns 0
-                PushValueToContext(ObjcNullPointer());
-            } else {
-                assert(0 && "TODO: not implemented!");
+                auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
+                _builder->CreateStore(newString(targetName), keypathStringValueAlloca);
+                auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
+
+                std::vector<llvm::Value *>Args;
+                Args.push_back(value);
+                Args.push_back(keypathStringValue);
+                messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
             }
             
             break;
-            
         } case NAMED_PROPERTY: {
             //            EmitNamedPropertyAssignment(expr);
             break;
@@ -950,13 +937,18 @@ void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
         return;
     }
    
-    std::cout << "load variable";
-
-    auto parentThis = messageSend(classNamed("nestedFName"), "parent");
-    auto alloca1 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca1");
-    _builder->CreateStore(newNumber(20), alloca1);
-    auto arg1 = _builder->CreateLoad(alloca1);
-    auto value = messageSend(parentThis, "valueForKey:", arg1);
+    //NTS: always create an alloca for an arugment you want to pass to a function!!
+    auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "");
+    _builder->CreateStore(newString(variableName), environmentVariableAlloca);
+    auto keypathArgument = _builder->CreateLoad(environmentVariableAlloca);
+   
+    //load the value from the parents environment
+    //TODO : support N layers of nested functions
+    auto parentFunction = _builder->GetInsertBlock()->getParent();
+    auto parentName = parentFunction ->getName().str();
+    auto parentThis = messageSend(classNamed(parentName.c_str()), "parent");
+    auto value = messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
+  
     PushValueToContext(value);
 }
 
@@ -993,56 +985,35 @@ void ObjCCodeGen::VisitCall(Call* node) {
    
     std::string name;
     
+    VariableProxy* proxy = callee->AsVariableProxy();
     if (callType == Call::GLOBAL_CALL) {
-        assert(0 == "unimplemented");
+        UNIMPLEMENTED();
     } else if (callType == Call::LOOKUP_SLOT_CALL) {
-        VariableProxy* proxy = callee->AsVariableProxy();
-         name = stringFromV8AstRawString(proxy->raw_name());
+        // Call to a lookup slot (dynamically introduced variable).
+        UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
         name = stringFromV8AstRawString(proxy->raw_name());
-        
     } else {
-        VariableProxy* proxy = callee->AsVariableProxy();
-        name = stringFromV8AstRawString(proxy->raw_name());
-    }
-   
-    auto *calleeF = _module->getFunction(name);
-    
-    if (calleeF == 0){
-        //TODO: this would call an objc or c function in the future
-        assert(0 && "Unknown function referenced");
-        return;
+        UNIMPLEMENTED();
     }
 
     ZoneList<Expression*>* args = node->arguments();
-   
     for (int i = 0; i <args->length(); i++) {
-        //TODO : this would likely retain the values
+        //TODO : this should likely retain the values
         Visit(args->at(i));
     }
-   
     if (_context->size() == 0) {
+        assert(0 && "wtf!");
         return;
-    }
-   
-    if (!calleeF->isVarArg()) {
-        assert(calleeF->arg_size() == args->length() + 2 && "Unknown function referenced: airity mismatch");
     }
     
     std::vector<llvm::Value *> finalArgs;
-    unsigned Idx = 0;
-    for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
-         ++AI, ++Idx){
+    for (unsigned i = 0; i < args->length(); i++){
         llvm::Value *arg = PopContext();
-    
-        // check param types
-//        llvm::Type *argTy = arg->getType();
-//        llvm::Type *paramTy = AI->getType();
-//        assert(argTy == paramTy);
-        //
         finalArgs.push_back(arg);
     }
+    
     std::reverse(finalArgs.begin(), finalArgs.end());
 
     if (_context) {
@@ -1053,12 +1024,30 @@ void ObjCCodeGen::VisitCall(Call* node) {
     if (isJSFunction) {
         //Create a new instance and invoke the body
         llvm::Value *instance = messageSend(classNamed(name.c_str()), "new");
-        
         auto value = messageSendJSFunction(instance, finalArgs);
         PushValueToContext(value);
     } else {
+        auto calleeF = _module->getFunction(name);
         PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
     }
+}
+
+void checkFuntionArguments(llvm::Function calleeF, ZoneList<Expression*>* args){
+//    if (!calleeF->isVarArg()) {
+//        assert(calleeF->arg_size() == args->length() + 2 && "Unknown function referenced: airity mismatch");
+//    }
+//    
+//    std::vector<llvm::Value *> finalArgs;
+//    unsigned Idx = 0;
+//    for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
+//         ++AI, ++Idx){
+//        llvm::Value *arg = PopContext();
+//    
+//        // check param types
+//        llvm::Type *argTy = arg->getType();
+//        llvm::Type *paramTy = AI->getType();
+//        assert(argTy == paramTy);
+//    }
 }
 
 void ObjCCodeGen::VisitCallNew(CallNew* node) {
@@ -1157,10 +1146,6 @@ static bool IsClassOfTest(CompareOperation* expr) {
 void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
       ASSERT(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
-//    ASSERT(current_block() != NULL);
-//    ASSERT(current_block()->HasPredecessor());
-    
-//    if (!FLAG_hydrogen_track_positions) SetSourcePosition(expr->position());
     
     // Check for a few fast cases. The AST visiting behavior must be in sync
     // with the full codegen: We don't push both left and right values onto
