@@ -29,13 +29,12 @@ using namespace v8::internal;
 class CGContext {
 public:
     Scope *_scope;
-    std::vector<llvm::Value *> *_context;
+    std::vector<llvm::Value *> _context;
     std::map<std::string, llvm::AllocaInst*> _namedValues;
+    
     CGContext(){
-        _context = new std::vector<llvm::Value *>();
     }
     ~CGContext(){
-        _context = NULL;
     }
     
     CGContext *Extend(){
@@ -46,8 +45,7 @@ public:
     }
     
     size_t size(){
-        assert(_context);
-        return _context->size();
+        return _context.size();
     }
     
     void setValue(std::string key, llvm::AllocaInst *value) {
@@ -60,7 +58,7 @@ public:
     
     void Push(llvm::Value *value) {
         if (value) {
-            _context->push_back(value);
+            _context.push_back(value);
         } else {
             printf("warning: tried to push null value");
         }   
@@ -70,8 +68,8 @@ public:
         if (!size()) {
             return NULL;
         }
-        llvm::Value *value = _context->back();
-        _context->pop_back();
+        llvm::Value *value = _context.back();
+        _context.pop_back();
         return value;
     };
 };
@@ -80,16 +78,9 @@ public:
 class ObjCCodeGen: public  v8::internal::AstVisitor {
 public:
     CGContext *_context;
-    
     std::vector<CGContext *> Contexts;
-    
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
-    
-    llvm::Type *_pointerTy;
-
-    llvm::BasicBlock *_setRetBB;
-    llvm::BasicBlock *_defaultRetBB;
     
     ObjCCodeGen(Zone *zone);
 
@@ -177,6 +168,7 @@ public:
     llvm::Value *CGLiteral( Handle<Object> value, bool push);
     void CGIfStatement(IfStatement *node, bool flag);
 
+    void enterContext();
     void VisitStartAccumulation(AstNode *expr);
     void VisitStartAccumulation(AstNode *expr, bool extendContext);
     

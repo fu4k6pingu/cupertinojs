@@ -248,7 +248,7 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     //TODO : use llvm to generate this
     _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
     _module->setTargetTriple("x86_64-apple-macosx10.9.0");
-    _context = NULL;
+    _context = new CGContext();
     
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
@@ -357,9 +357,7 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     }
     
     //VisitFunctionLiteral
-    VisitStartAccumulation(node->fun());
-    
-    EndAccumulation();
+    VisitStartAccumulation(node->fun(), false);
 }
 
 #pragma mark - Modules
@@ -517,7 +515,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
     assert(currentFunction->getReturnType() == ObjcPointerTy() && _context->size());
     llvm::AllocaInst *alloca = _context->valueForKey(STR("DEFAULT_RET_ALLOCA"));
     auto retValue = PopContext();
-    assert(retValue && "requires return value");
+    assert(retValue && "requires return value" && alloca && "requires return alloca");
     _builder->CreateStore(retValue, alloca);
 }
 
@@ -574,6 +572,9 @@ void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
 
 //Define the body of the function
 void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+    enterContext();
+    _builder->saveIP();
+    
     auto name = stringFromV8AstRawString(node->raw_name());
     
     if (!name.length()){
@@ -615,7 +616,9 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
     _builder->CreateStore(sentenialReturnValue, retAlloca);
     _context->setValue(STR("SET_RET_ALLOCA"), retAlloca);
-  
+
+    auto value = _context->valueForKey(STR("SET_RET_ALLOCA"));
+    assert(value);
     _builder->saveIP();
     VisitDeclarations(node->scope()->declarations());
 
@@ -649,6 +652,8 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     if (_context) {
         std::cout << "Context size:" << _context->size();
     }
+    
+    EndAccumulation();
 }
 
 void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
@@ -1216,16 +1221,23 @@ void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
 }
 
 void ObjCCodeGen::VisitStartAccumulation(AstNode *expr, bool extendContext) {
+    if (extendContext){
+        enterContext();
+    }
+    
+    Visit(expr);
+}
+
+void ObjCCodeGen::enterContext(){
     CGContext *context;
-    if (extendContext) {
+    if (_context) {
         context = _context->Extend();
     } else {
         context = new CGContext();
     }
     
     Contexts.push_back(context);
-    _context = context;
-    Visit(expr);
+    _context = context;   
 }
 
 void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {

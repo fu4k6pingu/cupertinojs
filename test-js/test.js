@@ -1,11 +1,11 @@
 function larryf(argument){
     NSLog("LARRYFFROMJS");
     function jerryf(){
-        return 4;
+        var a = argument
+        return a;
     }
     return jerryf();
 }
-
 
 function objcjs_main(a, b){
     //seg faults when called with an arg
