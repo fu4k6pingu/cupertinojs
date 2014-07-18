@@ -1,16 +1,15 @@
 function larryf(argument){
-    NSLog("LARRYFFROMJS");
-    function jerryf(){
-        var a = argument
-        return a;
+    var a = 3
+    function nestedFName(){
+        var c = a;
+        return c;
     }
-    return jerryf();
+   
+    return nestedFName();
 }
 
 function objcjs_main(a, b){
     //seg faults when called with an arg
-    NSLog("MAINBEFORE %@", 0);
-    NSLog("zero: %@", larryf(42));
-    NSLog("MAINAFTER %@", 0);
+    NSLog("zero: %@", larryf(4));
     return 0;
 }

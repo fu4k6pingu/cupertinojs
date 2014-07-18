@@ -326,6 +326,7 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     _context->setValue(str, alloca);
 
     VariableProxy *var = node->proxy();
+    //TODO : insert points
     Visit(var);
 }
 
@@ -351,9 +352,15 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
         ArgsV.push_back(nameAlloca);
         ArgsV.push_back(function);
         auto call = llvm::CallInst::Create(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
-//        auto call = _builder->CreateCall(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
         llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
         mainBB->getInstList().push_front(call);
+
+        //If this is a nested declaration set the parent to this!
+        if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
+            auto functionClass = classNamed(name.c_str());
+            auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME) , "load-this");
+            messageSend(functionClass, "setParent:", jsThis);
+        }
     }
     
     //VisitFunctionLiteral
@@ -705,7 +712,9 @@ llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selecto
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(receiver);
     ArgsV.push_back(selector);
-    ArgsV.push_back(Arg);
+    if (Arg){
+        ArgsV.push_back(Arg);
+    }
     auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
     return resultValue;
 }
@@ -715,7 +724,11 @@ llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selecto
     std::vector<llvm::Value*> Args;
     Args.push_back(receiver);
     Args.push_back(selector);
-    assert(ArgsV.size() == 1);
+   
+    for (int i = 0; i < ArgsV.size(); i++) {
+        Args.push_back(ArgsV.at(i));
+    }
+    
     Args.push_back(ArgsV.back());
 
     auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
@@ -856,33 +869,6 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
         }
     }
    
-//TODO :
-// For compound assignments we need another deoptimization point after the
-// variable/property load.
-//    if (node->is_compound()) {
-//        //            AccumulatorValueContext context(this);
-//        switch (assign_type) {
-//            case VARIABLE:
-//                EmitVariableLoad(node->target()->AsVariableProxy());
-//                //                    PrepareForBailout(expr->target(), TOS_REG);
-//                break;
-//            case NAMED_PROPERTY:
-//                //                    EmitNamedPropertyLoad(property);
-//                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
-//                break;
-//            case KEYED_PROPERTY:
-//                //                    EmitKeyedPropertyLoad(property);
-//                //                    PrepareForBailoutForId(property->LoadId(), TOS_REG);
-//                break;
-//        }
-//        
-//        Token::Value op = node->binary_op();
-//        //        assert(op == v8::internal::Token::ADD);
-//        //        __ Push(rax);  // Left operand goes on the stack.
-//        VisitStartStackAccumulation(node->value());
-//       //            EmitBinaryOp(expr->binary_operation(), op, mode);
-//    }
-   
     //TODO : new scope
     Visit(node->value());
     
@@ -901,14 +887,36 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
                 alloca = _context->valueForKey(targetName);
             }
            
-//            EmitVariableAssignment(node->target()->AsVariableProxy()->var(), node->op());
-          
+
             llvm::Value *value = PopContext();
             if (value) {
-//                _builder->CreateLoad(alloca);
-                _builder->CreateStore(value, alloca);
-                //TODO : remove because it is unneeded?
-                //An assignment returns the value 0
+                if (targetName == STR("a")) {
+                    //Set the environment property
+//                    auto jsThis = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+                    auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME));
+//                    messageSend(jsThis, "defineProperty:", llvmNewLocalStringVar(STR("a"), _module));
+//                    messageSend(jsThis, "a");
+                    std::vector<llvm::Value *>Args;
+//                    Args.push_back(llvmNewLocalStringVar(targetName, _module));
+//                    Args.push_back(llvmNewLocalStringVar(targetName, _module));
+                    
+                    auto alloca1 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca1");
+                    _builder->CreateStore(newNumber(20), alloca1);
+                    auto arg1 = _builder->CreateLoad(alloca1);
+                    
+                    auto alloca2 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca2");
+                    _builder->CreateStore(newNumber(23), alloca2);
+                    auto arg2 = _builder->CreateLoad(alloca2);
+                    Args.push_back(arg1);
+                    Args.push_back(arg2);
+                    messageSend(jsThis, "setValue:forKey:", Args);
+                    
+                    _builder->CreateStore(value, alloca);
+                } else {
+                    _builder->CreateStore(value, alloca);
+                }
+                
+                //assignment returns 0
                 PushValueToContext(ObjcNullPointer());
             } else {
                 assert(0 && "TODO: not implemented!");
@@ -936,8 +944,20 @@ void ObjCCodeGen::EmitVariableAssignment(Variable* var, Token::Value op) {
 
 void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
-    auto varValue = _context->valueForKey(variableName);
-    PushValueToContext(_builder->CreateLoad(varValue, variableName));
+    auto varAlloca = _context->valueForKey(variableName);
+    if (varAlloca) {
+        PushValueToContext(_builder->CreateLoad(varAlloca, variableName));
+        return;
+    }
+   
+    std::cout << "load variable";
+
+    auto parentThis = messageSend(classNamed("nestedFName"), "parent");
+    auto alloca1 = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca1");
+    _builder->CreateStore(newNumber(20), alloca1);
+    auto arg1 = _builder->CreateLoad(alloca1);
+    auto value = messageSend(parentThis, "valueForKey:", arg1);
+    PushValueToContext(value);
 }
 
 void ObjCCodeGen::VisitYield(Yield* node) {
@@ -1162,14 +1182,6 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
     
     if (IsClassOfTest(expr)) {
         UNIMPLEMENTED();
-//        CallRuntime* call = expr->left()->AsCallRuntime();
-//        ASSERT(call->arguments()->length() == 1);
-//        CHECK_ALIVE(VisitForValue(call->arguments()->at(0)));
-//        HValue* value = Pop();
-//        Literal* literal = expr->right()->AsLiteral();
-//        Handle<String> rhs = Handle<String>::cast(literal->value());
-//        HClassOfTestAndBranch* instr = New<HClassOfTestAndBranch>(value, rhs);
-//        return ast_context()->ReturnControl(instr, expr->id());
     }
 
     

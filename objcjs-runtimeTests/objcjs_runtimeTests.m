@@ -63,13 +63,34 @@ id impl2(id firstObject, void *second, void *third, ...){
 
 - (void)testItCanCreateASubclass
 {
-    Class aClass = (__bridge Class)(defineJSFunction("subclass-1", impl1));
+    defineJSFunction("subclass-1", impl1);
+    Class aClass = objc_getClass("subclass-1");
     JSFunction *f = [aClass new];
     id result = [f body:@"An Arg"];
     
     XCTAssertTrue(f, @"It creates a subclass");
     XCTAssertTrue(calledBody, @"It creates a subclass");
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
+}
+
+- (void)testItCanDefineAPropety{
+    const char *name = "name";
+    JSFunction *f = [JSFunction new];
+    [f defineProperty:name];
+    XCTAssertTrue([f respondsToSelector:NSSelectorFromString(@"name")], @"It adds a getter");
+    XCTAssertTrue([f respondsToSelector:NSSelectorFromString(@"setName:")], @"It adds a setter");
+    
+    [f performSelector:NSSelectorFromString(@"setName:") withObject:@3];
+    id nameValue = [f performSelector:NSSelectorFromString(@"name")];
+    XCTAssertEqual(nameValue, @3, @"It can set the value");
+}
+
+- (void)testItCanSetAParent {
+    JSFunction *parent = [JSFunction new];
+    defineJSFunction("child", impl1);
+    Class childClass = objc_getClass("child");
+    [childClass setParent:parent];
+    XCTAssertEqual([childClass parent], parent, @"It has a parent");
 }
 
 @end

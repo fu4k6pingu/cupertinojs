@@ -39,8 +39,8 @@ public:
     
     CGContext *Extend(){
         auto extended = new CGContext();
-        extended->_context = _context;
-        extended->_namedValues = _namedValues;
+//        extended->_context = _context;
+//        extended->_namedValues = _namedValues;
         return extended;
     }
     

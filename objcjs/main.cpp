@@ -174,7 +174,7 @@ int main(int argc, const char * argv[])
     //run module
     system("/usr/local/Cellar/llvm/3.4/bin/llc /tmp/module.bc");
     //TODO : load lib from /usr/local/lib
-    system("clang -g -framework Foundation /Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib /tmp/module.s -o /tmp/a.out");
+    system("clang -framework Foundation /Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib /tmp/module.s -o /tmp/a.out");
     
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();

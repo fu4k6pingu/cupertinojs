@@ -12,7 +12,17 @@
 //TODO : make static!
 @interface JSFunction : NSObject
 
+@property (nonatomic, copy) JSFunction *parent;
+@property (nonatomic, strong) NSMutableDictionary *ivars;
+
 - (id)body:(id)args;
+
+- (void)defineProperty:(const char *)propertyName;
+
+@property (nonatomic, copy) NSString *identifier;
+
++ (void)setParent:(id)parent;
++ (id)parent ;
 
 @end
 
