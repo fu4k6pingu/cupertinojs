@@ -9,20 +9,21 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 
-//TODO : make static!
 @interface JSFunction : NSObject
 
 @property (nonatomic, copy) JSFunction *parent;
-@property (nonatomic, strong) NSMutableDictionary *ivars;
+@property (nonatomic, strong) NSMutableDictionary *environment;
 
 + (void)setParent:(id)parent;
 + (id)parent;
 
+- (id)parent;
 - (id)body:(id)args;
 
 - (void)defineProperty:(const char *)propertyName;
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key;
+- (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key;
 - (id)_objcjs_env_valueForKey:(NSString *)key;
 
 @end
@@ -37,3 +38,12 @@ extern void *defineJSFunction(const char *name, JSFunctionBodyIMP body);
 //
 // otherwise it simply invokes body:
 extern void *objcjs_invoke(void *target, ...);
+
+@interface NSNumber (ObjcJSOperators)
+
+- (instancetype)objcjs_add:(id)value;
+- (instancetype)objcjs_subtract:(id)value;
+- (instancetype)objcjs_multiply:(id)value;
+- (instancetype)objcjs_divide:(id)value;
+
+@end

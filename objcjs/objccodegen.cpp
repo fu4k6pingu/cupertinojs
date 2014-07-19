@@ -16,21 +16,12 @@
 #include "src/scopes.h"
 #include "string.h"
 #include "llvm/Support/CFG.h"
+#include "cgobjcjsruntime.h"
 
 #define DEBUG 1
 #define ILOG(A, ...) if (DEBUG) printf(A,##__VA_ARGS__);
 
 using namespace v8::internal;
-
-static auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
-static llvm::Type *ObjcPointerTy(){
-    return _ObjcPointerTy;
-}
-
-static llvm::Value *ObjcNullPointer() {
-    auto ty = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
-    return llvm::ConstantPointerNull::get(ty);
-}
 
 static std::string stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
@@ -42,204 +33,13 @@ static std::string stringFromV8AstRawString(const AstRawString *raw) {
     return str;
 }
 
-/// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
-/// the function.  This is used for mutable variables etc.
-static llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
-                                          const std::string &VarName) {
-    llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
-                     Function->getEntryBlock().begin());
-    return Builder.CreateAlloca(ObjcPointerTy(), 0, VarName.c_str());
-}
-
-static llvm::Function *ObjcCodeGenFunction(size_t numParams, std::string name, llvm::Module *mod) {
-    std::vector<llvm::Type*> Params(numParams, ObjcPointerTy());
-    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
-    return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
-}
-
 static std::string FUNCTION_CMD_ARG_NAME("__cmd__");
 static std::string FUNCTION_THIS_ARG_NAME("__this");
 
-static llvm::Function *ObjcCodeGenJSFunction(size_t numParams, std::string name, llvm::Module *mod) {
-    std::vector<llvm::Type*> Params;
+static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
+static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
-    Params.push_back(ObjcPointerTy());
-    Params.push_back(ObjcPointerTy());
-    
-    for (int i = 0; i < numParams; i++) {
-        Params.push_back(ObjcPointerTy());
-    }
-    
-    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
-    return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
-}
-
-static llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder, llvm::Module *module) {
-    std::vector<llvm::Type*> argumentTypes;
-    
-    llvm::FunctionType *functionType = llvm::FunctionType::get(
-                                                        llvm::Type::getInt32Ty(module->getContext()),
-                                                        argumentTypes,
-                                                        false);
-    
-    llvm::Function *function = llvm::Function::Create(
-                                                  functionType,
-                                                  llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("main"),
-                                                  module);
-    
-    function->setCallingConv(llvm::CallingConv::C);
-    
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    builder->SetInsertPoint(BB);
-    
-    ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
-  
-    //TODO : pass arguments from main
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(ObjcNullPointer());
-    ArgsV.push_back(ObjcNullPointer());
-    
-    builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
-
-    auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
-    builder->CreateRet(zeroInt);
-    builder->saveAndClearIP();
-    return function;
-}
-
-//TODO : explicitly specifiy varargs
-#define DefExternFucntion(name){\
-{\
-    std::vector<llvm::Type*> argTypes; \
-    argTypes.push_back(ObjcPointerTy()); \
-    llvm::FunctionType *ft = llvm::FunctionType::get(ObjcPointerTy(), argTypes, true); \
-    auto function = llvm::Function::Create( \
-        ft, llvm::Function::ExternalLinkage, \
-        llvm::Twine(name), \
-        _module );\
-    function->setCallingConv(llvm::CallingConv::C); \
-} \
-}
-
-static llvm::Function *ObjcMsgSendFPret(llvm::Module *module) {
-        std::vector<llvm::Type*> argTypes;
-    argTypes.push_back(ObjcPointerTy());
-    auto doubleTy  = llvm::Type::getDoubleTy(llvm::getGlobalContext());
-    llvm::FunctionType *ft = llvm::FunctionType::get(doubleTy, argTypes, true); \
-    auto function = llvm::Function::Create(
-        ft, llvm::Function::ExternalLinkage,
-                                           llvm::Twine("objc_msgSend_fpret"), \
-        module );\
-    function->setCallingConv(llvm::CallingConv::C);
-    return function;
-}
-
-static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
-{
-    std::vector<llvm::Type*> ArgumentTypes;
-    ArgumentTypes.push_back(ObjcPointerTy());
-    
-    llvm::FunctionType* printf_type =
-    llvm::FunctionType::get(
-                            llvm::Type::getInt32Ty(module->getContext()), ArgumentTypes, true);
-    
-    llvm::Function *function = llvm::Function::Create(
-                                                  printf_type, llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("NSLog"),
-                                                  module
-                                                  );
-    function->setCallingConv(llvm::CallingConv::C);
-    return function;
-}
-
-static llvm::Function *ObjcMallocPrototype(llvm::Module *module) {
-    std::vector<llvm::Type*>FuncTy_7_args;
-    FuncTy_7_args.push_back(llvm::IntegerType::get(module->getContext(), 64));
-    llvm::FunctionType* FuncTy_7 = llvm::FunctionType::get(
-                                                           /*Result=*/ObjcPointerTy(),
-                                                           /*Params=*/FuncTy_7_args,
-                                                           /*isVarArg=*/false);
-    llvm::Function* func_malloc = module->getFunction("malloc");
-    if (!func_malloc) {
-        func_malloc = llvm::Function::Create(
-                                             /*Type=*/FuncTy_7,
-                                             /*Linkage=*/llvm::GlobalValue::ExternalLinkage,
-                                             /*Name=*/"malloc", module); // (external, no body)
-        func_malloc->setCallingConv(llvm::CallingConv::C);
-    }
-    
-    return func_malloc;
-}
-
-std::string asciiStringWithV8String(String *string) {
-    char *ascii = string->ToAsciiArray();
-    return std::string(ascii);
-}
-
-llvm::Value *llvmNewLocalStringVar(const char* data, size_t len, llvm::Module *module) {
-    auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
-    if (exisitingString){
-        return exisitingString;
-    }
-    llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
-    //We are adding an extra space for the null terminator!
-    auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
-    llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
-                                                         type,
-                                                         true,
-                                                         llvm::GlobalValue::PrivateLinkage,
-                                                         0,
-                                                         ".str");
-    var->setInitializer(constTy);
-    
-    std::vector<llvm::Constant*> const_ptr_16_indices;
-    llvm::ConstantInt* const_int32_17 =llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, llvm::StringRef("0"), 10));
-    const_ptr_16_indices.push_back(const_int32_17);
-    const_ptr_16_indices.push_back(const_int32_17);
-    llvm::Constant* const_ptr_16 = llvm::ConstantExpr::getGetElementPtr(var, const_ptr_16_indices);
-    auto castedConst = llvm::ConstantExpr::getPointerCast(const_ptr_16, ObjcPointerTy());
-    return castedConst;
-}
-
-llvm::Value *llvmNewLocalStringVar(std::string value, llvm::Module *module) {
-    return llvmNewLocalStringVar(value.c_str(), value.size(), module);
-}
-
-//TODO : move to native JS
-static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder, llvm::Module *module) {
-    std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
-    
-    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         ArgumentTypes, true);
-   
-    auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, llvm::Twine("objcjs_cout"), module);
-    
-    
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    _builder->SetInsertPoint(BB);
-    
-    llvm::Function::arg_iterator argIterator = function->arg_begin();
-    
-    llvm::IRBuilder<> Builder(&function->getEntryBlock(),
-                           function->getEntryBlock().begin());
-   
-    auto *alloca  = Builder.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
-    _builder->CreateStore(argIterator, alloca);
-
-    llvm::Value *localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
-
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(localVarValue);
-    _builder->CreateCall(module->getFunction("NSLog"), ArgsV);
-    
-    auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-    _builder->CreateRet(zero);
-    _builder->saveAndClearIP();
-    return function;
-}
-
-ObjCCodeGen::ObjCCodeGen(Zone *zone){
+CGObjCJS::CGObjCJS(Zone *zone){
     InitializeAstVisitor(zone);
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
@@ -248,27 +48,13 @@ ObjCCodeGen::ObjCCodeGen(Zone *zone){
     _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
     _module->setTargetTriple("x86_64-apple-macosx10.9.0");
     _context = new CGContext();
-    
-    DefExternFucntion("objc_msgSend");
-    DefExternFucntion("sel_getUid");
-    DefExternFucntion("objc_getClass");
-    DefExternFucntion("objcjs_invoke");
 
-    //JSRuntime
-    DefExternFucntion("defineJSFunction");
-    
-    ObjcMsgSendFPret(_module);
-    ObjcMallocPrototype(_module);
-    ObjcNSLogPrototye(_module);
-    ObjcCOutPrototype(_builder, _module);
-    ObjcCOutPrototype(_builder, _module);
-
-    ObjcCodeGenMainPrototype(_builder, _module);
+    _runtime = new CGObjCJSRuntime(_builder, _module);
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
 /// argument in the symbol table so that references to it will succeed.
-void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     int numParams = scope->num_parameters();
     for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
@@ -285,17 +71,17 @@ void ObjCCodeGen::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* 
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
 /// argument in the symbol table so that references to it will succeed.
-void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     llvm::Value *argSelf = AI++;
     int numParams = scope->num_parameters();
    
-    llvmNewLocalStringVar(FUNCTION_THIS_ARG_NAME, _module);
+    localStringVar(FUNCTION_THIS_ARG_NAME, _module);
     llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, FUNCTION_THIS_ARG_NAME);
     _builder->CreateStore(argSelf, allocaThis);
     _context->setValue(FUNCTION_THIS_ARG_NAME, allocaThis);
    
-    llvmNewLocalStringVar(FUNCTION_CMD_ARG_NAME, _module);
+    localStringVar(FUNCTION_CMD_ARG_NAME, _module);
     llvm::AllocaInst *allocaCMD = CreateEntryBlockAlloca(F, FUNCTION_CMD_ARG_NAME);
     llvm::Value *argCMD = AI++;
     _builder->CreateStore(argCMD, allocaCMD);
@@ -314,11 +100,11 @@ void ObjCCodeGen::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope
     }
 }
 
-void ObjCCodeGen::dump(){
+void CGObjCJS::dump(){
     _module->dump();
 }
 
-void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
+void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
     //TODO : Enter into symbol table with scope..
     std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *f = _builder->GetInsertBlock()->getParent();
@@ -330,7 +116,7 @@ void ObjCCodeGen::VisitVariableDeclaration(v8::internal::VariableDeclaration* no
     Visit(var);
 }
 
-void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
+void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
     std::string name = stringFromV8AstRawString(node->fun()->raw_name());
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
@@ -342,12 +128,12 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
     }
     
     int numParams = node->fun()->scope()->num_parameters();
-    auto function = ObjcCodeGenJSFunction(numParams, name, _module);
+    auto function = CGObjCJSFunction(numParams, name, _module);
     
     if (isJSFunction){
         //Add define JSFunction to front of main
         llvm::Function *main = _module->getFunction("main");
-        auto nameAlloca = llvmNewLocalStringVar(name.c_str(), name.length(), _module);
+        auto nameAlloca = localStringVar(name.c_str(), name.length(), _module);
         std::vector<llvm::Value*> ArgsV;
         ArgsV.push_back(nameAlloca);
         ArgsV.push_back(function);
@@ -357,11 +143,15 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
 
         //If this is a nested declaration set the parent to this!
         if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
-            auto functionClass = classNamed(name.c_str());
+            auto functionClass = _runtime->classNamed(name.c_str());
             auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME) , "load-this");
-            messageSend(functionClass, "setParent:", jsThis);
+            _runtime->messageSend(functionClass, "setParent:", jsThis);
         }
     }
+    
+    auto functionAlloca = _builder->CreateAlloca(ObjcPointerTy());
+    _builder->CreateStore(_runtime->classNamed(name.c_str()), functionAlloca);
+    _context->setValue(name, functionAlloca);
     
     //VisitFunctionLiteral
     VisitStartAccumulation(node->fun(), false);
@@ -369,53 +159,53 @@ void ObjCCodeGen::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* no
 
 #pragma mark - Modules
 
-void ObjCCodeGen::VisitModuleDeclaration(ModuleDeclaration* node) {
+void CGObjCJS::VisitModuleDeclaration(ModuleDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitImportDeclaration(ImportDeclaration* node) {
+void CGObjCJS::VisitImportDeclaration(ImportDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitExportDeclaration(ExportDeclaration* node) {
+void CGObjCJS::VisitExportDeclaration(ExportDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitModuleLiteral(ModuleLiteral* node) {
+void CGObjCJS::VisitModuleLiteral(ModuleLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitModuleVariable(ModuleVariable* node) {
+void CGObjCJS::VisitModuleVariable(ModuleVariable* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitModulePath(ModulePath* node) {
+void CGObjCJS::VisitModulePath(ModulePath* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitModuleUrl(ModuleUrl* node) {
+void CGObjCJS::VisitModuleUrl(ModuleUrl* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitModuleStatement(ModuleStatement* node) {
+void CGObjCJS::VisitModuleStatement(ModuleStatement* node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Statements
 
-void ObjCCodeGen::VisitExpressionStatement(ExpressionStatement* node) {
+void CGObjCJS::VisitExpressionStatement(ExpressionStatement* node) {
     Visit(node->expression());
 }
 
-void ObjCCodeGen::VisitEmptyStatement(EmptyStatement* node) {
+void CGObjCJS::VisitEmptyStatement(EmptyStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitIfStatement(IfStatement* node) {
+void CGObjCJS::VisitIfStatement(IfStatement* node) {
     CGIfStatement(node, true);
 }
 
-void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
+void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
     Visit(node->condition());
     llvm::Value *condV = PopContext();
     if (!condV) {
@@ -426,7 +216,7 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     // in JS land bools are represented as ints
     // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
     // so get the int value
-    condV = _builder->CreateICmpEQ(boolValue(condV), ObjcNullPointer(), "ifcond");
+    condV = _builder->CreateICmpEQ(_runtime->boolValue(condV), ObjcNullPointer(), "ifcond");
     
     auto function = _builder->GetInsertBlock()->getParent();
     
@@ -446,14 +236,12 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
         //TODO : new scope
         Visit(node->then_statement());
         thenV = PopContext();
-        if (!thenV){
-            thenV = ObjcNullPointer();
-        }
-    } else {
-        //no op
-        thenV = ObjcNullPointer();
     }
     
+    if (!thenV){
+        thenV = ObjcNullPointer();
+    }
+   
     _builder->CreateBr(mergeBB);
     // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
     thenBB = _builder->GetInsertBlock();
@@ -461,18 +249,15 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     // Emit else block.
     function->getBasicBlockList().push_back(elseBB);
     _builder->SetInsertPoint(elseBB);
-    
 
     llvm::Value *elseV;
     if (node->HasElseStatement()) {
         //TODO : new scope
         Visit(node->else_statement());
         elseV = PopContext();
-        if (!elseV) {
-            elseV = ObjcNullPointer();
-        }
-    } else {
-        //no op
+    }
+    
+    if (!elseV) {
         elseV = ObjcNullPointer();
     }
 
@@ -483,7 +268,6 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     // Emit merge block.
     function->getBasicBlockList().push_back(mergeBB);
     _builder->SetInsertPoint(mergeBB);
-   
   
     llvm::PHINode *ph = _builder->CreatePHI(
                                       ObjcPointerTy(),
@@ -492,16 +276,15 @@ void ObjCCodeGen::CGIfStatement(IfStatement *node, bool flag){
     ph->addIncoming(elseV, elseBB);
 }
 
-
-void ObjCCodeGen::VisitContinueStatement(ContinueStatement* node) {
+void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitBreakStatement(BreakStatement* node) {
+void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
+void CGObjCJS::VisitReturnStatement(ReturnStatement* node) {
     Visit(node->expression());
     llvm::BasicBlock *block = _builder->GetInsertBlock();
    
@@ -511,7 +294,7 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
         ){
         //In an if statement, the PHINode needs to have
         //the type 0 assigned to it!
-        llvm::AllocaInst *alloca = _context->valueForKey(STR("SET_RET_ALLOCA"));
+        llvm::AllocaInst *alloca = _context->valueForKey(SET_RET_ALLOCA_NAME);
         _builder->CreateStore(PopContext(), alloca);
         //TODO : remove this!
         PushValueToContext(ObjcNullPointer());
@@ -520,65 +303,63 @@ void ObjCCodeGen::VisitReturnStatement(ReturnStatement* node) {
 
     llvm::Function *currentFunction = block->getParent();
     assert(currentFunction->getReturnType() == ObjcPointerTy() && _context->size());
-    llvm::AllocaInst *alloca = _context->valueForKey(STR("DEFAULT_RET_ALLOCA"));
+    llvm::AllocaInst *alloca = _context->valueForKey(DEFAULT_RET_ALLOCA_NAME);
     auto retValue = PopContext();
     assert(retValue && "requires return value" && alloca && "requires return alloca");
     _builder->CreateStore(retValue, alloca);
 }
 
-
-void ObjCCodeGen::VisitWithStatement(WithStatement* node) {
+void CGObjCJS::VisitWithStatement(WithStatement* node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
-
 #pragma mark - Switch
 
-void ObjCCodeGen::VisitSwitchStatement(SwitchStatement* node) {
+void CGObjCJS::VisitSwitchStatement(SwitchStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitCaseClause(CaseClause* clause) {
+void CGObjCJS::VisitCaseClause(CaseClause* clause) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Loops
 
-void ObjCCodeGen::VisitDoWhileStatement(DoWhileStatement* node) {
+void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitWhileStatement(WhileStatement* node) {
+void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitForStatement(ForStatement* node) {
+void CGObjCJS::VisitForStatement(ForStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitForInStatement(ForInStatement* node) {
+void CGObjCJS::VisitForInStatement(ForInStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitForOfStatement(ForOfStatement* node) {
+void CGObjCJS::VisitForOfStatement(ForOfStatement* node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Try
-void ObjCCodeGen::VisitTryCatchStatement(TryCatchStatement* node) {
+void CGObjCJS::VisitTryCatchStatement(TryCatchStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitTryFinallyStatement(TryFinallyStatement* node) {
+void CGObjCJS::VisitTryFinallyStatement(TryFinallyStatement* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitDebuggerStatement(DebuggerStatement* node) {
+void CGObjCJS::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
 }
 
 //Define the body of the function
-void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     enterContext();
     _builder->saveIP();
     
@@ -613,26 +394,26 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     _builder->CreateStore(retPtr, sentenialReturnAlloca);
     auto sentenialReturnValue = _builder->CreateLoad(sentenialReturnAlloca);
     
-    
     //end ret alloca is the return value at the end of a function
     auto endRetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("endret"));
-    //TODO : instead of returnig a null pointer, return a 'undefined' sentenial
     _builder->CreateStore(ObjcNullPointer(), endRetAlloca);
-    _context->setValue(STR("DEFAULT_RET_ALLOCA") , endRetAlloca);
+    //TODO : instead of returnig a null pointer, return a 'undefined' sentenial
+    _context->setValue(DEFAULT_RET_ALLOCA_NAME , endRetAlloca);
     
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
     _builder->CreateStore(sentenialReturnValue, retAlloca);
-    _context->setValue(STR("SET_RET_ALLOCA"), retAlloca);
+    _context->setValue(SET_RET_ALLOCA_NAME, retAlloca);
 
-    auto value = _context->valueForKey(STR("SET_RET_ALLOCA"));
+    auto value = _context->valueForKey(SET_RET_ALLOCA_NAME);
     assert(value);
     _builder->saveIP();
+    
+    auto insertBlock = _builder->GetInsertBlock();
     VisitDeclarations(node->scope()->declarations());
-
-    _builder->SetInsertPoint(BB);
+    _builder->SetInsertPoint(insertBlock);
+  
     VisitStatements(node->body());
     
-    _builder->SetInsertPoint(BB);
     assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
     
     auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
@@ -648,7 +429,7 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     function->getBasicBlockList().push_back(defaultRetBB);
     _builder->SetInsertPoint(defaultRetBB);
-    auto endRetValue = _builder->CreateLoad(_context->valueForKey(STR("DEFAULT_RET_ALLOCA")), "endretalloca");
+    auto endRetValue = _builder->CreateLoad(_context->valueForKey(DEFAULT_RET_ALLOCA_NAME), "endretalloca");
     _builder->CreateRet(endRetValue);
     _builder->saveAndClearIP();
 
@@ -663,141 +444,45 @@ void ObjCCodeGen::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     EndAccumulation();
 }
 
-void ObjCCodeGen::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
+void CGObjCJS::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitConditional(Conditional* node) {
+void CGObjCJS::VisitConditional(Conditional* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitLiteral(class Literal* node) {
+void CGObjCJS::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
-}
-
-#pragma mark - Runtime calls
-
-llvm::Value *ObjCCodeGen::newString(std::string string){
-    const char *name = string.c_str();
-    llvm::Value *strGlobal = llvmNewLocalStringVar(name, string.length(), _module);
-    return messageSend(classNamed("NSString"), "stringWithUTF8String:", strGlobal);
-}
-
-llvm::Value *ObjCCodeGen::classNamed(const char *name){
-    return _builder->CreateCall(_module->getFunction("objc_getClass"),  llvmNewLocalStringVar(std::string(name), _module), "calltmp-getclass");
-}
-
-llvm::Value *ObjCCodeGen::newNumber(double doubleValue){
-    auto constValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(doubleValue));
-    return messageSend(classNamed("NSNumber"), "numberWithDouble:", constValue);
-}
-
-llvm::Value *ObjCCodeGen::newNumberWithLLVMValue(llvm::Value *doubleValue){
-    return messageSend(classNamed("NSNumber"), "numberWithDouble:", doubleValue);
-}
-
-llvm::Value *ObjCCodeGen::doubleValue(llvm::Value *llvmValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("doubleValue"), _module), "calltmp");
-
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(llvmValue);
-    ArgsV.push_back(sel);
-
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "calltmp-objc_msgSend_fpret");
-    return value;
-}
-
-llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName, llvm::Value *Arg) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(receiver);
-    ArgsV.push_back(selector);
-    if (Arg){
-        ArgsV.push_back(Arg);
-    }
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
-    return resultValue;
-}
-
-llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName, std::vector<llvm::Value *>ArgsV) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
-    std::vector<llvm::Value*> Args;
-    Args.push_back(receiver);
-    Args.push_back(selector);
-   
-    for (int i = 0; i < ArgsV.size(); i++) {
-        Args.push_back(ArgsV.at(i));
-    }
-    
-    Args.push_back(ArgsV.back());
-
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
-    return resultValue;
-}
-
-llvm::Value *ObjCCodeGen::messageSend(llvm::Value *receiver, const char *selectorName) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string(selectorName), _module), "calltmp");
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(receiver);
-    ArgsV.push_back(selector);
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return resultValue;
-}
-
-//Sends a message to a JSFunction instance
-llvm::Value *ObjCCodeGen::messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV) {
-    std::vector<llvm::Value*> Args;
-    Args.push_back(instance);
-    
-    if (ArgsV.size() > 0) {
-        assert(ArgsV.size() == 1);
-        Args.push_back(ArgsV.back());
-    }
-    
-    auto resultValue = _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
-    return resultValue;
-}
-
-//Convert a llvm value to an bool
-//which is represented as an int in JS land
-llvm::Value *ObjCCodeGen::boolValue(llvm::Value *llvmValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), llvmNewLocalStringVar(std::string("intValue"), _module), "calltmp");
-
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(llvmValue);
-    ArgsV.push_back(sel);
-
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return value;
 }
 
 #pragma mark - Literals
 
-llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
+llvm::Value *CGObjCJS::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
         String* string = String::cast(object);
         auto name = asciiStringWithV8String(string);
         if (name.length()){
-            lvalue = newString(name);
+            lvalue = _runtime->newString(name);
         }
         
         ILOG("STRING literal: %s", name.c_str());
     } else if (object->IsNull()) {
-        lvalue = newNumber(0);
+        lvalue = _runtime->newNumber(0);
         ILOG("null literal");
         lvalue = ObjcNullPointer();
     } else if (object->IsTrue()) {
         ILOG("true literal");
-        lvalue = newNumber(1);
+        lvalue = _runtime->newNumber(1);
     } else if (object->IsFalse()) {
         ILOG("false literal");
-        lvalue = newNumber(0);
+        lvalue = _runtime->newNumber(0);
     } else if (object->IsUndefined()) {
         ILOG("undefined");
     } else if (object->IsNumber()) {
-        lvalue = newNumber(object->Number());
+        lvalue = _runtime->newNumber(object->Number());
         ILOG("NUMBER value %g", object->Number());
     } else if (object->IsJSObject()) {
         assert(0 && "Not implmeneted");
@@ -824,24 +509,24 @@ llvm::Value *ObjCCodeGen::CGLiteral(Handle<Object> value, bool push) {
     return NULL;
 }
 
-void ObjCCodeGen::VisitRegExpLiteral(RegExpLiteral* node) {
+void CGObjCJS::VisitRegExpLiteral(RegExpLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitObjectLiteral(ObjectLiteral* node) {
+void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitArrayLiteral(ArrayLiteral* node) {
+void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitVariableProxy(VariableProxy* node) {
+void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
 }
 
 //TODO : checkout full-codegen-x86.cc
-void ObjCCodeGen::VisitAssignment(Assignment* node) {
+void CGObjCJS::VisitAssignment(Assignment* node) {
     ASSERT(node->target()->IsValidReferenceExpression());
 
     enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
@@ -874,42 +559,48 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
         case VARIABLE: {
             VariableProxy *targetProxy = (VariableProxy *)node->target();
             assert(targetProxy && "target for assignment required");
-            
             std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
-            
-            llvm::AllocaInst *targetAlloca;
-            if (!_context->valueForKey(targetName)){
-                targetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, targetName);
-                _context->setValue(targetName, targetAlloca);
-            } else {
-                targetAlloca = _context->valueForKey(targetName);
-            }
             
             llvm::Value *value = PopContext();
             assert(value && "missing value - not implemented");
             
-            _builder->CreateStore(value, targetAlloca);
+            if (_context->valueForKey(targetName)){
+                llvm::AllocaInst *targetAlloca = _context->valueForKey(targetName);
+                _builder->CreateStore(value, targetAlloca);
+                
+                //Store all assignements in environment if present
+                auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+                
+                if (jsThisAlloca) {
+                    auto jsThis = _builder->CreateLoad(jsThisAlloca);
 
-            //assignment returns 0
-            PushValueToContext(ObjcNullPointer());
-            
-            //Store all assignements in environment if present
-            auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
-            
-            if (jsThisAlloca) {
+                    auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
+                    _builder->CreateStore(_runtime->newString(targetName), keypathStringValueAlloca);
+                    auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
+                   
+                    //Declare the key in this environment
+                    std::vector<llvm::Value *>Args;
+                    Args.push_back(value);
+                    Args.push_back(keypathStringValue);
+                    _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
+                }
+            } else {
+                //Set the environment value
+                auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
                 auto jsThis = _builder->CreateLoad(jsThisAlloca);
-                // messageSend(jsThis, "defineProperty:", llvmNewLocalStringVar(STR("a"), _module));
                 
                 auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
-                _builder->CreateStore(newString(targetName), keypathStringValueAlloca);
+                _builder->CreateStore(_runtime->newString(targetName), keypathStringValueAlloca);
                 auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
-
+               
                 std::vector<llvm::Value *>Args;
                 Args.push_back(value);
                 Args.push_back(keypathStringValue);
-                messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
+                _runtime->messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
             }
             
+            //assignment returns 0
+            PushValueToContext(ObjcNullPointer());
             break;
         } case NAMED_PROPERTY: {
             //            EmitNamedPropertyAssignment(expr);
@@ -921,15 +612,15 @@ void ObjCCodeGen::VisitAssignment(Assignment* node) {
         }
     }
 }
-void ObjCCodeGen::EmitBinaryOp(BinaryOperation* expr, Token::Value op){
+void CGObjCJS::EmitBinaryOp(BinaryOperation* expr, Token::Value op){
 //TODO:
 }
 
-void ObjCCodeGen::EmitVariableAssignment(Variable* var, Token::Value op) {
+void CGObjCJS::EmitVariableAssignment(Variable* var, Token::Value op) {
 //TODO:
 }
 
-void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
+void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
     auto varAlloca = _context->valueForKey(variableName);
     if (varAlloca) {
@@ -938,29 +629,29 @@ void ObjCCodeGen::EmitVariableLoad(VariableProxy* node) {
     }
    
     //NTS: always create an alloca for an arugment you want to pass to a function!!
-    auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "");
-    _builder->CreateStore(newString(variableName), environmentVariableAlloca);
+    auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "env_var_alloca");
+    _builder->CreateStore(_runtime->newString(variableName), environmentVariableAlloca);
     auto keypathArgument = _builder->CreateLoad(environmentVariableAlloca);
    
     //load the value from the parents environment
     //TODO : support N layers of nested functions
     auto parentFunction = _builder->GetInsertBlock()->getParent();
     auto parentName = parentFunction ->getName().str();
-    auto parentThis = messageSend(classNamed(parentName.c_str()), "parent");
-    auto value = messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
-  
+    auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "parent");
+    auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
+
     PushValueToContext(value);
 }
 
-void ObjCCodeGen::VisitYield(Yield* node) {
+void CGObjCJS::VisitYield(Yield* node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
-void ObjCCodeGen::VisitThrow(Throw* node) {
+void CGObjCJS::VisitThrow(Throw* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitProperty(Property* node) {
+void CGObjCJS::VisitProperty(Property* node) {
     UNIMPLEMENTED();
 }
 
@@ -979,7 +670,7 @@ Call::CallType GetCallType(Call*call, Isolate* isolate) {
     return property != NULL ? Call::PROPERTY_CALL : Call::OTHER_CALL;
 }
 
-void ObjCCodeGen::VisitCall(Call* node) {
+void CGObjCJS::VisitCall(Call* node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(node, isolate());
    
@@ -1003,10 +694,6 @@ void ObjCCodeGen::VisitCall(Call* node) {
         //TODO : this should likely retain the values
         Visit(args->at(i));
     }
-    if (_context->size() == 0) {
-        assert(0 && "wtf!");
-        return;
-    }
     
     std::vector<llvm::Value *> finalArgs;
     for (unsigned i = 0; i < args->length(); i++){
@@ -1023,8 +710,17 @@ void ObjCCodeGen::VisitCall(Call* node) {
     bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
     if (isJSFunction) {
         //Create a new instance and invoke the body
-        llvm::Value *instance = messageSend(classNamed(name.c_str()), "new");
-        auto value = messageSendJSFunction(instance, finalArgs);
+       
+        llvm::Value *target;
+        auto calleeF = _module->getFunction(name);
+        if (calleeF) {
+            target = _runtime->classNamed(name.c_str());
+        } else {
+            Visit(callee);
+            target = PopContext();
+       }
+        
+        auto value = _runtime->messageSendJSFunction(target, finalArgs);
         PushValueToContext(value);
     } else {
         auto calleeF = _module->getFunction(name);
@@ -1032,41 +728,23 @@ void ObjCCodeGen::VisitCall(Call* node) {
     }
 }
 
-void checkFuntionArguments(llvm::Function calleeF, ZoneList<Expression*>* args){
-//    if (!calleeF->isVarArg()) {
-//        assert(calleeF->arg_size() == args->length() + 2 && "Unknown function referenced: airity mismatch");
-//    }
-//    
-//    std::vector<llvm::Value *> finalArgs;
-//    unsigned Idx = 0;
-//    for (llvm::Function::arg_iterator AI = calleeF->arg_begin(); Idx != args->length();
-//         ++AI, ++Idx){
-//        llvm::Value *arg = PopContext();
-//    
-//        // check param types
-//        llvm::Type *argTy = arg->getType();
-//        llvm::Type *paramTy = AI->getType();
-//        assert(argTy == paramTy);
-//    }
-}
-
-void ObjCCodeGen::VisitCallNew(CallNew* node) {
+void CGObjCJS::VisitCallNew(CallNew* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitCallRuntime(CallRuntime* node) {
+void CGObjCJS::VisitCallRuntime(CallRuntime* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitUnaryOperation(UnaryOperation* node) {
+void CGObjCJS::VisitUnaryOperation(UnaryOperation* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitCountOperation(CountOperation* node) {
+void CGObjCJS::VisitCountOperation(CountOperation* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* expr) {
+void CGObjCJS::VisitBinaryOperation(BinaryOperation* expr) {
   switch (expr->op()) {
     case Token::COMMA:
       return VisitComma(expr);
@@ -1078,15 +756,15 @@ void ObjCCodeGen::VisitBinaryOperation(BinaryOperation* expr) {
   }
 }
 
-void ObjCCodeGen::VisitComma(BinaryOperation* expr) {
+void CGObjCJS::VisitComma(BinaryOperation* expr) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitLogicalExpression(BinaryOperation* expr) {
+void CGObjCJS::VisitLogicalExpression(BinaryOperation* expr) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
+void CGObjCJS::VisitArithmeticExpression(BinaryOperation* expr) {
     Expression *left = expr->left();
     Expression *right = expr->right();
   
@@ -1099,29 +777,28 @@ void ObjCCodeGen::VisitArithmeticExpression(BinaryOperation* expr) {
     auto rhs = PopContext();
    
     llvm::Value *result = NULL;
+    std::vector<llvm::Value *>Args;
+    Args.push_back(lhs);
+    Args.push_back(rhs);
+
     auto op = expr->op();
     switch (op) {
         case v8::internal::Token::ADD : {
-            llvm::Value *floatResult = _builder->CreateFAdd(doubleValue(lhs), doubleValue(rhs), "addtmp");
-            result = newNumberWithLLVMValue(floatResult);
+            result = _runtime->messageSend(lhs, "objcjs_add:", rhs);
             break;
         }
         case v8::internal::Token::SUB : {
-            llvm::Value *floatResult = _builder->CreateFSub(doubleValue(lhs), doubleValue(rhs), "subtmp");
-            result = newNumberWithLLVMValue(floatResult);
+            result = _runtime->messageSend(lhs, "objcjs_subtract:", rhs);
             break;
         }
         case v8::internal::Token::MUL : {
-            llvm::Value *floatResult = _builder->CreateFMul(doubleValue(lhs), doubleValue(rhs), "multmp");
-            result = newNumberWithLLVMValue(floatResult);
-            break;   
-        }
-        case v8::internal::Token::DIV : {
-            llvm::Value *floatResult = _builder->CreateFDiv(doubleValue(lhs), doubleValue(rhs), "divtmp");
-            result = newNumberWithLLVMValue(floatResult);
+            result = _runtime->messageSend(lhs, "objcjs_multiply:", rhs);
             break;
         }
-
+        case v8::internal::Token::DIV : {
+            result = _runtime->messageSend(lhs, "objcjs_divide:", rhs);
+            break;
+        }
         default: break;
     }
     
@@ -1143,7 +820,7 @@ static bool IsClassOfTest(CompareOperation* expr) {
     return true;
 }
  
-void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
+void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
       ASSERT(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
     
@@ -1200,24 +877,29 @@ void ObjCCodeGen::VisitCompareOperation(CompareOperation* expr) {
     } else if (op == Token::IN) {
         UNIMPLEMENTED();
     } else if (op == Token::LT) {
-        resultValue = messageSend(left, "isLessThan:",  right);
+        resultValue = _runtime->messageSend(left, "isLessThan:",  right);
     } else if (op == Token::GT){
-        resultValue = messageSend(left, "isGreaterThan:",  right);
+        resultValue = _runtime->messageSend(left, "isGreaterThan:",  right);
     } else if (op == Token::LTE){
-        resultValue = messageSend(left, "isLessThanOrEqualTo:",  right);
+        resultValue = _runtime->messageSend(left, "isLessThanOrEqualTo:",  right);
     } else if (op == Token::GTE){
-        resultValue = messageSend(left, "isGreaterThanOrEqualTo:",  right);
+        resultValue = _runtime->messageSend(left, "isGreaterThanOrEqualTo:",  right);
+    } else if (op == Token::EQ){
+//TODO : implement equality with respect to ECMAScript conventions
+        resultValue = _runtime->messageSend(left, "isEqual:", right);
+    } else if (op == Token::EQ_STRICT){
+        resultValue = _runtime->messageSend(left, "isEqual:", right);
     }
     
     assert(resultValue);
     PushValueToContext(resultValue);
 }
 
-void ObjCCodeGen::VisitThisFunction(ThisFunction* node) {
+void CGObjCJS::VisitThisFunction(ThisFunction* node) {
     UNIMPLEMENTED();
 }
 
-void ObjCCodeGen::VisitStartAccumulation(AstNode *expr, bool extendContext) {
+void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     if (extendContext){
         enterContext();
     }
@@ -1225,7 +907,7 @@ void ObjCCodeGen::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     Visit(expr);
 }
 
-void ObjCCodeGen::enterContext(){
+void CGObjCJS::enterContext(){
     CGContext *context;
     if (_context) {
         context = _context->Extend();
@@ -1237,23 +919,23 @@ void ObjCCodeGen::enterContext(){
     _context = context;   
 }
 
-void ObjCCodeGen::VisitStartAccumulation(AstNode *expr) {
+void CGObjCJS::VisitStartAccumulation(AstNode *expr) {
     VisitStartAccumulation(expr, false);
 }
 
-void ObjCCodeGen::EndAccumulation() {
+void CGObjCJS::EndAccumulation() {
     Contexts.pop_back();
     delete _context;
     auto context = Contexts.back();
     _context = context;
 }
 
-void ObjCCodeGen::VisitStartStackAccumulation(AstNode *expr) {
+void CGObjCJS::VisitStartStackAccumulation(AstNode *expr) {
     //TODO : retain values
     VisitStartAccumulation(expr, false);
 }
 
-void ObjCCodeGen::EndStackAccumulation(){
+void CGObjCJS::EndStackAccumulation(){
     assert(0);
     delete _context;
     auto context = Contexts.back();
@@ -1261,10 +943,10 @@ void ObjCCodeGen::EndStackAccumulation(){
     _context = context;
 }
 
-void ObjCCodeGen::PushValueToContext(llvm::Value *value) {
+void CGObjCJS::PushValueToContext(llvm::Value *value) {
     _context->Push(value);
 }
 
-llvm::Value *ObjCCodeGen::PopContext() {
+llvm::Value *CGObjCJS::PopContext() {
     return _context->Pop();
 }

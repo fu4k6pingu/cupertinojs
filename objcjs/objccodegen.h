@@ -22,9 +22,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include "cgobjcjsruntime.h"
 
 using namespace v8::internal;
-#define STR(v) std::string(v)
 
 class CGContext {
 public:
@@ -32,16 +32,15 @@ public:
     std::vector<llvm::Value *> _context;
     std::map<std::string, llvm::AllocaInst*> _namedValues;
     
-    CGContext(){
-    }
-    ~CGContext(){
-    }
-    
     CGContext *Extend(){
         auto extended = new CGContext();
-//        extended->_context = _context;
-//        extended->_namedValues = _namedValues;
         return extended;
+    }
+   
+    void dump(){
+        for (unsigned i = 0; i < _context.size(); i++){
+            _context[i]->dump();
+        }
     }
     
     size_t size(){
@@ -75,19 +74,22 @@ public:
 };
 
 
-class ObjCCodeGen: public  v8::internal::AstVisitor {
+class CGObjCJS: public  v8::internal::AstVisitor {
 public:
     CGContext *_context;
     std::vector<CGContext *> Contexts;
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
     
-    ObjCCodeGen(Zone *zone);
+    CGObjCJSRuntime *_runtime;
+    
+    CGObjCJS(Zone *zone);
 
-    virtual~ObjCCodeGen(){};
+    virtual~CGObjCJS(){};
 
     void dump();
-   
+
+    //TODO : consider adding insertion point saving here
     void VisitDeclarations(ZoneList<Declaration*>* declarations){
         if (declarations->length() > 0) {
             for (int i = 0; i < declarations->length(); i++) {
@@ -159,7 +161,7 @@ public:
     void VisitArithmeticExpression(BinaryOperation* expr);
     
     void EmitVariableAssignment(Variable* var,
-                                               Token::Value op) ;
+                                Token::Value op) ;
     
     void EmitVariableLoad(VariableProxy* proxy);
 
@@ -175,21 +177,11 @@ public:
     void EndAccumulation();
     void VisitStartStackAccumulation(AstNode *expr);
     void EndStackAccumulation();
-    void CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
-    void CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* node);
-   
-#pragma mark - Runtime calls
-    llvm::Value *newString(std::string string);
-    llvm::Value *newNumber(double value);
-    llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
-    llvm::Value *doubleValue(llvm::Value *llvmValue);
-    llvm::Value *boolValue(llvm::Value *llvmValue);
-    llvm::Value *messageSend(llvm::Value *receiver, const char *selector, std::vector<llvm::Value *>ArgsV);
-    llvm::Value *messageSend(llvm::Value *receiver, const char *selector, llvm::Value *Arg);
-    llvm::Value *messageSend(llvm::Value *receiver, const char *selector);
-    llvm::Value *messageSendJSFunction(llvm::Value *instance, std::vector<llvm::Value *>ArgsV);
-    llvm::Value *classNamed(const char *name);
-    
+    void CreateArgumentAllocas(llvm::Function *F,
+                               v8::internal::Scope* node);
+    void CreateJSArgumentAllocas(llvm::Function *F,
+                                 v8::internal::Scope* node);
+
     void PushValueToContext(llvm::Value *value);
     llvm::Value *PopContext();
     

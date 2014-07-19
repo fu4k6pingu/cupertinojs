@@ -9,8 +9,11 @@
 #import "objcjs_runtime.h"
 #import <objc/message.h>
 
-@implementation JSFunction
+#define RuntimeException(_FMT) \
+    [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
 
+
+@implementation JSFunction
 
 static NSMutableDictionary *Parents = NULL;
 
@@ -28,8 +31,12 @@ static NSMutableDictionary *Parents = NULL;
 
 - (id)init {
     self = [super init];
-    self.ivars = [[[NSMutableDictionary alloc] init] retain];
+    self.environment = [[[NSMutableDictionary alloc] init] retain];
     return self;
+}
+
+- (id)parent {
+    return Parents[NSStringFromClass(self.class)];
 }
 
 - (id)body:(id)args {
@@ -81,11 +88,20 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
-    _ivars[[key copy]] = [value copy];
+    if (![[_environment allKeys] containsObject:key]) {
+        [self.parent _objcjs_env_setValue:value forKey:key];
+    } else {
+        _environment[[key copy]] = [value copy];
+    }
+}
+
+- (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key {
+    _environment[[key copy]] = [value copy];
 }
 
 - (id)_objcjs_env_valueForKey:(NSString *)key {
-    return _ivars[key];
+    id value = _environment[key];
+    return value ?: [self.parent _objcjs_env_valueForKey:key];
 }
 
 @end
@@ -103,13 +119,25 @@ void *defineJSFunction(const char *name, JSFunctionBodyIMP body){
 }
 
 void *objcjs_invoke(void *target, ...){
+    printf("objcjs_invoke(%p, ...)\n", target);
+
+    if (!target) {
+        RuntimeException(@"nil is not a function");
+    }
+    
     Class targetClass;
     if (![(id)target isKindOfClass:[JSFunction class]]){
         targetClass = target;
-        target = class_createInstance(target, 0);
+// TODO: handle this retain count craze!
+//        target = class_createInstance(target, 0);
+        target = [(id)target new];
+        printf("new instance of %s \n", class_getName(targetClass));
     } else {
         targetClass = object_getClass(target);
+        printf("instance of %s\n", class_getName(targetClass));
     }
+  
+    assert(targetClass && "objcjs_invoke on missing class:" && target);
     
     SEL bodySel = @selector(body:);
     va_list args;
@@ -140,3 +168,23 @@ void *objcjs_invoke(void *target, ...){
     va_end(args);
     return result;
 }
+
+@implementation NSNumber (ObjcJSOperators)
+
+- (instancetype)objcjs_add:(id)value {
+    return @([self doubleValue] + [value doubleValue]);
+}
+
+- (instancetype)objcjs_subtract:(id)value {
+    return @([self doubleValue] - [value doubleValue]);
+}
+
+- (instancetype)objcjs_multiply:(id)value {
+    return @([self doubleValue] * [value doubleValue]);
+}
+
+- (instancetype)objcjs_divide:(id)value {
+    return @([self doubleValue] / [value doubleValue]);
+}
+
+@end

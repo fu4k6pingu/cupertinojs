@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */; };
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C53C8BFD197664AD00335186 /* objcjs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* objcjs-runtime.dylib */; };
@@ -179,6 +180,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cgobjcjsruntime.h; sourceTree = "<group>"; };
+		C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjsruntime.cpp; sourceTree = "<group>"; };
 		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "../../../../usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<group>"; };
 		C51CE3161971BC4000996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		C51CE3171971BC4000996E03 /* test1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test1.js; sourceTree = "<group>"; };
@@ -359,6 +362,8 @@
 			children = (
 				C5F83B0E1969155100A381F3 /* main.cpp */,
 				C5D6F09D196A406F00BB9050 /* objccodegen.cpp */,
+				C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */,
+				C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */,
 				C5D6F09E196A406F00BB9050 /* objccodegen.h */,
 				C5D6F09A1969F28600BB9050 /* README.md */,
 				C5F83B101969155100A381F3 /* objcjs.1 */,
@@ -623,6 +628,7 @@
 			files = (
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
 				C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */,
+				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
