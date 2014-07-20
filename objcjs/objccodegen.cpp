@@ -23,6 +23,9 @@
 
 using namespace v8::internal;
 
+#define CALL_LOG(STR)\
+    _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString(STR))
+
 static std::string stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
     size_t size = raw->length();
@@ -38,6 +41,7 @@ static std::string FUNCTION_THIS_ARG_NAME("__this");
 
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
+static std::string SENTENIAL_RET_ALLOCA_NAME("SENTENIAL_RET_ALLOCA");
 
 CGObjCJS::CGObjCJS(Zone *zone){
     InitializeAstVisitor(zone);
@@ -334,22 +338,14 @@ void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "dowhileloop", function);
     llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "afterloop", function);
 
-    Visit(node->cond());
-    auto condVar = PopContext();
-    _context->EmptyStack();
-
     _builder->CreateBr(loopBB);
     _builder->SetInsertPoint(loopBB);
-    
-    Visit(node->cond());
-    condVar = PopContext();
-    _context->EmptyStack();
     
     Visit(node->body());
     _context->EmptyStack();
 
     Visit(node->cond());
-    condVar = PopContext();
+    auto condVar = PopContext();
     _context->EmptyStack();
     
     auto endCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loopcond");
@@ -380,6 +376,19 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     Visit(node->body());
     Visit(node->next());
     Visit(node->cond());
+
+    auto breakBB = llvm::BasicBlock::Create(_module->getContext(), "breakBB", function);
+    _builder->CreateBr(breakBB);
+    _builder->SetInsertPoint(breakBB);
+
+    auto returnValue = _builder->CreateLoad(_context->valueForKey(SET_RET_ALLOCA_NAME));
+    auto sentenialReturnValue = _builder->CreateLoad(_context->valueForKey(SENTENIAL_RET_ALLOCA_NAME));
+    
+    auto breakCond = _builder->CreateICmpEQ(returnValue, sentenialReturnValue, "breakcond");
+    
+    auto continueBB = llvm::BasicBlock::Create(_module->getContext(), "breakBB", function);
+    _builder->CreateCondBr(breakCond, continueBB, afterBB);
+    _builder->SetInsertPoint(continueBB);
 
     auto endCondVar = PopContext();
     _context->EmptyStack();
@@ -445,6 +454,7 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto retPtr = _builder->CreateCall(_module->getFunction("malloc"), const_int64_10, "calltmp");
     _builder->CreateStore(retPtr, sentenialReturnAlloca);
     auto sentenialReturnValue = _builder->CreateLoad(sentenialReturnAlloca);
+    _context->setValue(SENTENIAL_RET_ALLOCA_NAME, sentenialReturnAlloca);
     
     //end ret alloca is the return value at the end of a function
     auto endRetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("endret"));
