@@ -334,7 +334,47 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
 }
 
 void CGObjCJS::VisitForStatement(ForStatement* node) {
-    UNIMPLEMENTED();
+    //TODO : ensure context is 0
+    PopContext();
+    
+    VisitStartAccumulation(node->init());
+    
+    auto function = _builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock *preheaderBB = _builder->GetInsertBlock();
+    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "forloop", function);
+    
+    //break to loop from current position
+    _builder->CreateBr(loopBB);
+    _builder->SetInsertPoint(loopBB);
+  
+    auto variableName = PopContext();
+    llvm::PHINode *loopVar = _builder->CreatePHI(ObjcPointerTy(), 2, "incrementer");
+    loopVar->addIncoming(variableName, preheaderBB);
+    
+   
+    Visit(node->next());
+    auto stepValue = PopContext();
+    if (!stepValue){
+        stepValue = _runtime->newNumber(1);
+    }
+    Visit(node->cond());
+    auto condVar = PopContext();
+
+    auto nextVar = _runtime->messageSend(variableName, "objcjs_add:", stepValue);
+    
+    auto endCond = _builder->CreateICmpEQ(condVar, ObjcNullPointer(), "loopcond");
+    // Create the "after loop" block and insert it.
+    llvm::BasicBlock *loopEndBB = _builder->GetInsertBlock();
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "afterloop", function);
+
+    _builder->CreateCondBr(endCond, loopBB, afterBB);
+
+    _builder->SetInsertPoint(afterBB);
+  
+    loopVar->addIncoming(nextVar, loopEndBB);
+    
+    //TODO : restore symbols
+    PushValueToContext(ObjcNullPointer());
 }
 
 void CGObjCJS::VisitForInStatement(ForInStatement* node) {
@@ -600,7 +640,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             }
             
             //assignment returns 0
-            PushValueToContext(ObjcNullPointer());
+//            PushValueToContext(ObjcNullPointer());
             break;
         } case NAMED_PROPERTY: {
             //            EmitNamedPropertyAssignment(expr);
@@ -741,7 +781,27 @@ void CGObjCJS::VisitUnaryOperation(UnaryOperation* node) {
 }
 
 void CGObjCJS::VisitCountOperation(CountOperation* node) {
-    UNIMPLEMENTED();
+    enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
+    LhsKind assign_type = VARIABLE;
+    Property* prop = node->expression()->AsProperty();
+    // In case of a property we use the uninitialized expression context
+    // of the key to detect a named property.
+    if (prop != NULL) {
+        assign_type =
+        (prop->key()->IsPropertyName()) ? NAMED_PROPERTY : KEYED_PROPERTY;
+    }
+   
+    if (assign_type == VARIABLE){
+        EmitVariableLoad(node->expression()->AsVariableProxy());
+    }
+    
+    if (node->is_postfix()) {
+        
+        
+    }
+    if (node->is_prefix()) {
+        UNIMPLEMENTED();
+    }
 }
 
 void CGObjCJS::VisitBinaryOperation(BinaryOperation* expr) {
