@@ -273,8 +273,7 @@ llvm::Value *CGObjCJSRuntime::doubleValue(llvm::Value *llvmValue){
     ArgsV.push_back(llvmValue);
     ArgsV.push_back(sel);
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "calltmp-objc_msgSend_fpret");
-    return value;
+    return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "calltmp-objc_msgSend_fpret");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
@@ -284,11 +283,12 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(receiver);
     ArgsV.push_back(selector);
+   
     if (Arg){
         ArgsV.push_back(Arg);
     }
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
-    return resultValue;
+   
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
@@ -302,34 +302,32 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     for (int i = 0; i < ArgsV.size(); i++) {
         Args.push_back(ArgsV.at(i));
     }
-
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
-    return resultValue;
+  
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *selectorName) {
     llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string(selectorName), _module), "calltmp");
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(receiver);
-    ArgsV.push_back(selector);
-    auto resultValue = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return resultValue;
+    std::vector<llvm::Value*> Args;
+    Args.push_back(receiver);
+    Args.push_back(selector);
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
 }
 
 //Sends a message to a JSFunction instance
 llvm::Value *CGObjCJSRuntime::messageSendJSFunction(llvm::Value *instance,
                                                     std::vector<llvm::Value *>ArgsV) {
+//    assert(ArgsV.size() <= 1 && "Only single argument functions supported");
+
     std::vector<llvm::Value*> Args;
     Args.push_back(instance);
-    
-    if (ArgsV.size() > 0) {
-        assert(ArgsV.size() == 1);
-        Args.push_back(ArgsV.back());
+
+    for (int i = 0; i < ArgsV.size(); i++) {
+        Args.push_back(ArgsV.at(i));
     }
     
-    auto resultValue = _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
-    return resultValue;
+    return _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
 }
 
 //Convert a llvm value to an bool
@@ -341,6 +339,5 @@ llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
     ArgsV.push_back(llvmValue);
     ArgsV.push_back(sel);
 
-    llvm::Value *value = _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
-    return value;
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
 }

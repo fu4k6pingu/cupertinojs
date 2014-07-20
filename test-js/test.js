@@ -1,7 +1,7 @@
 function larryf(argument){
     NSLog("enter");
     for (var incrementer = 1; incrementer < 10; incrementer = incrementer + 1){
-        if (incrementer == 5){
+        if (incrementer == argument){
             NSLog("inc eq %@", incrementer);
             return incrementer;
         } else {
@@ -18,6 +18,6 @@ function moe(argument){
 }
 
 function objcjs_main(a, b){
-    NSLog("zero: %@", moe(1))
+    NSLog("zero: %@", larryf(1))
     return 0
 }
