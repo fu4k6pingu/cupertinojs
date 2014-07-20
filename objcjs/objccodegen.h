@@ -63,6 +63,12 @@ public:
         }   
     }
     
+    void EmptyStack(){
+        while (size()) {
+            Pop();
+        }
+    }
+    
     llvm::Value *Pop(){
         if (!size()) {
             return NULL;

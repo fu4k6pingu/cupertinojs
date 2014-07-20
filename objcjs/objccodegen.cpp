@@ -334,47 +334,37 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
 }
 
 void CGObjCJS::VisitForStatement(ForStatement* node) {
-    //TODO : ensure context is 0
-    PopContext();
-    
-    VisitStartAccumulation(node->init());
+    _context->EmptyStack();
+   
+    //TODO : handle shadow variables
+    if (node->init()){
+        Visit(node->init());
+        PopContext();
+    }
     
     auto function = _builder->GetInsertBlock()->getParent();
-    llvm::BasicBlock *preheaderBB = _builder->GetInsertBlock();
     llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "forloop", function);
     
     //break to loop from current position
     _builder->CreateBr(loopBB);
     _builder->SetInsertPoint(loopBB);
-  
-    auto variableName = PopContext();
-    llvm::PHINode *loopVar = _builder->CreatePHI(ObjcPointerTy(), 2, "incrementer");
-    loopVar->addIncoming(variableName, preheaderBB);
     
-   
-    Visit(node->next());
-    auto stepValue = PopContext();
-    if (!stepValue){
-        stepValue = _runtime->newNumber(1);
-    }
+    Visit(node->body());
+    _context->EmptyStack();
+    
     Visit(node->cond());
     auto condVar = PopContext();
 
-    auto nextVar = _runtime->messageSend(variableName, "objcjs_add:", stepValue);
-    
-    auto endCond = _builder->CreateICmpEQ(condVar, ObjcNullPointer(), "loopcond");
-    // Create the "after loop" block and insert it.
-    llvm::BasicBlock *loopEndBB = _builder->GetInsertBlock();
+    Visit(node->next());
+    _context->EmptyStack();
+
+    auto endCond = _builder->CreateICmpEQ(_runtime->boolValue(condVar), ObjcNullPointer(), "loopcond");
+
     llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "afterloop", function);
-
-    _builder->CreateCondBr(endCond, loopBB, afterBB);
-
+    _builder->CreateCondBr(endCond, afterBB, loopBB);
+   
+   
     _builder->SetInsertPoint(afterBB);
-  
-    loopVar->addIncoming(nextVar, loopEndBB);
-    
-    //TODO : restore symbols
-    PushValueToContext(ObjcNullPointer());
 }
 
 void CGObjCJS::VisitForInStatement(ForInStatement* node) {
