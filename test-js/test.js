@@ -1,7 +1,10 @@
 function larryf(argument){
     NSLog("enter");
-    
-    for (var incrementer = 1.0; incrementer < 2.0; incrementer = incrementer + 1){
+    for (var incrementer = 1.0; incrementer < 20.0; incrementer = incrementer + 1){
+        if (incrementer == 5.0)
+            return 10;
+        else
+            NSLog("go");
         NSLog("%@", incrementer);
     }
     return 0;
