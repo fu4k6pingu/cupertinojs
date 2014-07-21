@@ -18,7 +18,7 @@
 + (id)parent;
 
 - (id)parent;
-- (id)body:(id)args;
+- (id)body:(id)args,...;
 
 - (void)defineProperty:(const char *)propertyName;
 
@@ -28,9 +28,10 @@
 
 @end
 
-typedef id JSFunctionBodyIMP (id _self, SEL sel, ...);
+typedef id JSFunctionBodyIMP (id instance, SEL cmd, id arg1,...);
 
-extern void *defineJSFunction(const char *name, JSFunctionBodyIMP body);
+extern void *defineJSFunction(const char *name,
+                              JSFunctionBodyIMP body);
 
 //dynamically dispatch to a pointer
 // if target is a class class, a new instance of the class is created

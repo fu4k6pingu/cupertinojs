@@ -28,39 +28,51 @@ static BOOL calledBody;
     [super tearDown];
 }
 
-id impl1(id firstObject, ...){
+id impl1(id firstObject,
+         SEL selector,
+         id firstArgument, ...){
     calledBody = YES;
 
-    va_list argumentList;
-    va_start(argumentList, firstObject);
     id instance = firstObject;
     NSLog(@"%@", instance);
-   
-    SEL selector = va_arg(argumentList, SEL);
     NSLog(@"%s", sel_getName(selector));
-    
-    id firstVArgument = va_arg(argumentList, id);
-    NSLog(@"%@", firstVArgument);
-    va_end(argumentList);
-    return firstVArgument;
+    NSLog(@"%@", firstArgument);
+    return firstArgument;
 }
 
-//id impl2(id firstObject, void *second, void *third, ...){
-//    calledBody = YES;
-//    
-//    va_list argumentList;
-//    va_start(argumentList, firstObject);
-//    id instance = firstObject;
-//    NSLog(@"%@", instance);
-//    
-//    SEL selector = va_arg(argumentList, SEL);
-//    NSLog(@"%s", sel_getName(selector));
-//    
-//    id arg3 = va_arg(argumentList, id);
-//    NSLog(@"%@", arg3);
-//    va_end(argumentList);
-//    return arg3;
-//}
+id impl2(id firstObject,
+         SEL selector,
+         id firstArgument,
+         id secondArgument,
+         ...){
+    calledBody = YES;
+    
+    id instance = firstObject;
+    NSLog(@"%@", instance);
+    NSLog(@"%s", sel_getName(selector));
+    NSLog(@"%@", firstArgument);
+    NSLog(@"%@", secondArgument);
+    return secondArgument;
+}
+
+id impl3(id instance,
+         SEL selector,
+         id firstArg, ...){
+    calledBody = YES;
+    NSLog(@"%@", firstArg);
+
+    va_list argumentList;
+    va_start(argumentList, firstArg);
+
+    NSMutableArray *arguments = [NSMutableArray array];
+
+    for (id arg = firstArg; arg != nil; arg = va_arg(argumentList, id)) {
+        [arguments addObject:arg];
+    }
+
+    va_end(argumentList);
+    return arguments;
+}
 
 - (void)testItCanCreateASubclass
 {
@@ -113,6 +125,24 @@ id impl1(id firstObject, ...){
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"));
     XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
+}
+
+- (void)testItCanInvokeAJSFunctionWith2Args {
+    defineJSFunction("subclass-4", impl2);
+    Class aClass = objc_getClass("subclass-4");
+   
+    id result = objcjs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"));
+    XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
+    XCTAssertEqual(@"An Arg2", result, @"It returns the arg");
+}
+
+- (void)testItCanInvokeAJSFunctionWithVarArgs {
+    defineJSFunction("subclass-5", impl3);
+    Class aClass = objc_getClass("subclass-5");
+   
+    id result = objcjs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), CFRetain(@"An Arg3"));
+    XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
+    XCTAssertEqualObjects(@([result count]), @3, @"It returns the arg");
 }
 
 @end

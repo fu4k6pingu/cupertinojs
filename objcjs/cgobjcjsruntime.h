@@ -33,7 +33,7 @@ extern std::string asciiStringWithV8String(v8::internal::String *string);
 class CGObjCJSRuntime {
 public:
     CGObjCJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
-    
+
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
     
@@ -50,9 +50,12 @@ public:
                              llvm::Value *Arg);
     llvm::Value *messageSend(llvm::Value *receiver,
                              const char *selector);
-    llvm::Value *messageSendJSFunction(llvm::Value *instance,
+    llvm::Value *invokeJSValue(llvm::Value *instance,
                                        std::vector<llvm::Value *>ArgsV);
-    llvm::Value *classNamed(const char *name);   
+    llvm::Value *classNamed(const char *name);
+    llvm::Value *defineJSFuction(const char *name,
+                                 unsigned nArgs
+                                    );
 };
 
 

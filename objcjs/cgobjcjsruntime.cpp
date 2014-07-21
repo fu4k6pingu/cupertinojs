@@ -50,7 +50,7 @@ llvm::Function *CGObjCJSFunction(size_t numParams,
         Params.push_back(ObjcPointerTy());
     }
     
-    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
+    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, true);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
@@ -316,17 +316,16 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
 }
 
 //Sends a message to a JSFunction instance
-llvm::Value *CGObjCJSRuntime::messageSendJSFunction(llvm::Value *instance,
+llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
                                                     std::vector<llvm::Value *>ArgsV) {
-//    assert(ArgsV.size() <= 1 && "Only single argument functions supported");
-
     std::vector<llvm::Value*> Args;
     Args.push_back(instance);
 
     for (int i = 0; i < ArgsV.size(); i++) {
         Args.push_back(ArgsV.at(i));
     }
-    
+
+    Args.push_back(ObjcNullPointer());
     return _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
 }
 
@@ -341,3 +340,18 @@ llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
 
     return _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
 }
+
+llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
+                                              unsigned nArgs
+                                                 ) {
+    auto function = CGObjCJSFunction(nArgs, name, _module);
+    
+    auto nameAlloca = localStringVar(name, strlen(name), _module);
+    
+    std::vector<llvm::Value*> Args;
+    Args.push_back(nameAlloca);
+    Args.push_back(function);
+
+    return llvm::CallInst::Create(_module->getFunction("defineJSFunction"), Args, "calltmp");
+}
+

@@ -39,7 +39,7 @@ static NSMutableDictionary *Parents = NULL;
     return Parents[NSStringFromClass(self.class)];
 }
 
-- (id)body:(id)args {
+- (id)body:(id)args, ... {
     return @"JSFUNCTION-DEFAULT-BODY-RETURN";
 }
 
@@ -105,15 +105,39 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 @end
+
+
+SEL BodySelector(NSInteger nArgs){
+    static char * BodySelectors[] = {
+        "body",
+        "body:",
+        "body::",
+        "body:::",
+        "body::::",
+    };
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        for (int i = 0; i < 5; i++){
+            sel_registerName(BodySelectors[i]);
+        }
+    });
+
+    SEL selector = sel_getUid(BodySelectors[nArgs]);
+    return selector;
+}
+
+
 //an imp signature is id name(_strong id, SEL, ...);
-void *defineJSFunction(const char *name, JSFunctionBodyIMP body){
+void *defineJSFunction(const char *name,
+                       JSFunctionBodyIMP body){
     NSLog(@"%s %s %p",__PRETTY_FUNCTION__, name, body);
     Class superClass = [JSFunction class];
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
-   
-    Method superBody = class_getInstanceMethod(superClass, @selector(body:));
+
+    SEL bodySelector = @selector(body:);
+    Method superBody = class_getInstanceMethod(superClass, bodySelector);
     const char *enc = method_getTypeEncoding(superBody);
-    assert(class_addMethod(jsClass, @selector(body:), (IMP)body, enc));
+    assert(class_addMethod(jsClass, bodySelector, (IMP)body, enc));
     objc_registerClassPair(jsClass);
     return jsClass;
 }
@@ -124,6 +148,14 @@ void *objcjs_invoke(void *target, ...){
     if (!target) {
         RuntimeException(@"nil is not a function");
     }
+  
+    int argCt = 0;
+    va_list args1;
+    va_start(args1, target);
+    for (NSString *arg = target; arg != nil; arg = va_arg(args1, id)){
+        argCt++;
+    }
+    va_end(args1);
     
     Class targetClass;
     if (![(id)target isKindOfClass:[JSFunction class]]){
@@ -143,25 +175,39 @@ void *objcjs_invoke(void *target, ...){
     va_list args;
     va_start(args, target);
     
-    Method m = class_getInstanceMethod(targetClass, @selector(body:));
-    int nArgs = method_getNumberOfArguments(m);
+    Method m = class_getInstanceMethod(targetClass, bodySel);
     IMP imp = method_getImplementation(m);
     
     id result;
-    switch (nArgs) {
+    switch (argCt) {
+        case 1: {
+            result = imp(target, bodySel, nil);
+            break;
+        }
         case 2: {
-            result = imp(target, bodySel);
+            id arg1 = va_arg(args, id);
+            result = imp(target, bodySel, arg1, nil);
             break;
         }
         case 3: {
             id arg1 = va_arg(args, id);
-            result = imp(target, bodySel, arg1);
+            id arg2 = va_arg(args, id);
+            result = imp(target, bodySel, arg1, arg2, nil);
             break;
         }
         case 4: {
             id arg1 = va_arg(args, id);
             id arg2 = va_arg(args, id);
-            result = imp(target, bodySel, arg1, arg2);
+            id arg3 = va_arg(args, id);
+            result = imp(target, bodySel, arg1, arg2, arg3, nil);
+            break;
+        }
+        case 5: {
+            id arg1 = va_arg(args, id);
+            id arg2 = va_arg(args, id);
+            id arg3 = va_arg(args, id);
+            id arg4 = va_arg(args, id);
+            result = imp(target, bodySel, arg1, arg2, arg3, arg4, nil);
             break;
         }
     }

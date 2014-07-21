@@ -132,18 +132,13 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
     }
     
     int numParams = node->fun()->scope()->num_parameters();
-    auto function = CGObjCJSFunction(numParams, name, _module);
-    
     if (isJSFunction){
         //Add define JSFunction to front of main
         llvm::Function *main = _module->getFunction("main");
-        auto nameAlloca = localStringVar(name.c_str(), name.length(), _module);
-        std::vector<llvm::Value*> ArgsV;
-        ArgsV.push_back(nameAlloca);
-        ArgsV.push_back(function);
-        auto call = llvm::CallInst::Create(_module->getFunction("defineJSFunction"), ArgsV, "calltmp");
+
         llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
-        mainBB->getInstList().push_front(call);
+        llvm::Instruction *defineFunction = (llvm::Instruction *)_runtime->defineJSFuction(name.c_str(), numParams);
+        mainBB->getInstList().push_front(defineFunction);
 
         //If this is a nested declaration set the parent to this!
         if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
@@ -782,7 +777,7 @@ void CGObjCJS::VisitCall(Call* node) {
             target = PopContext();
        }
         
-        auto value = _runtime->messageSendJSFunction(target, finalArgs);
+        auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);
     } else {
         auto calleeF = _module->getFunction(name);
