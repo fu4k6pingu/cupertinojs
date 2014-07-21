@@ -86,6 +86,8 @@ public:
     std::vector<CGContext *> Contexts;
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
+   
+    llvm::BasicBlock *_currentSetRetBlock;
     
     CGObjCJSRuntime *_runtime;
     

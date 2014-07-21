@@ -206,6 +206,7 @@ void CGObjCJS::VisitIfStatement(IfStatement* node) {
 
 void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
     Visit(node->condition());
+    
     llvm::Value *condV = PopContext();
     if (!condV) {
         return;
@@ -230,49 +231,35 @@ void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
     // Emit then value.
     _builder->SetInsertPoint(thenBB);
 
-    llvm::Value *thenV;
     if (node->HasThenStatement()){
-        //TODO : new scope
         Visit(node->then_statement());
-        thenV = PopContext();
+        PopContext();
     }
     
-    if (!thenV){
-        thenV = ObjcNullPointer();
-    }
-   
-    _builder->CreateBr(mergeBB);
-    // Codegen of 'Then' can change the current block, update ThenBB for the PHI.
+    // Codegen of 'Then' can change the current block
     thenBB = _builder->GetInsertBlock();
+    if (!thenBB->getTerminator()) {
+        _builder->CreateBr(mergeBB);
+    }
     
     // Emit else block.
     function->getBasicBlockList().push_back(elseBB);
     _builder->SetInsertPoint(elseBB);
 
-    llvm::Value *elseV;
     if (node->HasElseStatement()) {
-        //TODO : new scope
         Visit(node->else_statement());
-        elseV = PopContext();
+        PopContext();
     }
     
-    if (!elseV) {
-        elseV = ObjcNullPointer();
-    }
-
-    _builder->CreateBr(mergeBB);
-    // Codegen of 'Else' can change the current block, update ElseBB for the PHI.
+    // Codegen of 'Else' can change the current block
     elseBB = _builder->GetInsertBlock();
+    if (!elseBB->getTerminator()) {
+        _builder->CreateBr(mergeBB);
+    }
     
     // Emit merge block.
     function->getBasicBlockList().push_back(mergeBB);
     _builder->SetInsertPoint(mergeBB);
-  
-    llvm::PHINode *ph = _builder->CreatePHI(
-                                      ObjcPointerTy(),
-                                      2, "condphi");
-    ph->addIncoming(ObjcNullPointer(), thenBB);
-    ph->addIncoming(ObjcNullPointer(), elseBB);
 }
 
 void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
@@ -283,29 +270,25 @@ void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
     UNIMPLEMENTED();
 }
 
+//Insert the expressions into a returning block
 void CGObjCJS::VisitReturnStatement(ReturnStatement* node) {
-    Visit(node->expression());
     llvm::BasicBlock *block = _builder->GetInsertBlock();
-   
-    auto blockName = block->getName();
-    if (blockName.startswith(llvm::StringRef("then")) ||
-        blockName.startswith(llvm::StringRef("else"))
-        ){
-        //In an if statement, the PHINode needs to have
-        //the type 0 assigned to it!
-        llvm::AllocaInst *alloca = _context->valueForKey(SET_RET_ALLOCA_NAME);
-        _builder->CreateStore(PopContext(), alloca);
-        //TODO : remove this!
-        PushValueToContext(ObjcNullPointer());
-        return;
-    }
-
     llvm::Function *currentFunction = block->getParent();
-    assert(currentFunction->getReturnType() == ObjcPointerTy() && _context->size());
-    llvm::AllocaInst *alloca = _context->valueForKey(DEFAULT_RET_ALLOCA_NAME);
+    llvm::BasicBlock *jumpBlock = llvm::BasicBlock::Create(_builder->getContext(), "retjump", currentFunction);
+    _builder->CreateBr(jumpBlock);
+    _builder->SetInsertPoint(jumpBlock);
+   
+    Visit(node->expression());
+    
+    assert(currentFunction->getReturnType() == ObjcPointerTy() && "requires pointer return");
+    
+    llvm::AllocaInst *alloca = _context->valueForKey(SET_RET_ALLOCA_NAME);
     auto retValue = PopContext();
     assert(retValue && "requires return value" && alloca && "requires return alloca");
+    
     _builder->CreateStore(retValue, alloca);
+    _builder->CreateBr(_currentSetRetBlock);
+    _builder->SetInsertPoint(block);
 }
 
 void CGObjCJS::VisitWithStatement(WithStatement* node) {
@@ -376,15 +359,6 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     _builder->CreateBr(breakBB);
     _builder->SetInsertPoint(breakBB);
 
-    auto returnValue = _builder->CreateLoad(_context->valueForKey(SET_RET_ALLOCA_NAME));
-    auto sentenialReturnValue = _builder->CreateLoad(_context->valueForKey(SENTENIAL_RET_ALLOCA_NAME));
-    
-    auto breakCond = _builder->CreateICmpEQ(returnValue, sentenialReturnValue, "breakcond");
-    
-    auto continueBB = llvm::BasicBlock::Create(_module->getContext(), "breakBB", function);
-    _builder->CreateCondBr(breakCond, continueBB, afterBB);
-    _builder->SetInsertPoint(continueBB);
-
     auto endCondVar = PopContext();
     _context->EmptyStack();
     
@@ -412,6 +386,32 @@ void CGObjCJS::VisitTryFinallyStatement(TryFinallyStatement* node) {
 
 void CGObjCJS::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
+}
+
+void cleanupInstructionsAfterBreaks(llvm::Function *function){
+    for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
+        bool didBreak = false;
+        for (llvm::BasicBlock::iterator i = block->begin(), h = block->end();  i && i != h; ++i){
+            if (llvm::ReturnInst::classof(i) || llvm::BranchInst::classof(i)){
+                didBreak = true;
+            } else if (didBreak) {
+                while (i && i != h) {
+                    i++;
+                    i->removeFromParent();
+                }
+                break;
+            }
+        }
+    }
+}
+
+void appendImplicitReturn(llvm::Function *function){
+    for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
+        if (!block->getTerminator()) {
+            //TODO : return undefined
+            llvm::ReturnInst::Create(function->getContext(), ObjcNullPointer(), block);
+        }
+    }
 }
 
 //Define the body of the function
@@ -442,55 +442,31 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         CreateArgumentAllocas(function, node->scope());
     }
    
-    //Return types
-//TODO : don't malloc a return sentenenial everytime and use builtin malloc func
+    //Returns
     auto sentenialReturnAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("sentential"));
-    llvm::ConstantInt* const_int64_10 = llvm::ConstantInt::get(_module->getContext(), llvm::APInt(64, llvm::StringRef("8"), 10));
-    auto retPtr = _builder->CreateCall(_module->getFunction("malloc"), const_int64_10, "calltmp");
-    _builder->CreateStore(retPtr, sentenialReturnAlloca);
-    auto sentenialReturnValue = _builder->CreateLoad(sentenialReturnAlloca);
+    _builder->CreateStore(ObjcNullPointer(), sentenialReturnAlloca);
     _context->setValue(SENTENIAL_RET_ALLOCA_NAME, sentenialReturnAlloca);
     
-    //end ret alloca is the return value at the end of a function
-    auto endRetAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("endret"));
-    _builder->CreateStore(ObjcNullPointer(), endRetAlloca);
-    //TODO : instead of returnig a null pointer, return a 'undefined' sentenial
-    _context->setValue(DEFAULT_RET_ALLOCA_NAME , endRetAlloca);
-    
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
-    _builder->CreateStore(sentenialReturnValue, retAlloca);
     _context->setValue(SET_RET_ALLOCA_NAME, retAlloca);
-
     auto value = _context->valueForKey(SET_RET_ALLOCA_NAME);
     assert(value);
     _builder->saveIP();
     
     auto insertBlock = _builder->GetInsertBlock();
+    auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret");
+    _currentSetRetBlock =  setRetBB;
+    
     VisitDeclarations(node->scope()->declarations());
     _builder->SetInsertPoint(insertBlock);
   
     VisitStatements(node->body());
-    
-    assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
-    
-    auto retValue = _builder->CreateLoad(retAlloca, "retalloca");
    
-    //If the return value was set, then return what it was set to
-    auto condV = _builder->CreateICmpEQ(retValue, sentenialReturnValue, "ifsetreturn");
-   
-    auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret", function);
-    auto defaultRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "endret");
-    _builder->CreateCondBr(condV, defaultRetBB, setRetBB);
+    function->getBasicBlockList().push_back(setRetBB);
     
-    _builder->saveIP();
-    
-    function->getBasicBlockList().push_back(defaultRetBB);
-    _builder->SetInsertPoint(defaultRetBB);
-    auto endRetValue = _builder->CreateLoad(_context->valueForKey(DEFAULT_RET_ALLOCA_NAME), "endretalloca");
-    _builder->CreateRet(endRetValue);
-    _builder->saveAndClearIP();
-
     _builder->SetInsertPoint(setRetBB);
+    assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
+
     _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
     _builder->saveAndClearIP();
     
@@ -498,6 +474,10 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         std::cout << "Context size:" << _context->size();
     }
     
+    cleanupInstructionsAfterBreaks(function);
+  
+    appendImplicitReturn(function);
+
     EndAccumulation();
 }
 
