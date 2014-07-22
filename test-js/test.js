@@ -10,13 +10,13 @@ function larryf(argument){
     
     var j = 0;
    
-    do {
+    while (j < 10) {
         j = j + 1
         if (j == 5)
             continue
         
         NSLog("do: %@", j);
-    } while (j < 10);
+    }
    
     return 0 
 }
