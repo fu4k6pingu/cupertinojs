@@ -41,7 +41,6 @@ static std::string FUNCTION_THIS_ARG_NAME("__this");
 
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
-static std::string SENTENIAL_RET_ALLOCA_NAME("SENTENIAL_RET_ALLOCA");
 
 CGObjCJS::CGObjCJS(Zone *zone){
     InitializeAstVisitor(zone);
@@ -451,7 +450,7 @@ void CGObjCJS::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
 }
 
-void cleanupInstructionsAfterBreaks(llvm::Function *function){
+static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
         bool didBreak = false;
         for (llvm::BasicBlock::iterator i = block->begin(), h = block->end();  i && i != h; ++i){
@@ -471,7 +470,7 @@ void cleanupInstructionsAfterBreaks(llvm::Function *function){
     }
 }
 
-void appendImplicitReturn(llvm::Function *function){
+static void AppendImplicitReturn(llvm::Function *function){
     for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
         if (!block->getTerminator()) {
             //TODO : return undefined
@@ -509,18 +508,14 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     }
    
     //Returns
-    auto sentenialReturnAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("sentential"));
-    _builder->CreateStore(ObjcNullPointer(), sentenialReturnAlloca);
-    _context->setValue(SENTENIAL_RET_ALLOCA_NAME, sentenialReturnAlloca);
-    
-    auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, std::string("ret"));
+    auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, "__return__");
     _context->setValue(SET_RET_ALLOCA_NAME, retAlloca);
     auto value = _context->valueForKey(SET_RET_ALLOCA_NAME);
     assert(value);
     _builder->saveIP();
     
     auto insertBlock = _builder->GetInsertBlock();
-    auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "setret");
+    auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "return.set");
     _currentSetRetBlock =  setRetBB;
     
     VisitDeclarations(node->scope()->declarations());
@@ -533,16 +528,16 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     _builder->SetInsertPoint(setRetBB);
     assert(function->getReturnType() == ObjcPointerTy() && "all functions return pointers");
 
-    _builder->CreateRet(_builder->CreateLoad(retAlloca, "retallocaend"));
+    _builder->CreateRet(_builder->CreateLoad(retAlloca, "__return__"));
     _builder->saveAndClearIP();
     
     if (_context) {
         std::cout << "Context size:" << _context->size();
     }
     
-    cleanupInstructionsAfterBreaks(function);
+    CleanupInstructionsAfterBreaks(function);
   
-    appendImplicitReturn(function);
+    AppendImplicitReturn(function);
 
     EndAccumulation();
 }
