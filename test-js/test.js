@@ -1,22 +1,22 @@
 function larryf(argument){
-//    var i;
-//    for (i = 0; i < argument; i = i + 1){
-//        if (i == 5){
-//            continue;
-//        }
-//        
-//        NSLog("for: %@", i);
-//    }
-    
-    var j = 0;
-   
-    while (j < 10) {
-        j = j + 1
-        if (j == 5)
-            continue
+    var i;
+    for (i = 0; i < argument; i = i + 1){
+        if (i == 5){
+            continue;
+        }
         
-        NSLog("do: %@", j);
+        NSLog("for: %@", i);
     }
+    
+//    var j = 0;
+//   
+//    while (j < 10) {
+//        j = j + 1
+//        if (j == 5)
+//            continue
+//        
+//        NSLog("do: %@", j);
+//    }
    
     return 0 
 }
