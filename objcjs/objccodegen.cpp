@@ -262,8 +262,28 @@ void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
     _builder->SetInsertPoint(mergeBB);
 }
 
+//Continues & breaks must be nested inside of for loops
 void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
-    UNIMPLEMENTED();
+    auto currentBlock = _builder->GetInsertBlock();
+    auto function = _builder->GetInsertBlock()->getParent();
+    bool start = false;
+    llvm::BasicBlock *jumpTarget = NULL;
+    for (llvm::Function::iterator block = function->end(), e = function->begin(); block != e; --block){
+        if (block == *currentBlock) {
+            start = true;
+        }
+        
+        if (start && block->getName().startswith(llvm::StringRef("loop.next"))) {
+            jumpTarget = block;
+            break;
+        }
+    }
+  
+    if (!jumpTarget) {
+        assert(0 && "invalid continue statement");
+    }
+    
+    _builder->CreateBr(jumpTarget);
 }
 
 void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
@@ -313,8 +333,8 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
 
 void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
-    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "dowhileloop", function);
-    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "afterloop", function);
+    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop", function);
+    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
 
     _builder->CreateBr(loopBB);
     _builder->SetInsertPoint(loopBB);
@@ -326,7 +346,7 @@ void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     auto condVar = PopContext();
     _context->EmptyStack();
     
-    auto endCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loopcond");
+    auto endCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loop.cond");
     _builder->CreateCondBr(endCond, afterBB, loopBB);
     _builder->SetInsertPoint(afterBB);
 }
@@ -340,14 +360,16 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     }
 
     auto function = _builder->GetInsertBlock()->getParent();
-    auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "forloop", function);
-    auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "afterloop", function);
 
     Visit(node->cond());
     auto condVar = PopContext();
     _context->EmptyStack();
-
-    auto continueCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loopcond");
+    
+    auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop", function);
+    auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
+    auto nextBB =  llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
+    
+    auto continueCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loop.cond");
     _builder->CreateCondBr(continueCond, afterBB, loopBB);
     _builder->SetInsertPoint(loopBB);
 
@@ -355,15 +377,20 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     Visit(node->next());
     Visit(node->cond());
 
-    auto breakBB = llvm::BasicBlock::Create(_module->getContext(), "breakBB", function);
+    auto breakBB = llvm::BasicBlock::Create(_module->getContext(), "loop.break", function);
     _builder->CreateBr(breakBB);
     _builder->SetInsertPoint(breakBB);
 
     auto endCondVar = PopContext();
     _context->EmptyStack();
-    
-    auto endCond = _builder->CreateICmpEQ(endCondVar, ObjcNullPointer(), "loopcond");
+   
+    auto endCond = _builder->CreateICmpEQ(endCondVar, ObjcNullPointer(), "loop.cond");
     _builder->CreateCondBr(endCond, afterBB, loopBB);
+
+    _builder->SetInsertPoint(nextBB);
+    Visit(node->next());
+    _builder->CreateBr(loopBB);
+    
     _builder->SetInsertPoint(afterBB);
 }
 
@@ -397,7 +424,10 @@ void cleanupInstructionsAfterBreaks(llvm::Function *function){
             } else if (didBreak) {
                 while (i && i != h) {
                     i++;
-                    i->removeFromParent();
+                    if (i) {
+                        i->removeFromParent();
+                        
+                    }
                 }
                 break;
             }
