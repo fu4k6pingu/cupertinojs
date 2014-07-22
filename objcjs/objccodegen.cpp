@@ -333,8 +333,9 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
 
 void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
-    llvm::BasicBlock *loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop", function);
-    llvm::BasicBlock *afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
+    auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
+//    auto nextBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
+    auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
 
     _builder->CreateBr(loopBB);
     _builder->SetInsertPoint(loopBB);
@@ -345,9 +346,13 @@ void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     Visit(node->cond());
     auto condVar = PopContext();
     _context->EmptyStack();
-    
+
     auto endCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loop.cond");
     _builder->CreateCondBr(endCond, afterBB, loopBB);
+   
+//    _builder->SetInsertPoint(nextBB);
+//    _builder->CreateBr(loopBB);
+    
     _builder->SetInsertPoint(afterBB);
 }
 
@@ -367,7 +372,7 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop", function);
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
-    auto nextBB =  llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
+    auto nextBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
     
     auto continueCond = _builder->CreateICmpEQ((condVar), ObjcNullPointer(), "loop.cond");
     _builder->CreateCondBr(continueCond, afterBB, loopBB);

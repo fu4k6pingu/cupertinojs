@@ -1,12 +1,24 @@
 function larryf(argument){
-    var i;
-    for (i = 0; i < argument; i = i + 1){
-        if (i == 5){
-            continue;
-        }
+//    var i;
+//    for (i = 0; i < argument; i = i + 1){
+//        if (i == 5){
+//            continue;
+//        }
+//        
+//        NSLog("for: %@", i);
+//    }
+    
+    var j = 0;
+   
+    do {
+        j = j + 1
+        if (j == 5)
+            continue
         
-        NSLog("%@", i);
-    }
+        NSLog("do: %@", j);
+    } while (j < 10);
+   
+    return 0 
 }
 
 function objcjs_main(a, b){
