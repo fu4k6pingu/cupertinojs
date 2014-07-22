@@ -330,9 +330,12 @@ void CGObjCJS::VisitCaseClause(CaseClause* clause) {
 void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
-//    auto nextBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
 
+    auto startBB = llvm::BasicBlock::Create(_module->getContext(), "loop.start", function);
+    _builder->CreateBr(startBB);
+    _builder->SetInsertPoint(startBB);
+    
     Visit(node->cond());
     auto condVar = PopContext();
     _context->EmptyStack();
@@ -343,17 +346,8 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
     
     Visit(node->body());
     _context->EmptyStack();
-
-    Visit(node->cond());
-    auto endCondVar = PopContext();
-    _context->EmptyStack();
-    
-    auto endCond = _builder->CreateICmpEQ(endCondVar, ObjcNullPointer(), "loop.cond");
-    _builder->CreateCondBr(endCond, afterBB, loopBB);
    
-//    _builder->SetInsertPoint(nextBB);
-//    _builder->CreateBr(loopBB);
-    
+    _builder->CreateBr(startBB);
     _builder->SetInsertPoint(afterBB);
 }
 
