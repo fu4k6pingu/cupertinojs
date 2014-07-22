@@ -287,7 +287,27 @@ void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
 }
 
 void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
-    UNIMPLEMENTED();
+    auto currentBlock = _builder->GetInsertBlock();
+    auto function = _builder->GetInsertBlock()->getParent();
+    
+    bool start = false;
+    llvm::BasicBlock *jumpTarget = NULL;
+    for (llvm::Function::iterator block = function->end(), e = function->begin(); block != e; --block){
+        if (block == *currentBlock) {
+            start = true;
+        }
+        
+        if (start && block->getName().startswith(llvm::StringRef("loop.after"))) {
+            jumpTarget = block;
+            break;
+        }
+    }
+  
+    if (!jumpTarget) {
+        assert(0 && "invalid break statement");
+    }
+    
+    _builder->CreateBr(jumpTarget);
 }
 
 //Insert the expressions into a returning block
