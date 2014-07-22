@@ -864,13 +864,14 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
 
 void CGObjCJS::VisitBinaryOperation(BinaryOperation* expr) {
   switch (expr->op()) {
-    case Token::COMMA:
-      return VisitComma(expr);
-    case Token::OR:
-    case Token::AND:
-      return VisitLogicalExpression(expr);
-    default:
-      return VisitArithmeticExpression(expr);
+      case Token::COMMA:
+          return VisitComma(expr);
+      case Token::OR:
+          return EmitLogicalOr(expr);
+      case Token::AND:
+          return EmitLogicalAnd(expr);
+      default:
+          return VisitArithmeticExpression(expr);
   }
 }
 
@@ -878,8 +879,75 @@ void CGObjCJS::VisitComma(BinaryOperation* expr) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitLogicalExpression(BinaryOperation* expr) {
-    UNIMPLEMENTED();
+void CGObjCJS::EmitLogicalAnd(BinaryOperation *expr) {
+    auto function = _builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock *trueBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "and.true", function);
+    llvm::BasicBlock *falseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "and.false");
+    llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "and.merge");
+    
+    Visit(expr->left());
+    auto left = PopContext();
+    
+    // convert condition to a bool by comparing equal to NullPointer.
+    auto condV = _builder->CreateICmpEQ(_runtime->boolValue(left), ObjcNullPointer());
+    _builder->CreateCondBr(condV, falseBB, trueBB);
+    _builder->SetInsertPoint(trueBB);
+    
+    Visit(expr->right());
+    auto right = PopContext();
+    
+    _builder->CreateBr(mergeBB);
+    trueBB = _builder->GetInsertBlock();
+    
+    function->getBasicBlockList().push_back(falseBB);
+
+    //emit false block
+    _builder->SetInsertPoint(falseBB);
+    _builder->CreateBr(mergeBB);
+    
+    //emit merge block
+    function->getBasicBlockList().push_back(mergeBB);
+    _builder->SetInsertPoint(mergeBB);
+    
+    llvm::PHINode *ph = _builder->CreatePHI(ObjcPointerTy(), 2, "and.value");
+    ph->addIncoming(right, trueBB);
+    ph->addIncoming(left, falseBB);
+    PushValueToContext(ph);
+}
+
+void CGObjCJS::EmitLogicalOr(BinaryOperation *expr) {
+    auto function = _builder->GetInsertBlock()->getParent();
+    llvm::BasicBlock *trueBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "or.true", function);
+    llvm::BasicBlock *falseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "or.false");
+    llvm::BasicBlock *mergeBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "or.merge");
+    
+    Visit(expr->left());
+    auto left = PopContext();
+    
+    // convert condition to a bool by comparing equal to NullPointer.
+    auto condV = _builder->CreateICmpEQ(_runtime->boolValue(left), ObjcNullPointer());
+    _builder->CreateCondBr(condV, falseBB, trueBB);
+    
+    _builder->SetInsertPoint(trueBB);
+    
+    _builder->CreateBr(mergeBB);
+    trueBB = _builder->GetInsertBlock();
+    
+    //emit false block
+    function->getBasicBlockList().push_back(falseBB);
+    _builder->SetInsertPoint(falseBB);
+    Visit(expr->right());
+    auto right = PopContext();
+    _builder->CreateBr(mergeBB);
+    
+    //emit merge block
+    function->getBasicBlockList().push_back(mergeBB);
+    _builder->SetInsertPoint(mergeBB);
+    
+    llvm::PHINode *ph = _builder->CreatePHI(ObjcPointerTy(), 2, "or.value");
+    ph->addIncoming(left, trueBB);
+    ph->addIncoming(right, falseBB);
+    PushValueToContext(ph);
 }
 
 void CGObjCJS::VisitArithmeticExpression(BinaryOperation* expr) {

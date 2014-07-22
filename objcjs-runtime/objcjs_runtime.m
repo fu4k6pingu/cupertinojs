@@ -88,10 +88,18 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
-    if (![[_environment allKeys] containsObject:key]) {
-        [self.parent _objcjs_env_setValue:value forKey:key];
+    if (!key) {
+        if (![[_environment allKeys] containsObject:key]) {
+            [self.parent _objcjs_env_setValue:value forKey:key];
+        } else {
+            [_environment setNilValueForKey:[key copy]];
+        }
     } else {
-        _environment[[key copy]] = [value copy];
+        if (![[_environment allKeys] containsObject:key]) {
+            [self.parent _objcjs_env_setValue:value forKey:key];
+        } else {
+            _environment[[key copy]] = [value copy];
+        }   
     }
 }
 
@@ -233,4 +241,18 @@ void *objcjs_invoke(void *target, ...){
     return @([self doubleValue] / [value doubleValue]);
 }
 
+- (bool)objcjs_boolValue {
+    return !![self intValue];
+}
+
 @end
+
+@implementation NSString (ObjcJSOperators)
+
+- (bool)objcjs_boolValue {
+    return !![self length];
+}
+
+@end
+
+

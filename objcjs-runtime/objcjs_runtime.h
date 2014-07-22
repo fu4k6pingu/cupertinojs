@@ -47,4 +47,16 @@ extern void *objcjs_invoke(void *target, ...);
 - (instancetype)objcjs_multiply:(id)value;
 - (instancetype)objcjs_divide:(id)value;
 
+// Bool value is semantically equal to int value in JS land
+// so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
+// and zero is false
+- (bool)objcjs_boolValue;
+
+@end
+
+// a string that has characters is true
+@interface NSString (ObjcJSOperators)
+
+- (bool)objcjs_boolValue;
+
 @end

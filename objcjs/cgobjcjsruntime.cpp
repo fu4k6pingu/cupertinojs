@@ -332,7 +332,7 @@ llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
 //Convert a llvm value to an bool
 //which is represented as an int in JS land
 llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string("intValue"), _module), "calltmp");
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string("objcjs_boolValue"), _module), "calltmp");
 
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(llvmValue);

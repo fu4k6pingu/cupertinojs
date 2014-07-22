@@ -172,8 +172,9 @@ public:
                                 Token::Value op) ;
     
     void EmitVariableLoad(VariableProxy* proxy);
-
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
+    void EmitLogicalAnd(BinaryOperation *expr);
+    void EmitLogicalOr(BinaryOperation *expr);
     
     llvm::Value *CGLiteral( Handle<Object> value, bool push);
     void CGIfStatement(IfStatement *node, bool flag);
