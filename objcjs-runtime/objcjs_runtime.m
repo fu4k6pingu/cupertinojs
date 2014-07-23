@@ -241,6 +241,36 @@ void *objcjs_invoke(void *target, ...){
     return @([self doubleValue] / [value doubleValue]);
 }
 
+- (instancetype)objcjs_mod:(id)value {
+    return @([self intValue] % [value intValue]);
+}
+
+- (instancetype)objcjs_increment {
+    NSNumber **s =&self;
+    const char d = 'd';
+    if (*[*s objCType] == d) {
+        double result = [self doubleValue] + 1.0;
+        *s = [NSNumber numberWithDouble:result];
+    } else {
+        *s = [NSNumber numberWithInt:[self doubleValue] + 1];
+    }
+    
+    return *s;
+}
+
+- (instancetype)objcjs_decrement {
+    NSNumber **s =&self;
+    const char d = 'd';
+    if (*[*s objCType] == d) {
+        double result = [self doubleValue] - 1.0;
+        *s = [NSNumber numberWithDouble:result];
+    } else {
+        *s = [NSNumber numberWithInt:[self doubleValue] - 1];
+    }
+    
+    return *s;
+}
+
 - (bool)objcjs_boolValue {
     return !![self intValue];
 }
@@ -254,5 +284,3 @@ void *objcjs_invoke(void *target, ...){
 }
 
 @end
-
-

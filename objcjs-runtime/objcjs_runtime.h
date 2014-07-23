@@ -47,6 +47,11 @@ extern void *objcjs_invoke(void *target, ...);
 - (instancetype)objcjs_multiply:(id)value;
 - (instancetype)objcjs_divide:(id)value;
 
+- (instancetype)objcjs_mod:(id)value;
+
+- (instancetype)objcjs_increment;
+- (instancetype)objcjs_decrement;
+
 // Bool value is semantically equal to int value in JS land
 // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
 // and zero is false

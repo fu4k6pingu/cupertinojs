@@ -848,17 +848,37 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
         assign_type =
         (prop->key()->IsPropertyName()) ? NAMED_PROPERTY : KEYED_PROPERTY;
     }
-   
+ 
+    const char *opSelector = node->op() == Token::INC ?
+                "objcjs_increment" : "objcjs_decrement";
+
+  
+    VariableProxy *proxy =  node->expression()->AsVariableProxy();
+    auto alloca = _context->valueForKey(stringFromV8AstRawString(proxy->raw_name()));
+    
     if (assign_type == VARIABLE){
-        EmitVariableLoad(node->expression()->AsVariableProxy());
+        EmitVariableLoad(proxy);
+    } else {
+        assert(0);
     }
     
-    if (node->is_postfix()) {
-        
-        
-    }
+    auto value = PopContext();
+    
     if (node->is_prefix()) {
-        UNIMPLEMENTED();
+        auto result = _runtime->messageSend(value, opSelector);
+        _builder->CreateStore(result, alloca);
+        
+        PushValueToContext(result);
+    }
+    
+    Visit(node->expression());
+    PopContext();
+    
+    if (node->is_postfix()) {
+        PushValueToContext(value);
+
+        auto result = _runtime->messageSend(value, opSelector);
+        _builder->CreateStore(result, alloca);
     }
 }
 

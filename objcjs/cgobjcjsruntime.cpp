@@ -238,6 +238,9 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
 
     //JSRuntime
     DefExternFucntion("defineJSFunction");
+   
+    ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
+    ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
     
     ObjcMsgSendFPret(_module);
     ObjcMallocPrototype(_module);
