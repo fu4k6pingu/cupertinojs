@@ -88,7 +88,7 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
-    if (!key) {
+    if (!value) {
         if (![[_environment allKeys] containsObject:key]) {
             [self.parent _objcjs_env_setValue:value forKey:key];
         } else {
@@ -104,7 +104,11 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 - (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key {
-    _environment[[key copy]] = [value copy];
+    if (!value) {
+        [_environment setNilValueForKey:[key copy]];
+    } else {
+        _environment[[key copy]] = [value copy];
+    }
 }
 
 - (id)_objcjs_env_valueForKey:(NSString *)key {
@@ -225,50 +229,67 @@ void *objcjs_invoke(void *target, ...){
 
 @implementation NSNumber (ObjcJSOperators)
 
-- (instancetype)objcjs_add:(id)value {
+- objcjs_add:(id)value {
     return @([self doubleValue] + [value doubleValue]);
 }
 
-- (instancetype)objcjs_subtract:(id)value {
+- objcjs_subtract:(id)value {
     return @([self doubleValue] - [value doubleValue]);
 }
 
-- (instancetype)objcjs_multiply:(id)value {
+- objcjs_multiply:(id)value {
     return @([self doubleValue] * [value doubleValue]);
 }
 
-- (instancetype)objcjs_divide:(id)value {
+- objcjs_divide:(id)value {
     return @([self doubleValue] / [value doubleValue]);
 }
 
-- (instancetype)objcjs_mod:(id)value {
+- objcjs_mod:(id)value {
     return @([self intValue] % [value intValue]);
 }
 
-- (instancetype)objcjs_increment {
-    NSNumber **s =&self;
-    const char d = 'd';
-    if (*[*s objCType] == d) {
-        double result = [self doubleValue] + 1.0;
-        *s = [NSNumber numberWithDouble:result];
-    } else {
-        *s = [NSNumber numberWithInt:[self doubleValue] + 1];
-    }
-    
-    return *s;
+- objcjs_bitor:(id)value {
+    return @([self intValue] | [value intValue]);
 }
 
-- (instancetype)objcjs_decrement {
-    NSNumber **s =&self;
-    const char d = 'd';
-    if (*[*s objCType] == d) {
-        double result = [self doubleValue] - 1.0;
-        *s = [NSNumber numberWithDouble:result];
-    } else {
-        *s = [NSNumber numberWithInt:[self doubleValue] - 1];
+- objcjs_bitxor:(id)value {
+    return @([self intValue] ^ [value intValue]);
+}
+
+- objcjs_bitand:(id)value {
+    return @([self intValue] & [value intValue]);
+}
+
+// "<<"
+- objcjs_shiftleft:(id)value {
+    return @([self intValue] << [value intValue]);
+}
+
+// ">>"
+- objcjs_shiftright:(id)value {
+    return @([self intValue] >> [value intValue]);
+}
+
+// ">>>"
+- objcjs_shiftrightright:(id)value {
+    return @(([self intValue] >> [value intValue]) | 0);
+}
+
+- objcjs_increment {
+    if ([self objCType] == (const char *)'d') {
+        return [NSNumber numberWithDouble:[self doubleValue] + 1.0];
     }
     
-    return *s;
+    return [NSNumber numberWithInt:[self doubleValue] + 1];
+}
+
+- objcjs_decrement {
+    if ([self objCType] == (const char *)'d') {
+        return [NSNumber numberWithDouble:[self doubleValue] - 1.0];
+    }
+   
+    return [NSNumber numberWithInt:[self doubleValue] - 1];
 }
 
 - (bool)objcjs_boolValue {

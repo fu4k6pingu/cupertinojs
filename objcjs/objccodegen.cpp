@@ -53,6 +53,34 @@ CGObjCJS::CGObjCJS(Zone *zone){
     _context = new CGContext();
 
     _runtime = new CGObjCJSRuntime(_builder, _module);
+    
+    assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string ("objcjs_add:");
+    assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string ("objcjs_subtract:");
+    assignOpSelectorByToken[Token::ASSIGN_MUL] = std::string ("objcjs_multiply:");
+    assignOpSelectorByToken[Token::ASSIGN_DIV] = std::string ("objcjs_divide:");
+    assignOpSelectorByToken[Token::ASSIGN_MOD] = std::string ("objcjs_mod:");
+    
+    assignOpSelectorByToken[Token::ASSIGN_BIT_OR] = std::string ("objcjs_bitor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_XOR] = std::string ("objcjs_bitxor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_AND] = std::string ("objcjs_bitand:");
+    
+    assignOpSelectorByToken[Token::ASSIGN_SHL] = std::string ("objcjs_shiftleft:");
+    assignOpSelectorByToken[Token::ASSIGN_SAR] = std::string ("objcjs_shiftright:");
+    assignOpSelectorByToken[Token::ASSIGN_SHR] = std::string ("objcjs_shiftrightright:");
+    
+    opSelectorByToken[Token::ADD] = std::string ("objcjs_add:");
+    opSelectorByToken[Token::SUB] = std::string ("objcjs_subtract:");
+    opSelectorByToken[Token::MUL] = std::string ("objcjs_multiply:");
+    opSelectorByToken[Token::DIV] = std::string ("objcjs_divide:");
+    opSelectorByToken[Token::MOD] = std::string ("objcjs_mod:");
+    
+    opSelectorByToken[Token::BIT_OR] = std::string ("objcjs_bitor:");
+    opSelectorByToken[Token::BIT_XOR] = std::string ("objcjs_bitxor:");
+    opSelectorByToken[Token::BIT_AND] = std::string ("objcjs_bitand:");
+    
+    opSelectorByToken[Token::SHL] = std::string ("objcjs_shiftleft:");
+    opSelectorByToken[Token::SAR] = std::string ("objcjs_shiftright:");
+    opSelectorByToken[Token::SHR] = std::string ("objcjs_shiftrightright:");
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
@@ -622,6 +650,7 @@ void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
 void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
 }
+            
 
 //TODO : checkout full-codegen-x86.cc
 void CGObjCJS::VisitAssignment(Assignment* node) {
@@ -648,57 +677,41 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             
         }
     }
-   
+    
+//TODO : implement these better with mutable numbers!
+//    (ASSIGN, "=",
+//    (ASSIGN_SHL, "<<="
+//    (ASSIGN_SAR, ">>="
+//    (ASSIGN_SHR, ">>>="
+    
     //TODO : new scope
     Visit(node->value());
-    
-    // Store the value.
+    llvm::Value *value = PopContext();
+  
     switch (assign_type) {
         case VARIABLE: {
             VariableProxy *targetProxy = (VariableProxy *)node->target();
             assert(targetProxy && "target for assignment required");
-            std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
-            
-            llvm::Value *value = PopContext();
             assert(value && "missing value - not implemented");
-            
-            if (_context->valueForKey(targetName)){
-                llvm::AllocaInst *targetAlloca = _context->valueForKey(targetName);
-                _builder->CreateStore(value, targetAlloca);
-                
-                //Store all assignements in environment if present
-                auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
-                
-                if (jsThisAlloca) {
-                    auto jsThis = _builder->CreateLoad(jsThisAlloca);
 
-                    auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
-                    _builder->CreateStore(_runtime->newString(targetName), keypathStringValueAlloca);
-                    auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
-                   
-                    //Declare the key in this environment
-                    std::vector<llvm::Value *>Args;
-                    Args.push_back(value);
-                    Args.push_back(keypathStringValue);
-                    _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
-                }
-            } else {
-                //Set the environment value
-                auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
-                auto jsThis = _builder->CreateLoad(jsThisAlloca);
-                
-                auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
-                _builder->CreateStore(_runtime->newString(targetName), keypathStringValueAlloca);
-                auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
-               
-                std::vector<llvm::Value *>Args;
-                Args.push_back(value);
-                Args.push_back(keypathStringValue);
-                _runtime->messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
+            std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
+            if (node->op() != Token::EQ && node->op() != Token::INIT_VAR){
+                EmitVariableLoad(targetProxy);
+                auto target = PopContext();
+                auto selector = assignOpSelectorByToken[node->op()].c_str();
+                assert(selector && "unsupported assignment operation");
+                value = _runtime->messageSend(target, selector, value);
             }
             
-            //assignment returns 0
-//            PushValueToContext(ObjcNullPointer());
+            if (node->op() == Token::INIT_VAR) {
+                //TODO : refactor
+                ILOG("INIT_VAR %s", targetName.c_str());
+            }
+            
+            EmitVariableStore(targetProxy, value);
+
+            //TODO:
+            //assignment returns undefined
             break;
         } case NAMED_PROPERTY: {
             //            EmitNamedPropertyAssignment(expr);
@@ -716,6 +729,50 @@ void CGObjCJS::EmitBinaryOp(BinaryOperation* expr, Token::Value op){
 
 void CGObjCJS::EmitVariableAssignment(Variable* var, Token::Value op) {
 //TODO:
+}
+
+void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
+    assert(targetProxy && "target for assignment required");
+    assert(value && "missing value - not implemented");
+    std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
+    
+    llvm::AllocaInst *targetAlloca;
+    bool scopeHasTarget = _context->valueForKey(targetName);
+    if (scopeHasTarget){
+        targetAlloca = _context->valueForKey(targetName);
+        _builder->CreateStore(value, targetAlloca);
+       
+        //TODO : clean this up as it is killing performance
+        //Store all assignements in environment if present
+        auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+        
+        if (jsThisAlloca) {
+            auto jsThis = _builder->CreateLoad(jsThisAlloca);
+            
+            auto keypathStringValueAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "alloca");
+            _builder->CreateStore(_runtime->newString(targetName), keypathStringValueAlloca);
+            auto keypathStringValue = _builder->CreateLoad(keypathStringValueAlloca);
+            
+            //Declare the key in this environment
+            std::vector<llvm::Value *>Args;
+            Args.push_back(value);
+            Args.push_back(keypathStringValue);
+            _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
+        }
+    } else {
+        targetAlloca = _builder->CreateAlloca(ObjcPointerTy());
+        //Set the environment value
+        auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+        auto jsThis = _builder->CreateLoad(jsThisAlloca);
+        
+        _builder->CreateStore(_runtime->newString(targetName), targetAlloca);
+        auto keypathStringValue = _builder->CreateLoad(targetAlloca);
+        
+        std::vector<llvm::Value *>Args;
+        Args.push_back(value);
+        Args.push_back(keypathStringValue);
+        _runtime->messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
+    }
 }
 
 void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
@@ -849,7 +906,7 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
         (prop->key()->IsPropertyName()) ? NAMED_PROPERTY : KEYED_PROPERTY;
     }
  
-    const char *opSelector = node->op() == Token::INC ?
+    const char *assignOpSelector = node->op() == Token::INC ?
                 "objcjs_increment" : "objcjs_decrement";
 
   
@@ -865,7 +922,7 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
     auto value = PopContext();
     
     if (node->is_prefix()) {
-        auto result = _runtime->messageSend(value, opSelector);
+        auto result = _runtime->messageSend(value, assignOpSelector);
         _builder->CreateStore(result, alloca);
         
         PushValueToContext(result);
@@ -877,7 +934,7 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
     if (node->is_postfix()) {
         PushValueToContext(value);
 
-        auto result = _runtime->messageSend(value, opSelector);
+        auto result = _runtime->messageSend(value, assignOpSelector);
         _builder->CreateStore(result, alloca);
     }
 }
@@ -982,32 +1039,14 @@ void CGObjCJS::VisitArithmeticExpression(BinaryOperation* expr) {
     Visit(right);
     auto rhs = PopContext();
    
-    llvm::Value *result = NULL;
     std::vector<llvm::Value *>Args;
     Args.push_back(lhs);
     Args.push_back(rhs);
-
-    auto op = expr->op();
-    switch (op) {
-        case v8::internal::Token::ADD : {
-            result = _runtime->messageSend(lhs, "objcjs_add:", rhs);
-            break;
-        }
-        case v8::internal::Token::SUB : {
-            result = _runtime->messageSend(lhs, "objcjs_subtract:", rhs);
-            break;
-        }
-        case v8::internal::Token::MUL : {
-            result = _runtime->messageSend(lhs, "objcjs_multiply:", rhs);
-            break;
-        }
-        case v8::internal::Token::DIV : {
-            result = _runtime->messageSend(lhs, "objcjs_divide:", rhs);
-            break;
-        }
-        default: break;
-    }
     
+    auto selector = opSelectorByToken[expr->op()].c_str();
+    assert(selector && "unsupported arithmatic operation");
+   
+    auto result = _runtime->messageSend(lhs, selector, rhs);
     PushValueToContext(result);
 }
 

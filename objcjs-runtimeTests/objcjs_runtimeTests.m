@@ -145,20 +145,20 @@ id impl3(id instance,
     XCTAssertEqualObjects(@([result count]), @3, @"It returns the arg");
 }
 
+#pragma mark - Number tests
 
-- (void)testIncrementInt{
-    NSNumber *target = [NSNumber numberWithInt:1];
-    NSNumber *result = [target objcjs_increment];
-    XCTAssertEqualObjects(@2, result, @"It returns the arg");
-    XCTAssertEqualObjects(@2, [@1 objcjs_increment], @"It returns the arg");
-}
-
-- (void)testIncrementDouble{
+- (void)testIncrementReturnPlusOne {
     NSNumber *target = [NSNumber numberWithDouble:1.0];
     NSNumber *result = [target objcjs_increment];
     
     XCTAssertEqualObjects(@2.0, result, @"It returns the arg");
     XCTAssertEqualObjects(@2.0, [@1.0 objcjs_increment], @"It returns the arg");
+}
+
+- (void)testIncrementDoesntMutateReceiver {
+    NSNumber *target = [NSNumber numberWithDouble:1.0];
+    [target objcjs_increment];
+    XCTAssertEqualObjects(@1.0, target, @"It returns the arg");
 }
 
 @end

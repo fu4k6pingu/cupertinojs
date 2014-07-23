@@ -88,6 +88,9 @@ public:
     llvm::Module *_module;
    
     llvm::BasicBlock *_currentSetRetBlock;
+    std::map <Token::Value, std::string> assignOpSelectorByToken;
+    std::map <Token::Value, std::string> opSelectorByToken;
+    
     
     CGObjCJSRuntime *_runtime;
     
@@ -172,6 +175,7 @@ public:
                                 Token::Value op) ;
     
     void EmitVariableLoad(VariableProxy* proxy);
+    void EmitVariableStore(VariableProxy* proxy, llvm::Value *value);
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
     void EmitLogicalAnd(BinaryOperation *expr);
     void EmitLogicalOr(BinaryOperation *expr);

@@ -42,15 +42,24 @@ extern void *objcjs_invoke(void *target, ...);
 
 @interface NSNumber (ObjcJSOperators)
 
-- (instancetype)objcjs_add:(id)value;
-- (instancetype)objcjs_subtract:(id)value;
-- (instancetype)objcjs_multiply:(id)value;
-- (instancetype)objcjs_divide:(id)value;
+- objcjs_add:(id)value;
+- objcjs_subtract:(id)value;
+- objcjs_multiply:(id)value;
+- objcjs_divide:(id)value;
 
-- (instancetype)objcjs_mod:(id)value;
+- objcjs_mod:(id)value;
 
-- (instancetype)objcjs_increment;
-- (instancetype)objcjs_decrement;
+- objcjs_bitor:(id)value;
+- objcjs_bitxor:(id)value;
+- objcjs_bitand:(id)value;
+// "<<"
+- objcjs_shiftleft:(id)value;
+// ">>"
+- objcjs_shiftright:(id)value;
+// ">>>"
+- objcjs_shiftrightright:(id)value;
+- objcjs_increment;
+- objcjs_decrement;
 
 // Bool value is semantically equal to int value in JS land
 // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
