@@ -9,18 +9,18 @@
 #import <Foundation/Foundation.h>
 #import <objc/runtime.h>
 
-@interface JSFunction : NSObject
+@interface NSObject (ObjCJSFunction)
 
-@property (nonatomic, copy) JSFunction *parent;
-@property (nonatomic, strong) NSMutableDictionary *environment;
+- (NSMutableDictionary *)_objcjs_environment;
 
-+ (void)setParent:(id)parent;
-+ (id)parent;
++ (void)_objcjs_setParent:(id)parent;
++ (id)_objcjs_parent;
 
-- (id)parent;
-- (id)body:(id)args,...;
+- (id)_objcjs_parent;
 
-- (void)defineProperty:(const char *)propertyName;
+- (id)_objcjs_body:(id)args,...;
+
+- (void)objcjs_defineProperty:(const char *)propertyName;
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key;
 - (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key;
@@ -28,12 +28,15 @@
 
 @end
 
+#pragma mark - Public
+
 typedef id JSFunctionBodyIMP (id instance, SEL cmd, id arg1,...);
 
-extern void *defineJSFunction(const char *name,
+extern void *objcjs_defineJSFunction(const char *name,
                               JSFunctionBodyIMP body);
 
-//dynamically dispatch to a pointer
+// dynamically dispatch an invocation of a pointer with arguments
+//
 // if target is a class class, a new instance of the class is created
 // then invokes body:
 //
@@ -43,7 +46,7 @@ extern void *objcjs_invoke(void *target, ...);
 extern id objcjs_NaN;
 extern id objcjs_Undefined;
 
-@interface NSObject (ObjcJSOperators)
+@interface NSObject (ObjCJSOperators)
 
 - objcjs_add:(id)value;
 - objcjs_subtract:(id)value;
@@ -68,7 +71,7 @@ extern id objcjs_Undefined;
 
 @end
 
-@interface NSNumber (ObjcJSOperators)
+@interface NSNumber (ObjCJSOperators)
 
 // Bool value is semantically equal to int value in JS land
 // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
@@ -78,7 +81,7 @@ extern id objcjs_Undefined;
 @end
 
 
-@interface NSString (ObjcJSOperators)
+@interface NSString (ObjCJSOperators)
 
 // a string that has characters is true
 - (bool)objcjs_boolValue;

@@ -76,10 +76,10 @@ id impl3(id instance,
 
 - (void)testItCanCreateASubclass
 {
-    defineJSFunction("subclass-1", impl1);
+    objcjs_defineJSFunction("subclass-1", impl1);
     Class aClass = objc_getClass("subclass-1");
-    JSFunction *f = [aClass new];
-    id result = [f body:@"An Arg"];
+    NSObject *f = [aClass new];
+    id result = [f _objcjs_body:@"An Arg"];
     
     XCTAssertTrue(f, @"It creates a subclass");
     XCTAssertTrue(calledBody, @"It creates a subclass");
@@ -90,8 +90,8 @@ id impl3(id instance,
 
 - (void)testItCanDefineAPropety{
     const char *name = "name";
-    JSFunction *f = [JSFunction new];
-    [f defineProperty:name];
+    NSObject *f = [NSObject new];
+    [f objcjs_defineProperty:name];
     XCTAssertTrue([f respondsToSelector:NSSelectorFromString(@"name")], @"It adds a getter");
     XCTAssertTrue([f respondsToSelector:NSSelectorFromString(@"setName:")], @"It adds a setter");
     
@@ -101,17 +101,17 @@ id impl3(id instance,
 }
 
 - (void)testItCanSetAParent {
-    JSFunction *parent = [JSFunction new];
-    defineJSFunction("child", impl1);
+    id parent = [NSObject new];
+    objcjs_defineJSFunction("child", impl1);
     Class childClass = objc_getClass("child");
-    [childClass setParent:parent];
-    XCTAssertEqual([childClass parent], parent, @"It has a parent");
+    [childClass _objcjs_setParent:parent];
+    XCTAssertEqual([childClass _objcjs_parent], parent, @"It has a parent");
 }
 
 - (void)testItCanInvokeAJSFunctionInstance {
-    defineJSFunction("subclass-2", impl1);
-    Class aClass = objc_getClass("subclass-1");
-    JSFunction *f = [aClass new];
+    objcjs_defineJSFunction("subclass-2", impl1);
+    Class aClass = objc_getClass("subclass-2");
+    id f = [aClass new];
     id result = objcjs_invoke(f, CFRetain(@"An Arg"));
     
     XCTAssertTrue(calledBody, @"It invokes body:");
@@ -119,7 +119,7 @@ id impl3(id instance,
 }
 
 - (void)testItCanInvokeAJSFunction {
-    defineJSFunction("subclass-3", impl1);
+    objcjs_defineJSFunction("subclass-3", impl1);
     Class aClass = objc_getClass("subclass-3");
    
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"));
@@ -128,7 +128,7 @@ id impl3(id instance,
 }
 
 - (void)testItCanInvokeAJSFunctionWith2Args {
-    defineJSFunction("subclass-4", impl2);
+    objcjs_defineJSFunction("subclass-4", impl2);
     Class aClass = objc_getClass("subclass-4");
    
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"));
@@ -137,7 +137,7 @@ id impl3(id instance,
 }
 
 - (void)testItCanInvokeAJSFunctionWithVarArgs {
-    defineJSFunction("subclass-5", impl3);
+    objcjs_defineJSFunction("subclass-5", impl3);
     Class aClass = objc_getClass("subclass-5");
    
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), CFRetain(@"An Arg3"));

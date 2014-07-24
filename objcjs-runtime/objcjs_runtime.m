@@ -8,54 +8,53 @@
 
 #import "objcjs_runtime.h"
 #import <objc/message.h>
+#import <malloc/malloc.h>
 
 #define RuntimeException(_FMT) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
 
 
-@implementation JSFunction
+@implementation NSObject (ObjCJSFunction)
 
-static NSMutableDictionary *Parents = NULL;
+static char * ObjCJSEnvironmentKey;
 
-+ (void)setParent:(id)parent {
-    if (!Parents){
-        Parents = [[NSMutableDictionary alloc] init];
+- (NSMutableDictionary *)_objcjs_environment {
+    NSMutableDictionary *environment = objc_getAssociatedObject(self, ObjCJSEnvironmentKey);
+    if (!environment) {
+        environment = [NSMutableDictionary dictionary];
+        objc_setAssociatedObject(self, ObjCJSEnvironmentKey, environment, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return environment;
+}
+
+static NSMutableDictionary *ObjCJSParents = NULL;
+
++ (void)_objcjs_setParent:(id)parent {
+    if (!ObjCJSParents){
+        ObjCJSParents = [[NSMutableDictionary alloc] init];
     }
 
-    Parents[NSStringFromClass(self.class)] = [parent retain];
+    ObjCJSParents[NSStringFromClass(self.class)] = [parent retain];
 }
 
-+ (id)parent {
-    return Parents[NSStringFromClass(self.class)];
++ (id)_objcjs_parent {
+    return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
-- (id)init {
-    self = [super init];
-    self.environment = [[[NSMutableDictionary alloc] init] retain];
-    return self;
+- (id)_objcjs_parent {
+    return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
-- (id)parent {
-    return Parents[NSStringFromClass(self.class)];
-}
-
-- (id)body:(id)args, ... {
+- (id)_objcjs_body:(id)args, ... {
     return @"JSFUNCTION-DEFAULT-BODY-RETURN";
 }
 
+//TODO : safely swizzle this on
 - (NSNumber *)length {
     return @0;
 }
 
-- (NSString *)description {
-    return @"JSFUNCTION";
-}
-
-+ (instancetype)new{
-    return [[super new]retain];
-}
-
-- (void)defineProperty:(const char *)propertyName {
+- (void)objcjs_defineProperty:(const char *)propertyName {
     Class selfClass = [self class];
     
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
@@ -76,7 +75,7 @@ static NSMutableDictionary *Parents = NULL;
     setterName[nameLen + 3] = ':';
     setterName[nameLen + 4] = '\0';
     
-    IMP setter = imp_implementationWithBlock(^(JSFunction *_self, SEL cmd, id value){
+    IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
         objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_COPY);
     });
     
@@ -88,70 +87,57 @@ static NSMutableDictionary *Parents = NULL;
 }
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
+    NSMutableDictionary *environment = [self _objcjs_environment];
     if (!value) {
-        if (![[_environment allKeys] containsObject:key]) {
-            [self.parent _objcjs_env_setValue:value forKey:key];
+        if (![[environment allKeys] containsObject:key]) {
+            [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
         } else {
-            [_environment setNilValueForKey:[key copy]];
+            [environment setNilValueForKey:[key copy]];
         }
     } else {
-        if (![[_environment allKeys] containsObject:key]) {
-            [self.parent _objcjs_env_setValue:value forKey:key];
+        if (![[environment allKeys] containsObject:key]) {
+            [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
         } else {
-            _environment[[key copy]] = [value copy];
+            environment[[key copy]] = [value copy];
         }   
     }
 }
 
 - (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key {
+    NSMutableDictionary *environment = [self _objcjs_environment];
     if (!value) {
-        [_environment setNilValueForKey:[key copy]];
+        [environment setNilValueForKey:[key copy]];
     } else {
-        _environment[[key copy]] = [value copy];
+        environment[[key copy]] = [value copy];
     }
 }
 
 - (id)_objcjs_env_valueForKey:(NSString *)key {
-    id value = _environment[key];
-    return value ?: [self.parent _objcjs_env_valueForKey:key];
+    NSMutableDictionary *environment = [self _objcjs_environment];
+    id value = environment[key];
+    return value ?: [[self _objcjs_parent] _objcjs_env_valueForKey:key];
 }
 
 @end
 
-
-SEL BodySelector(NSInteger nArgs){
-    static char * BodySelectors[] = {
-        "body",
-        "body:",
-        "body::",
-        "body:::",
-        "body::::",
-    };
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        for (int i = 0; i < 5; i++){
-            sel_registerName(BodySelectors[i]);
-        }
-    });
-
-    SEL selector = sel_getUid(BodySelectors[nArgs]);
-    return selector;
-}
-
-
 //an imp signature is id name(_strong id, SEL, ...);
-void *defineJSFunction(const char *name,
+void *objcjs_defineJSFunction(const char *name,
                        JSFunctionBodyIMP body){
     NSLog(@"%s %s %p",__PRETTY_FUNCTION__, name, body);
-    Class superClass = [JSFunction class];
+    Class superClass = [NSObject class];
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
 
-    SEL bodySelector = @selector(body:);
+    SEL bodySelector = @selector(_objcjs_body:);
     Method superBody = class_getInstanceMethod(superClass, bodySelector);
+    assert(superBody);
     const char *enc = method_getTypeEncoding(superBody);
-    assert(class_addMethod(jsClass, bodySelector, (IMP)body, enc));
+    class_addMethod(jsClass, bodySelector, (IMP)body, enc);
     objc_registerClassPair(jsClass);
     return jsClass;
+}
+
+size_t __NSObjectMallocSize(){
+    return 64;
 }
 
 void *objcjs_invoke(void *target, ...){
@@ -168,22 +154,24 @@ void *objcjs_invoke(void *target, ...){
         argCt++;
     }
     va_end(args1);
-    
-    Class targetClass;
-    if (![(id)target isKindOfClass:[JSFunction class]]){
+ 
+    // TODO: is there a better way to do this?
+    BOOL targetIsClass = malloc_size(target) == __NSObjectMallocSize();
+    Class targetClass = nil;
+    if (targetIsClass) {
         targetClass = target;
-// TODO: handle this retain count craze!
-//        target = class_createInstance(target, 0);
-        target = [(id)target new];
+        target = [[targetClass new] autorelease];
         printf("new instance of %s \n", class_getName(targetClass));
-    } else {
+    } else if ([(id)target respondsToSelector:@selector(_objcjs_body:)]) {
         targetClass = object_getClass(target);
         printf("instance of %s\n", class_getName(targetClass));
+    } else {
+        RuntimeException(@"objcjs_invoke requires _objcjs_body:");
     }
   
     assert(targetClass && "objcjs_invoke on missing class:" && target);
     
-    SEL bodySel = @selector(body:);
+    SEL bodySel = @selector(_objcjs_body:);
     va_list args;
     va_start(args, target);
     
@@ -227,43 +215,43 @@ void *objcjs_invoke(void *target, ...){
     return result;
 }
 
-@interface ObjcJSNaN : NSObject @end
-@implementation ObjcJSNaN @end
+@interface ObjCJSNaN : NSObject @end
+@implementation ObjCJSNaN @end
 
-@interface ObjcJSUndefined : NSObject @end
-@implementation ObjcJSUndefined @end
+@interface ObjCJSUndefined : NSObject @end
+@implementation ObjCJSUndefined @end
 
 id objcjs_NaN;
 id objcjs_Undefined;
 
 __attribute__((constructor))
 static void ObjCJSRuntimeInit(){
-    objcjs_NaN = [ObjcJSNaN class];
-    objcjs_Undefined = [ObjcJSUndefined class];
+    objcjs_NaN = [ObjCJSNaN class];
+    objcjs_Undefined = [ObjCJSUndefined class];
 }
 
-@implementation NSObject (ObjcJSOperators)
+@implementation NSObject (ObjCJSOperators)
 
-#define DEF_RETURN_SAME_CLASS_IMP(SEL)\
+#define DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(SEL)\
 - SEL (id) value { \
     BOOL sameClass = [self isKindOfClass:[value class]] ||  [value isKindOfClass:[self class]]; \
-    return sameClass ? [self SEL value] : false; \
+    return sameClass ? [self SEL value] : @0; \
 }
 
-DEF_RETURN_SAME_CLASS_IMP(objcjs_add:)
-DEF_RETURN_SAME_CLASS_IMP(objcjs_subtract:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_multiply:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_divide:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_mod:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_bitor:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_bitxor:);
-DEF_RETURN_SAME_CLASS_IMP(objcjs_bitand:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_add:)
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_subtract:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_multiply:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_divide:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_mod:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitor:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitxor:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitand:);
 // "<<"
-DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftleft:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftleft:);
 // ">>"
-DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftright:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftright:);
 // ">>>"
-DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftrightright:);
+DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 
 - objcjs_increment {
     return objcjs_NaN;
@@ -279,7 +267,7 @@ DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftrightright:);
 
 @end
 
-@implementation NSNumber (ObjcJSOperators)
+@implementation NSNumber (ObjCJSOperators)
 
 - objcjs_add:(id)value {
     return @([self doubleValue] + [value doubleValue]);
@@ -350,7 +338,7 @@ DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftrightright:);
 
 @end
 
-@implementation NSString (ObjcJSOperators)
+@implementation NSString (ObjCJSOperators)
 
 - (bool)objcjs_boolValue {
     return !![self length];

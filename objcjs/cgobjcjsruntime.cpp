@@ -237,7 +237,7 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     DefExternFucntion("objcjs_invoke");
 
     //JSRuntime
-    DefExternFucntion("defineJSFunction");
+    DefExternFucntion("objcjs_defineJSFunction");
    
     ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
     ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
@@ -355,6 +355,6 @@ llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
     Args.push_back(nameAlloca);
     Args.push_back(function);
 
-    return llvm::CallInst::Create(_module->getFunction("defineJSFunction"), Args, "calltmp");
+    return llvm::CallInst::Create(_module->getFunction("objcjs_defineJSFunction"), Args, "calltmp");
 }
 

@@ -171,7 +171,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
         if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
             auto functionClass = _runtime->classNamed(name.c_str());
             auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME) , "load-this");
-            _runtime->messageSend(functionClass, "setParent:", jsThis);
+            _runtime->messageSend(functionClass, "_objcjs_setParent:", jsThis);
         }
     }
     
@@ -792,7 +792,7 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     //TODO : support N layers of nested functions
     auto parentFunction = _builder->GetInsertBlock()->getParent();
     auto parentName = parentFunction ->getName().str();
-    auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "parent");
+    auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_objcjs_parent");
     auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
 
     PushValueToContext(value);
