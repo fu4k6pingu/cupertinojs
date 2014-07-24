@@ -40,7 +40,10 @@ extern void *defineJSFunction(const char *name,
 // otherwise it simply invokes body:
 extern void *objcjs_invoke(void *target, ...);
 
-@interface NSNumber (ObjcJSOperators)
+extern id objcjs_NaN;
+extern id objcjs_Undefined;
+
+@interface NSObject (ObjcJSOperators)
 
 - objcjs_add:(id)value;
 - objcjs_subtract:(id)value;
@@ -61,6 +64,12 @@ extern void *objcjs_invoke(void *target, ...);
 - objcjs_increment;
 - objcjs_decrement;
 
+- (bool)objcjs_boolValue;
+
+@end
+
+@interface NSNumber (ObjcJSOperators)
+
 // Bool value is semantically equal to int value in JS land
 // so comparing a NSDoubleNumber that is 0.0 will be incorrect in JS
 // and zero is false
@@ -68,9 +77,10 @@ extern void *objcjs_invoke(void *target, ...);
 
 @end
 
-// a string that has characters is true
+
 @interface NSString (ObjcJSOperators)
 
+// a string that has characters is true
 - (bool)objcjs_boolValue;
 
 @end

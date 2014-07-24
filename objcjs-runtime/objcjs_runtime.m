@@ -227,6 +227,58 @@ void *objcjs_invoke(void *target, ...){
     return result;
 }
 
+@interface ObjcJSNaN : NSObject @end
+@implementation ObjcJSNaN @end
+
+@interface ObjcJSUndefined : NSObject @end
+@implementation ObjcJSUndefined @end
+
+id objcjs_NaN;
+id objcjs_Undefined;
+
+__attribute__((constructor))
+static void ObjCJSRuntimeInit(){
+    objcjs_NaN = [ObjcJSNaN class];
+    objcjs_Undefined = [ObjcJSUndefined class];
+}
+
+@implementation NSObject (ObjcJSOperators)
+
+#define DEF_RETURN_SAME_CLASS_IMP(SEL)\
+- SEL (id) value { \
+    BOOL sameClass = [self isKindOfClass:[value class]] ||  [value isKindOfClass:[self class]]; \
+    return sameClass ? [self SEL value] : false; \
+}
+
+DEF_RETURN_SAME_CLASS_IMP(objcjs_add:)
+DEF_RETURN_SAME_CLASS_IMP(objcjs_subtract:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_multiply:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_divide:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_mod:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_bitor:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_bitxor:);
+DEF_RETURN_SAME_CLASS_IMP(objcjs_bitand:);
+// "<<"
+DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftleft:);
+// ">>"
+DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftright:);
+// ">>>"
+DEF_RETURN_SAME_CLASS_IMP(objcjs_shiftrightright:);
+
+- objcjs_increment {
+    return objcjs_NaN;
+}
+
+- objcjs_decrement {
+    return objcjs_NaN;
+}
+
+- (bool)objcjs_boolValue {
+    return true;
+}
+
+@end
+
 @implementation NSNumber (ObjcJSOperators)
 
 - objcjs_add:(id)value {
