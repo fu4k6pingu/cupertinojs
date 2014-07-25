@@ -48,6 +48,10 @@ public:
     }
     
     void setValue(std::string key, llvm::AllocaInst *value) {
+        if (_namedValues[key]){
+            std::cout << "waring: tried to set existing value for key" << key << "\n";
+            return;
+        }
         _namedValues[key] = value;
     }
    
@@ -59,7 +63,7 @@ public:
         if (value) {
             _context.push_back(value);
         } else {
-            printf("warning: tried to push null value");
+            printf("warning: tried to push null value \n");
         }   
     }
     
@@ -90,6 +94,7 @@ public:
     llvm::BasicBlock *_currentSetRetBlock;
     std::map <Token::Value, std::string> assignOpSelectorByToken;
     std::map <Token::Value, std::string> opSelectorByToken;
+    std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
     
     
     CGObjCJSRuntime *_runtime;
@@ -174,6 +179,7 @@ public:
     void EmitVariableAssignment(Variable* var,
                                 Token::Value op) ;
     
+    void EmitProperty(Property *property, llvm::Value *value);
     void EmitVariableLoad(VariableProxy* proxy);
     void EmitVariableStore(VariableProxy* proxy, llvm::Value *value);
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);

@@ -8,6 +8,7 @@
 
 #import <XCTest/XCTest.h>
 #import "objcjs_runtime.h"
+#import <objc/message.h>
 
 @interface objcjs_runtimeTests : XCTestCase
 
@@ -28,7 +29,7 @@ static BOOL calledBody;
     [super tearDown];
 }
 
-id impl1(id firstObject,
+id echoFirstArgImp(id firstObject,
          SEL selector,
          id firstArgument, ...){
     calledBody = YES;
@@ -76,7 +77,7 @@ id impl3(id instance,
 
 - (void)testItCanCreateASubclass
 {
-    objcjs_defineJSFunction("subclass-1", impl1);
+    objcjs_defineJSFunction("subclass-1", echoFirstArgImp);
     Class aClass = objc_getClass("subclass-1");
     NSObject *f = [aClass new];
     id result = [f _objcjs_body:@"An Arg"];
@@ -102,14 +103,14 @@ id impl3(id instance,
 
 - (void)testItCanSetAParent {
     id parent = [NSObject new];
-    objcjs_defineJSFunction("child", impl1);
+    objcjs_defineJSFunction("child", echoFirstArgImp);
     Class childClass = objc_getClass("child");
     [childClass _objcjs_setParent:parent];
     XCTAssertEqual([childClass _objcjs_parent], parent, @"It has a parent");
 }
 
 - (void)testItCanInvokeAJSFunctionInstance {
-    objcjs_defineJSFunction("subclass-2", impl1);
+    objcjs_defineJSFunction("subclass-2", echoFirstArgImp);
     Class aClass = objc_getClass("subclass-2");
     id f = [aClass new];
     id result = objcjs_invoke(f, CFRetain(@"An Arg"));
@@ -119,7 +120,7 @@ id impl3(id instance,
 }
 
 - (void)testItCanInvokeAJSFunction {
-    objcjs_defineJSFunction("subclass-3", impl1);
+    objcjs_defineJSFunction("subclass-3", echoFirstArgImp);
     Class aClass = objc_getClass("subclass-3");
    
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"));
@@ -143,6 +144,43 @@ id impl3(id instance,
     id result = objcjs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), CFRetain(@"An Arg3"));
     XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
     XCTAssertEqualObjects(@([result count]), @3, @"It returns the arg");
+}
+
+- (void)testPropertyAssignmentCreatesANewInstanceMethod {
+    objcjs_defineJSFunction("subclass-6", impl3);
+    Class aClass = objc_getClass("subclass-6");
+
+    objcjs_defineJSFunction("instance-method-class", echoFirstArgImp);
+   
+    Class methodClass = objc_getClass("instance-method-class");
+
+    id instance = [aClass new];
+    objcjs_assignProperty(instance, "aMethod", methodClass);
+
+    SEL expectedSelector = NSSelectorFromString(@"aMethod:");
+    XCTAssertTrue([instance respondsToSelector:expectedSelector], @"It adds the instance method with the selector");
+    id result = objc_msgSend(instance, expectedSelector, CFRetain(@"An Arg"), nil);
+
+    XCTAssertEqual(@"An Arg", result, @"It returns the arg of the instance method");
+}
+
+- (void)testPropertyAssignmentCreatesANewProperty {
+    objcjs_defineJSFunction("subclass-7", impl3);
+    Class aClass = objc_getClass("subclass-7");
+   
+    id instance = [aClass new];
+    id value = @1;
+    
+    objcjs_assignProperty(instance, "value", value);
+
+    SEL expectedSetterSelector = NSSelectorFromString(@"setValue:");
+    SEL expectedGetterSelector = NSSelectorFromString(@"value");
+    XCTAssertTrue([instance respondsToSelector:expectedSetterSelector], @"It adds the setter with the appropriate selector");
+    XCTAssertTrue([instance respondsToSelector:expectedGetterSelector], @"It adds the gettter with the appropriate selector");
+    
+    id result = objc_msgSend(instance, expectedGetterSelector);
+
+    XCTAssertEqual(@1, result, @"It returns the value of the property");
 }
 
 #pragma mark - Number tests

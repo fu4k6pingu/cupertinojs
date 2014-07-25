@@ -19,7 +19,7 @@
 #include "cgobjcjsruntime.h"
 
 #define DEBUG 1
-#define ILOG(A, ...) if (DEBUG) printf(A,##__VA_ARGS__);
+#define ILOG(A, ...) if (DEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;
 
@@ -36,8 +36,8 @@ static std::string stringFromV8AstRawString(const AstRawString *raw) {
     return str;
 }
 
-static std::string FUNCTION_CMD_ARG_NAME("__cmd__");
-static std::string FUNCTION_THIS_ARG_NAME("__this");
+static std::string FUNCTION_CMD_ARG_NAME("_cmd");
+static std::string FUNCTION_THIS_ARG_NAME("this");
 
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
@@ -47,6 +47,7 @@ CGObjCJS::CGObjCJS(Zone *zone){
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module("jit", Context);
+    
     //TODO : use llvm to generate this
     _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
     _module->setTargetTriple("x86_64-apple-macosx10.9.0");
@@ -120,8 +121,7 @@ void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* s
     
     for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
         // Create an alloca for this variable.
-        int i = Idx;
-        Variable *param = scope->parameter(i);
+        Variable *param = scope->parameter(Idx);
         std::string str = stringFromV8AstRawString(param->raw_name());
         llvm::AllocaInst *alloca = CreateEntryBlockAlloca(F, str);
         
@@ -136,14 +136,12 @@ void CGObjCJS::dump(){
 }
 
 void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
-    //TODO : Enter into symbol table with scope..
-    std::string str = stringFromV8AstRawString(node->proxy()->raw_name());
-    llvm::Function *f = _builder->GetInsertBlock()->getParent();
-    llvm::AllocaInst *alloca = CreateEntryBlockAlloca(f, str);
-    _context->setValue(str, alloca);
+    std::string name = stringFromV8AstRawString(node->proxy()->raw_name());
+    llvm::Function *function = _builder->GetInsertBlock()->getParent();
+    llvm::AllocaInst *alloca = CreateEntryBlockAlloca(function, name);
+    _context->setValue(name, alloca);
 
     VariableProxy *var = node->proxy();
-    //TODO : insert points
     Visit(var);
 }
 
@@ -170,7 +168,8 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
         //If this is a nested declaration set the parent to this!
         if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
             auto functionClass = _runtime->classNamed(name.c_str());
-            auto jsThis = _builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME) , "load-this");
+            auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
+            auto jsThis = _builder->CreateLoad(jsThisAlloca, "load-this");
             _runtime->messageSend(functionClass, "_objcjs_setParent:", jsThis);
         }
     }
@@ -180,7 +179,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
     _context->setValue(name, functionAlloca);
     
     //VisitFunctionLiteral
-    VisitStartAccumulation(node->fun(), false);
+    Visit(node->fun());
 }
 
 #pragma mark - Modules
@@ -340,21 +339,35 @@ void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
 //Insert the expressions into a returning block
 void CGObjCJS::VisitReturnStatement(ReturnStatement* node) {
     llvm::BasicBlock *block = _builder->GetInsertBlock();
-    llvm::Function *currentFunction = block->getParent();
-    llvm::BasicBlock *jumpBlock = llvm::BasicBlock::Create(_builder->getContext(), "retjump", currentFunction);
+    llvm::Function *function = block->getParent();
+    auto name = function->getName();
+    std::cout << &name;
+    
+    llvm::BasicBlock *jumpBlock = llvm::BasicBlock::Create(_builder->getContext(), "retjump");
+    _builder->SetInsertPoint(block);
+    
     _builder->CreateBr(jumpBlock);
+    
+    function->getBasicBlockList().push_back(jumpBlock);
     _builder->SetInsertPoint(jumpBlock);
    
     Visit(node->expression());
     
-    assert(currentFunction->getReturnType() == ObjcPointerTy() && "requires pointer return");
+    assert(function->getReturnType() == ObjcPointerTy() && "requires pointer return");
     
     llvm::AllocaInst *alloca = _context->valueForKey(SET_RET_ALLOCA_NAME);
     auto retValue = PopContext();
-    assert(retValue && "requires return value" && alloca && "requires return alloca");
     
-    _builder->CreateStore(retValue, alloca);
-    _builder->CreateBr(_currentSetRetBlock);
+    if (retValue) {
+        _builder->CreateLoad(alloca);
+        _builder->CreateStore(retValue, alloca);
+    } else {
+        _builder->CreateStore(ObjcNullPointer(), alloca);
+    }
+   
+    llvm::BasicBlock *setBr = returnBlockByFunction[function];
+    
+    _builder->CreateBr(setBr);
     _builder->SetInsertPoint(block);
 }
 
@@ -498,11 +511,12 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     }
 }
 
-static void AppendImplicitReturn(llvm::Function *function){
+__attribute__((unused))
+static void AppendImplicitReturn(llvm::Function *function, llvm::Value *value){
     for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
         if (!block->getTerminator()) {
             //TODO : return undefined
-            llvm::ReturnInst::Create(function->getContext(), ObjcNullPointer(), block);
+            llvm::ReturnInst::Create(function->getContext(), value, block);
         }
     }
 }
@@ -518,7 +532,7 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         ILOG("TODO: support unnamed functions");
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
-        
+        EndAccumulation();
         return;
     }
     
@@ -538,13 +552,18 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     //Returns
     auto retAlloca =  _builder->CreateAlloca(ObjcPointerTy(), 0, "__return__");
     _context->setValue(SET_RET_ALLOCA_NAME, retAlloca);
+   
+    if (isJSFunction) {
+        _builder->CreateStore(_builder->CreateLoad(_context->valueForKey(FUNCTION_THIS_ARG_NAME)), retAlloca);
+    }
+    
     auto value = _context->valueForKey(SET_RET_ALLOCA_NAME);
     assert(value);
     _builder->saveIP();
     
     auto insertBlock = _builder->GetInsertBlock();
     auto setRetBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "return.set");
-    _currentSetRetBlock =  setRetBB;
+    returnBlockByFunction[function] = setRetBB;
     
     VisitDeclarations(node->scope()->declarations());
     _builder->SetInsertPoint(insertBlock);
@@ -560,13 +579,17 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     _builder->saveAndClearIP();
     
     if (_context) {
-        std::cout << "Context size:" << _context->size();
+        ILOG("Context size: %lu", _context->size());
     }
     
     CleanupInstructionsAfterBreaks(function);
-  
-    AppendImplicitReturn(function);
 
+    llvm::BasicBlock *front = &function->front();
+    auto needsTerminator = !front->getTerminator();
+    if (needsTerminator) {
+        front->getInstList().push_back(llvm::BranchInst::Create(setRetBB));
+    }
+    
     EndAccumulation();
 }
 
@@ -651,8 +674,6 @@ void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
 }
             
-
-//TODO : checkout full-codegen-x86.cc
 void CGObjCJS::VisitAssignment(Assignment* node) {
     ASSERT(node->target()->IsValidReferenceExpression());
 
@@ -665,24 +686,6 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
         ? NAMED_PROPERTY
         : KEYED_PROPERTY;
     }
-    switch (assign_type) {
-        case VARIABLE:{
-            //Do nothing
-            break;
-        }
-        case KEYED_PROPERTY:{
-            
-        }
-        case NAMED_PROPERTY:{
-            
-        }
-    }
-    
-//TODO : implement these better with mutable numbers!
-//    (ASSIGN, "=",
-//    (ASSIGN_SHL, "<<="
-//    (ASSIGN_SAR, ">>="
-//    (ASSIGN_SHR, ">>>="
     
     //TODO : new scope
     Visit(node->value());
@@ -709,26 +712,39 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             }
             
             EmitVariableStore(targetProxy, value);
-
-            //TODO:
-            //assignment returns undefined
             break;
         } case NAMED_PROPERTY: {
-            //            EmitNamedPropertyAssignment(expr);
+            Property *property = node->target()->AsProperty();
+            EmitProperty(property, value);
+            
             break;
         }
         case KEYED_PROPERTY: {
-            //            EmitKeyedPropertyAssignment(expr);
             break;
         }
     }
 }
-void CGObjCJS::EmitBinaryOp(BinaryOperation* expr, Token::Value op){
-//TODO:
-}
 
-void CGObjCJS::EmitVariableAssignment(Variable* var, Token::Value op) {
-//TODO:
+void CGObjCJS::EmitProperty(Property *property, llvm::Value *value){
+    VariableProxy *object = property->obj()->AsVariableProxy();
+    v8::internal::Literal *key = property->key()->AsLiteral();
+    auto BB = _builder->GetInsertBlock();
+
+    Visit(key);
+    llvm::Value *keyValue = PopContext();
+    assert(keyValue);
+    
+    _builder->SetInsertPoint(BB);
+    Visit(object);
+    llvm::Value *objValue = PopContext();
+    assert(objValue);
+
+    _builder->SetInsertPoint(BB);
+    std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
+    assert(objectName.length());
+    std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+
+    _runtime->assignProperty(objValue, keyName, value);
 }
 
 void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
@@ -789,7 +805,6 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     auto keypathArgument = _builder->CreateLoad(environmentVariableAlloca);
    
     //load the value from the parents environment
-    //TODO : support N layers of nested functions
     auto parentFunction = _builder->GetInsertBlock()->getParent();
     auto parentName = parentFunction ->getName().str();
     auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_objcjs_parent");
@@ -807,7 +822,25 @@ void CGObjCJS::VisitThrow(Throw* node) {
 }
 
 void CGObjCJS::VisitProperty(Property* node) {
-    UNIMPLEMENTED();
+    Property *property = node;
+    
+    VariableProxy *object = property->obj()->AsVariableProxy();
+    v8::internal::Literal *key = property->key()->AsLiteral();
+    
+    Visit(key);
+    llvm::Value *keyValue = PopContext();
+    assert(keyValue);
+    
+    Visit(object);
+    llvm::Value *objValue = PopContext();
+    assert(objValue);
+    
+    std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
+    std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+
+    _runtime->declareProperty(objValue, keyName);
+
+    PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
 }
 
 Call::CallType GetCallType(Call*call, Isolate* isolate) {
@@ -828,58 +861,83 @@ Call::CallType GetCallType(Call*call, Isolate* isolate) {
 void CGObjCJS::VisitCall(Call* node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(node, isolate());
-   
-    std::string name;
     
-    VariableProxy* proxy = callee->AsVariableProxy();
     if (callType == Call::GLOBAL_CALL) {
         UNIMPLEMENTED();
     } else if (callType == Call::LOOKUP_SLOT_CALL) {
-        // Call to a lookup slot (dynamically introduced variable).
         UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
-        name = stringFromV8AstRawString(proxy->raw_name());
+        std::string name = stringFromV8AstRawString(proxy->raw_name());
+        
+        ZoneList<Expression*>* args = node->arguments();
+        for (int i = 0; i <args->length(); i++) {
+            //TODO : this should likely retain the values
+            Visit(args->at(i));
+        }
+        
+        std::vector<llvm::Value *> finalArgs;
+        for (unsigned i = 0; i < args->length(); i++){
+            llvm::Value *arg = PopContext();
+            finalArgs.push_back(arg);
+        }
+        std::reverse(finalArgs.begin(), finalArgs.end());
+        
+        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+        if (isJSFunction) {
+            //Create a new instance and invoke the body
+            llvm::Value *target;
+            auto calleeF = _module->getFunction(name);
+            if (calleeF) {
+                target = _runtime->classNamed(name.c_str());
+            } else {
+                Visit(callee);
+                target = PopContext();
+            }
+            
+            auto value = _runtime->invokeJSValue(target, finalArgs);
+            PushValueToContext(value);
+        } else {
+            auto calleeF = _module->getFunction(name);
+            PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
+        }
+        
+    } else if (callType == Call::PROPERTY_CALL){
+        Property *property = callee->AsProperty();
+       
+        VariableProxy *object = property->obj()->AsVariableProxy();
+        v8::internal::Literal *key = property->key()->AsLiteral();
+        
+        Visit(key);
+        llvm::Value *keyValue = PopContext();
+        assert(keyValue);
+
+        Visit(object);
+        llvm::Value *objValue = PopContext();
+        assert(objValue);
+
+        std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
+        std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+
+        ZoneList<Expression*>* args = node->arguments();
+        for (int i = 0; i <args->length(); i++) {
+            //TODO : this should likely retain the values
+            Visit(args->at(i));
+        }
+        
+        std::vector<llvm::Value *> finalArgs;
+        for (unsigned i = 0; i < args->length(); i++){
+            llvm::Value *arg = PopContext();
+            finalArgs.push_back(arg);
+        }
+        std::reverse(finalArgs.begin(), finalArgs.end());
+       
+        finalArgs.push_back(ObjcNullPointer());
+        //TODO: fix this!
+        auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
+        PushValueToContext(result);
     } else {
         UNIMPLEMENTED();
-    }
-
-    ZoneList<Expression*>* args = node->arguments();
-    for (int i = 0; i <args->length(); i++) {
-        //TODO : this should likely retain the values
-        Visit(args->at(i));
-    }
-    
-    std::vector<llvm::Value *> finalArgs;
-    for (unsigned i = 0; i < args->length(); i++){
-        llvm::Value *arg = PopContext();
-        finalArgs.push_back(arg);
-    }
-    
-    std::reverse(finalArgs.begin(), finalArgs.end());
-
-    if (_context) {
-        std::cout << '\n' << __PRETTY_FUNCTION__ << "Context size:" << _context->size();
-    }
-
-    bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
-    if (isJSFunction) {
-        //Create a new instance and invoke the body
-       
-        llvm::Value *target;
-        auto calleeF = _module->getFunction(name);
-        if (calleeF) {
-            target = _runtime->classNamed(name.c_str());
-        } else {
-            Visit(callee);
-            target = PopContext();
-       }
-        
-        auto value = _runtime->invokeJSValue(target, finalArgs);
-        PushValueToContext(value);
-    } else {
-        auto calleeF = _module->getFunction(name);
-        PushValueToContext(_builder->CreateCall(calleeF, finalArgs, "calltmp"));
     }
 }
 
@@ -910,13 +968,15 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
                 "objcjs_increment" : "objcjs_decrement";
 
   
-    VariableProxy *proxy =  node->expression()->AsVariableProxy();
-    auto alloca = _context->valueForKey(stringFromV8AstRawString(proxy->raw_name()));
-    
+    llvm::AllocaInst *alloca;
     if (assign_type == VARIABLE){
+        VariableProxy *proxy =  node->expression()->AsVariableProxy();
+        alloca = _context->valueForKey(stringFromV8AstRawString(proxy->raw_name()));
         EmitVariableLoad(proxy);
+    } else if (assign_type == NAMED_PROPERTY) {
+        UNIMPLEMENTED();
     } else {
-        assert(0);
+        UNIMPLEMENTED();
     }
     
     auto value = PopContext();
@@ -1076,15 +1136,14 @@ void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
     Handle<String> check;
     if (expr->IsLiteralCompareTypeof(&sub_expr, &check)) {
         UNIMPLEMENTED();
-//        return HandleLiteralCompareTypeof(expr, sub_expr, check);
     }
+    
     if (expr->IsLiteralCompareUndefined(&sub_expr, isolate())) {
         UNIMPLEMENTED();
-//        return HandleLiteralCompareNil(expr, sub_expr, kUndefinedValue);
     }
+    
     if (expr->IsLiteralCompareNull(&sub_expr)) {
         UNIMPLEMENTED();
-//        return HandleLiteralCompareNil(expr, sub_expr, kNullValue);
     }
     
     if (IsClassOfTest(expr)) {
@@ -1130,7 +1189,6 @@ void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
     } else if (op == Token::GTE){
         resultValue = _runtime->messageSend(left, "isGreaterThanOrEqualTo:",  right);
     } else if (op == Token::EQ){
-//TODO : implement equality with respect to ECMAScript conventions
         resultValue = _runtime->messageSend(left, "isEqual:", right);
     } else if (op == Token::EQ_STRICT){
         resultValue = _runtime->messageSend(left, "isEqual:", right);
@@ -1153,6 +1211,7 @@ void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
 }
 
 void CGObjCJS::enterContext(){
+    ILOG("enter context");
     CGContext *context;
     if (_context) {
         context = _context->Extend();
@@ -1175,8 +1234,9 @@ void CGObjCJS::EndAccumulation() {
     _context = context;
 }
 
+//TODO : ARC
 void CGObjCJS::VisitStartStackAccumulation(AstNode *expr) {
-    //TODO : retain values
+    assert(0);
     VisitStartAccumulation(expr, false);
 }
 

@@ -8,6 +8,7 @@
 
 #include "cgobjcjsruntime.h"
 #include "string.h"
+#import <malloc/malloc.h>
 
 const auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
 
@@ -241,6 +242,7 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
    
     ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
     ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
+    ObjcCodeGenFunction(3, std::string("objcjs_assignProperty"), _module);
     
     ObjcMsgSendFPret(_module);
     ObjcMallocPrototype(_module);
@@ -318,6 +320,20 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
 }
 
+llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
+                                 const char *name,
+                                 std::vector<llvm::Value *>ArgsV) {
+   
+    size_t nameLen = strlen(name);
+    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
+    memcpy(methodName, name, nameLen);
+    methodName[nameLen] = ':';
+    methodName[nameLen+1] = '\0';
+    auto retValue = messageSend(receiver, methodName, ArgsV);
+    free(methodName);
+    return retValue;
+}
+
 //Sends a message to a JSFunction instance
 llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
                                                     std::vector<llvm::Value *>ArgsV) {
@@ -358,3 +374,21 @@ llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
     return llvm::CallInst::Create(_module->getFunction("objcjs_defineJSFunction"), Args, "calltmp");
 }
 
+llvm::Value *CGObjCJSRuntime::declareProperty(llvm::Value *instance,
+                                              std::string name) {
+    
+    auto nameAlloca = localStringVar(name.c_str(), name.length(), _module);
+    return messageSend(instance, "objcjs_defineProperty:", nameAlloca);
+}
+
+llvm::Value *CGObjCJSRuntime::assignProperty(llvm::Value *instance,
+                                             std::string name,
+                                             llvm::Value *value) {
+    auto nameAlloca = localStringVar(name.c_str(), name.length(), _module);
+    std::vector<llvm::Value*> Args;
+    Args.push_back(instance);
+    Args.push_back(nameAlloca);
+    Args.push_back(value);
+    
+    return _builder->CreateCall(_module->getFunction("objcjs_assignProperty"), Args, "calltmp");
+}

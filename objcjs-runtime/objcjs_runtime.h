@@ -35,6 +35,11 @@ typedef id JSFunctionBodyIMP (id instance, SEL cmd, id arg1,...);
 extern void *objcjs_defineJSFunction(const char *name,
                               JSFunctionBodyIMP body);
 
+//Value can be a class, or variable pointer
+extern void *objcjs_assignProperty(id instance,
+                                   const char *name,
+                                   id value);
+
 // dynamically dispatch an invocation of a pointer with arguments
 //
 // if target is a class class, a new instance of the class is created
@@ -45,6 +50,7 @@ extern void *objcjs_invoke(void *target, ...);
 
 extern id objcjs_NaN;
 extern id objcjs_Undefined;
+extern id objcjs_GlobalScope;
 
 @interface NSObject (ObjCJSOperators)
 

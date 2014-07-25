@@ -61,7 +61,20 @@ static NSMutableDictionary *ObjCJSParents = NULL;
         id value = objc_getAssociatedObject(_self, propertyName);
         return [value retain];
     });
+
+    char *setterName = setterNameFromPropertyName(propertyName);
+    IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
+        objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_COPY);
+    });
     
+    SEL gSel = sel_getUid(propertyName);
+    class_addMethod(selfClass, gSel, getter, "@@:");
+    class_addMethod(selfClass, sel_getUid(setterName), setter, "v@:@");
+
+    free(setterName);
+}
+
+char *setterNameFromPropertyName(const char *propertyName){
     size_t nameLen = strlen(propertyName);
     char *setterName = malloc((sizeof(char) * nameLen) + 5);
   
@@ -74,16 +87,7 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     
     setterName[nameLen + 3] = ':';
     setterName[nameLen + 4] = '\0';
-    
-    IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
-        objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_COPY);
-    });
-    
-    SEL gSel = sel_getUid(propertyName);
-    class_addMethod(selfClass, gSel, getter, "@@:");
-    class_addMethod(selfClass, sel_getUid(setterName), setter, "v@:@");
-
-    free(setterName);
+    return setterName;
 }
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
@@ -123,7 +127,7 @@ static NSMutableDictionary *ObjCJSParents = NULL;
 //an imp signature is id name(_strong id, SEL, ...);
 void *objcjs_defineJSFunction(const char *name,
                        JSFunctionBodyIMP body){
-    NSLog(@"%s %s %p",__PRETTY_FUNCTION__, name, body);
+    NSLog(@"-%s %s %p",__PRETTY_FUNCTION__, name, body);
     Class superClass = [NSObject class];
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
 
@@ -139,6 +143,58 @@ void *objcjs_defineJSFunction(const char *name,
 size_t __NSObjectMallocSize(){
     return 64;
 }
+
+BOOL ptrIsClass(void *ptr){
+    return [(id)ptr class] == ptr;
+}
+
+void *objcjs_assignProperty(id target,
+                            const char *name,
+                            id value) {
+    NSLog(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, [value class]);
+
+    assert(target && "target required for property assignment");
+    assert(name && "name required for property assignment");
+    assert(value && "value required for property assignment");
+    
+    BOOL valueIsClass = ptrIsClass(value);
+    BOOL targetIsClass = ptrIsClass(target);
+
+    //get the instance method from the class
+    //and add it to our class
+    if (!targetIsClass && valueIsClass){
+        NSLog(@"add instance method");
+        Class targetClass = object_getClass(target);
+        
+        Class valueClass = value;
+       
+        Method valueMethod = class_getInstanceMethod(valueClass, @selector(_objcjs_body:));
+
+        size_t nameLen = strlen(name);
+        char *methodName = malloc((sizeof(char) * nameLen) + 2);
+       
+        memcpy(methodName, name, nameLen);
+        methodName[nameLen] = ':';
+        methodName[nameLen+1] = '\0';
+        
+        SEL newSelector = sel_getUid(methodName);
+        class_replaceMethod(targetClass, newSelector,
+                            method_getImplementation(valueMethod),
+                            method_getTypeEncoding(valueMethod));
+        NSLog(@"added method with selector %s", sel_getName(newSelector));
+    } else if (!targetIsClass){
+        NSLog(@"add property");
+        [target objcjs_defineProperty:name];
+        char *setterName = setterNameFromPropertyName(name);
+        [target performSelector:sel_getUid(setterName) withObject:value];
+        NSLog(@"added property with name %s", name);
+    } else {
+        RuntimeException(@"only supports instance methods and property declarations");
+    }
+    
+    return nil;
+}
+
 
 void *objcjs_invoke(void *target, ...){
     printf("objcjs_invoke(%p, ...)\n", target);
@@ -156,7 +212,7 @@ void *objcjs_invoke(void *target, ...){
     va_end(args1);
  
     // TODO: is there a better way to do this?
-    BOOL targetIsClass = malloc_size(target) == __NSObjectMallocSize();
+    BOOL targetIsClass = ptrIsClass(target);
     Class targetClass = nil;
     if (targetIsClass) {
         targetClass = target;
@@ -223,11 +279,13 @@ void *objcjs_invoke(void *target, ...){
 
 id objcjs_NaN;
 id objcjs_Undefined;
+id objcjs_GlobalScope;
 
 __attribute__((constructor))
 static void ObjCJSRuntimeInit(){
     objcjs_NaN = [ObjCJSNaN class];
     objcjs_Undefined = [ObjCJSUndefined class];
+    objcjs_GlobalScope = [NSObject new];
 }
 
 @implementation NSObject (ObjCJSOperators)

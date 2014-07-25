@@ -50,12 +50,21 @@ public:
                              llvm::Value *Arg);
     llvm::Value *messageSend(llvm::Value *receiver,
                              const char *selector);
+   
+    llvm::Value *messageSendProperty(llvm::Value *receiver,
+                                     const char *selector,
+                                     std::vector<llvm::Value *>ArgsV);
     llvm::Value *invokeJSValue(llvm::Value *instance,
                                        std::vector<llvm::Value *>ArgsV);
     llvm::Value *classNamed(const char *name);
     llvm::Value *defineJSFuction(const char *name,
                                  unsigned nArgs
                                     );
+    llvm::Value *declareProperty(llvm::Value *instance,
+                                 std::string name);
+    llvm::Value *assignProperty(llvm::Value *instance,
+                                std::string name,
+                                llvm::Value *value);
 };
 
 
