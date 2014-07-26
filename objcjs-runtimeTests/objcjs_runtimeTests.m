@@ -184,7 +184,7 @@ id impl3(id instance,
 }
 
 
-- (void)testClassPropertyAssignment {
+- (void)testPropertyAssignmentCreatesANewClassProperty {
     objcjs_defineJSFunction("subclass-8", impl3);
     Class aClass = objc_getClass("subclass-8");
     id value = @1;
@@ -198,6 +198,23 @@ id impl3(id instance,
     id result = objc_msgSend(aClass, expectedGetterSelector);
 
     XCTAssertEqual(@1, result, @"It returns the value of the property");
+}
+
+- (void)testPropertyAssignmentCreatesANewClassMethod {
+    objcjs_defineJSFunction("subclass-9", impl3);
+    Class aClass = objc_getClass("subclass-9");
+
+    objcjs_defineJSFunction("method-class2", echoFirstArgImp);
+   
+    Class methodClass = objc_getClass("method-class2");
+
+    objcjs_assignProperty(aClass, "aMethod", methodClass);
+
+    SEL expectedSelector = NSSelectorFromString(@"aMethod:");
+    XCTAssertTrue([aClass respondsToSelector:expectedSelector], @"It adds the aClass method with the selector");
+    id result = objc_msgSend(aClass, expectedSelector, CFRetain(@"An Arg"), nil);
+
+    XCTAssertEqual(@"An Arg", result, @"It returns the arg of the instance method");
 }
 
 #pragma mark - Number tests

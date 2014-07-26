@@ -131,6 +131,8 @@ char *setterNameFromPropertyName(const char *propertyName){
 
 @end
 
+const char *JSFunctionTag = "JSFunctionTag";
+
 //an imp signature is id name(_strong id, SEL, ...);
 void *objcjs_defineJSFunction(const char *name,
                        JSFunctionBodyIMP body){
@@ -144,6 +146,9 @@ void *objcjs_defineJSFunction(const char *name,
     const char *enc = method_getTypeEncoding(superBody);
     class_addMethod(jsClass, bodySelector, (IMP)body, enc);
     objc_registerClassPair(jsClass);
+   
+    objc_setAssociatedObject(jsClass, JSFunctionTag, @YES, OBJC_ASSOCIATION_ASSIGN);
+    
     return jsClass;
 }
 
@@ -155,6 +160,10 @@ BOOL ptrIsClass(void *ptr){
     return [(id)ptr class] == ptr;
 }
 
+BOOL ptrIsJSFunctionClass(void *ptr){
+    return [objc_getAssociatedObject(ptr, JSFunctionTag) boolValue];
+}
+
 void *objcjs_assignProperty(id target,
                             const char *name,
                             id value) {
@@ -164,13 +173,12 @@ void *objcjs_assignProperty(id target,
     assert(name && "name required for property assignment");
     assert(value && "value required for property assignment");
     
-    BOOL valueIsClass = ptrIsClass(value);
-    BOOL targetIsClass = ptrIsClass(target);
 
-    //get the instance method from the class
+    //get the method body from the class
     //and add it to our class
-    if (!targetIsClass && valueIsClass){
-        ILOG(@"add instance method");
+    if (ptrIsJSFunctionClass(value)){
+        BOOL targetIsClass = ptrIsClass(target);
+        ILOG(@"add %@  method", targetIsClass ? @"class" : @"instance");
         Class targetClass = object_getClass(target);
         
         Class valueClass = value;
@@ -189,9 +197,6 @@ void *objcjs_assignProperty(id target,
                             method_getImplementation(valueMethod),
                             method_getTypeEncoding(valueMethod));
         ILOG(@"added method with selector %s", sel_getName(newSelector));
-    } else if (targetIsClass && valueIsClass){
-        //class method
-        
     } else  {
         ILOG(@"add property");
         [target objcjs_defineProperty:name];
