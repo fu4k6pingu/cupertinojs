@@ -130,6 +130,40 @@ void CGObjCJS::dump(){
     _module->dump();
 }
 
+void CGObjCJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
+    if (declarations->length() > 0) {
+        auto preBB = _builder->GetInsertBlock();
+        for (int i = 0; i < declarations->length(); i++) {
+            auto BB = _builder->GetInsertBlock();
+            Visit(declarations->at(i));
+            if (BB){
+                _builder->SetInsertPoint(BB);
+            } else {
+                if (preBB)
+                    _builder->SetInsertPoint(preBB);
+            }
+        }
+    }
+}
+
+void CGObjCJS::VisitStatements(ZoneList<Statement*>* statements){
+    auto preBB = _builder->GetInsertBlock();
+    for (int i = 0; i < statements->length(); i++) {
+        auto BB = _builder->GetInsertBlock();
+        Visit(statements->at(i));
+        if (BB){
+            _builder->SetInsertPoint(BB);
+        } else {
+            if (preBB)
+                _builder->SetInsertPoint(preBB);
+        }
+    }
+}
+
+void CGObjCJS::VisitBlock(Block *block){
+    VisitStatements(block->statements());
+}
+
 void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
     std::string name = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *function = _builder->GetInsertBlock()->getParent();
@@ -172,7 +206,6 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
     auto functionAlloca = _builder->CreateAlloca(ObjcPointerTy());
     _builder->CreateStore(_runtime->classNamed(name.c_str()), functionAlloca);
     _context->setValue(name, functionAlloca);
-    
     //VisitFunctionLiteral
     Visit(node->fun());
 }
@@ -733,7 +766,7 @@ void CGObjCJS::EmitProperty(Property *property, llvm::Value *value){
     Visit(object);
     llvm::Value *objValue = PopContext();
     assert(objValue);
-
+    
     _builder->SetInsertPoint(BB);
     std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
     assert(objectName.length());
@@ -838,8 +871,8 @@ void CGObjCJS::VisitProperty(Property* node) {
     PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
 }
 
-Call::CallType GetCallType(Call*call, Isolate* isolate) {
-    VariableProxy* proxy = call->expression()->AsVariableProxy();
+static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
+    VariableProxy* proxy = call->AsVariableProxy();
     if (proxy != NULL && proxy->var()) {
         
         if (proxy->var()->IsUnallocated()) {
@@ -849,13 +882,13 @@ Call::CallType GetCallType(Call*call, Isolate* isolate) {
         }
     }
     
-    Property* property = call->expression()->AsProperty();
+    Property* property = call->AsProperty();
     return property != NULL ? Call::PROPERTY_CALL : Call::OTHER_CALL;
 }
 
 void CGObjCJS::VisitCall(Call* node) {
     Expression *callee = node->expression();
-    Call::CallType callType = GetCallType(node, isolate());
+    Call::CallType callType = GetCallType(callee, isolate());
     
     if (callType == Call::GLOBAL_CALL) {
         UNIMPLEMENTED();
@@ -880,16 +913,9 @@ void CGObjCJS::VisitCall(Call* node) {
         
         bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
         if (isJSFunction) {
-            //Create a new instance and invoke the body
-            llvm::Value *target;
-            auto calleeF = _module->getFunction(name);
-            if (calleeF) {
-                target = _runtime->classNamed(name.c_str());
-            } else {
-                Visit(callee);
-                target = PopContext();
-            }
-            
+            Visit(callee);
+            llvm::Value *target = PopContext();
+           
             auto value = _runtime->invokeJSValue(target, finalArgs);
             PushValueToContext(value);
         } else {
@@ -900,18 +926,18 @@ void CGObjCJS::VisitCall(Call* node) {
     } else if (callType == Call::PROPERTY_CALL){
         Property *property = callee->AsProperty();
        
-        VariableProxy *object = property->obj()->AsVariableProxy();
+        Expression *object = property->obj();
         v8::internal::Literal *key = property->key()->AsLiteral();
         
         Visit(key);
         llvm::Value *keyValue = PopContext();
         assert(keyValue);
 
+        llvm::Value *objValue;
         Visit(object);
-        llvm::Value *objValue = PopContext();
+        objValue = PopContext();
         assert(objValue);
-
-        std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
+       
         std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
         ZoneList<Expression*>* args = node->arguments();
@@ -936,8 +962,80 @@ void CGObjCJS::VisitCall(Call* node) {
     }
 }
 
+
 void CGObjCJS::VisitCallNew(CallNew* node) {
-    UNIMPLEMENTED();
+    Expression *callee = node->expression();
+    Call::CallType callType = GetCallType(callee, isolate());
+    
+    if (callType == Call::GLOBAL_CALL) {
+        UNIMPLEMENTED();
+    } else if (callType == Call::LOOKUP_SLOT_CALL) {
+        UNIMPLEMENTED();
+    } else if (callType == Call::OTHER_CALL){
+        VariableProxy* proxy = callee->AsVariableProxy();
+        std::string name = stringFromV8AstRawString(proxy->raw_name());
+        
+        ZoneList<Expression*>* args = node->arguments();
+        for (int i = 0; i <args->length(); i++) {
+            //TODO : this should likely retain the values
+            Visit(args->at(i));
+        }
+        
+        std::vector<llvm::Value *> finalArgs;
+        for (unsigned i = 0; i < args->length(); i++){
+            llvm::Value *arg = PopContext();
+            finalArgs.push_back(arg);
+        }
+        std::reverse(finalArgs.begin(), finalArgs.end());
+        
+        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+       
+        assert(isJSFunction);
+        
+        //Create a new instance and invoke the body
+        llvm::Value *targetClass = _runtime->classNamed(name.c_str());
+        llvm::Value *target = _runtime->messageSend(targetClass, "new");
+      
+        _runtime->messageSend(target, "retain");
+        
+        auto value = _runtime->invokeJSValue(target, finalArgs);
+        PushValueToContext(value);
+    } else if (callType == Call::PROPERTY_CALL){
+        Property *property = callee->AsProperty();
+       
+        VariableProxy *object = property->obj()->AsVariableProxy();
+        v8::internal::Literal *key = property->key()->AsLiteral();
+        
+        Visit(key);
+        llvm::Value *keyValue = PopContext();
+        assert(keyValue);
+
+        Visit(object);
+        llvm::Value *objValue = PopContext();
+        assert(objValue);
+
+        std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+
+        ZoneList<Expression*>* args = node->arguments();
+        for (int i = 0; i <args->length(); i++) {
+            //TODO : this should likely retain the values
+            Visit(args->at(i));
+        }
+        
+        std::vector<llvm::Value *> finalArgs;
+        for (unsigned i = 0; i < args->length(); i++){
+            llvm::Value *arg = PopContext();
+            finalArgs.push_back(arg);
+        }
+        std::reverse(finalArgs.begin(), finalArgs.end());
+       
+        finalArgs.push_back(ObjcNullPointer());
+        //TODO: fix this!
+        auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
+        PushValueToContext(result);
+    } else {
+        UNIMPLEMENTED();
+    }
 }
 
 void CGObjCJS::VisitCallRuntime(CallRuntime* node) {

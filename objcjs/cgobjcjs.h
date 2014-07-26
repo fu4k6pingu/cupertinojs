@@ -90,12 +90,11 @@ public:
     std::vector<CGContext *> Contexts;
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
-   
+    
     llvm::BasicBlock *_currentSetRetBlock;
     std::map <Token::Value, std::string> assignOpSelectorByToken;
     std::map <Token::Value, std::string> opSelectorByToken;
     std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
-    
     
     CGObjCJSRuntime *_runtime;
     
@@ -105,24 +104,9 @@ public:
 
     void dump();
 
-    //TODO : consider adding insertion point saving here
-    void VisitDeclarations(ZoneList<Declaration*>* declarations){
-        if (declarations->length() > 0) {
-            for (int i = 0; i < declarations->length(); i++) {
-                Visit(declarations->at(i));
-            }
-        }
-    }
-    void VisitStatements(ZoneList<Statement*>* statements){
-        for (int i = 0; i < statements->length(); i++) {
-            Visit(statements->at(i));
-        }
-    }
-
-    void VisitBlock(Block *block){
-        VisitStatements(block->statements());
-    }
-    
+    void VisitDeclarations(ZoneList<Declaration*>* declarations);
+    void VisitStatements(ZoneList<Statement*>* statements);
+    void VisitBlock(Block *block);
     void VisitVariableDeclaration(v8::internal::VariableDeclaration* node);
     void VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node);
     void VisitModuleDeclaration(ModuleDeclaration* node);

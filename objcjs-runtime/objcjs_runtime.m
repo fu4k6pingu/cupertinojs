@@ -13,6 +13,7 @@
 #define RuntimeException(_FMT) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
 
+#define ILOG(A, ...) NSLog(A,##__VA_ARGS__), printf("\n");
 
 @implementation NSObject (ObjCJSFunction)
 
@@ -59,12 +60,12 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
         id value = objc_getAssociatedObject(_self, propertyName);
-        return [value retain];
+        return value;
     });
 
     char *setterName = setterNameFromPropertyName(propertyName);
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
-        objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_COPY);
+        objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN);
     });
     
     SEL gSel = sel_getUid(propertyName);
@@ -89,20 +90,20 @@ char *setterNameFromPropertyName(const char *propertyName){
     setterName[nameLen + 4] = '\0';
     return setterName;
 }
-
+//TODO : test undefined values!
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
     NSMutableDictionary *environment = [self _objcjs_environment];
     if (!value) {
         if (![[environment allKeys] containsObject:key]) {
-            [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
+            [[self _objcjs_parent] _objcjs_env_setValue:[NSNull null] forKey:key];
         } else {
-            [environment setNilValueForKey:[key copy]];
+            environment[[key copy]] = [NSNull null];
         }
     } else {
         if (![[environment allKeys] containsObject:key]) {
             [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
         } else {
-            environment[[key copy]] = [value copy];
+            environment[[key copy]] = [value retain];
         }   
     }
 }
@@ -110,16 +111,16 @@ char *setterNameFromPropertyName(const char *propertyName){
 - (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key {
     NSMutableDictionary *environment = [self _objcjs_environment];
     if (!value) {
-        [environment setNilValueForKey:[key copy]];
+        environment[[key copy]] = [NSNull null];
     } else {
-        environment[[key copy]] = [value copy];
+        environment[[key copy]] = [value retain];
     }
 }
 
 - (id)_objcjs_env_valueForKey:(NSString *)key {
     NSMutableDictionary *environment = [self _objcjs_environment];
     id value = environment[key];
-    return value ?: [[self _objcjs_parent] _objcjs_env_valueForKey:key];
+    return value && ![value isKindOfClass:[NSNull class]] ? value : [[self _objcjs_parent] _objcjs_env_valueForKey:key];
 }
 
 @end
@@ -127,7 +128,7 @@ char *setterNameFromPropertyName(const char *propertyName){
 //an imp signature is id name(_strong id, SEL, ...);
 void *objcjs_defineJSFunction(const char *name,
                        JSFunctionBodyIMP body){
-    NSLog(@"-%s %s %p",__PRETTY_FUNCTION__, name, body);
+    ILOG(@"-%s %s %p",__PRETTY_FUNCTION__, name, body);
     Class superClass = [NSObject class];
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
 
@@ -151,7 +152,7 @@ BOOL ptrIsClass(void *ptr){
 void *objcjs_assignProperty(id target,
                             const char *name,
                             id value) {
-    NSLog(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, [value class]);
+    ILOG(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, [value class]);
 
     assert(target && "target required for property assignment");
     assert(name && "name required for property assignment");
@@ -163,7 +164,7 @@ void *objcjs_assignProperty(id target,
     //get the instance method from the class
     //and add it to our class
     if (!targetIsClass && valueIsClass){
-        NSLog(@"add instance method");
+        ILOG(@"add instance method");
         Class targetClass = object_getClass(target);
         
         Class valueClass = value;
@@ -181,13 +182,13 @@ void *objcjs_assignProperty(id target,
         class_replaceMethod(targetClass, newSelector,
                             method_getImplementation(valueMethod),
                             method_getTypeEncoding(valueMethod));
-        NSLog(@"added method with selector %s", sel_getName(newSelector));
+        ILOG(@"added method with selector %s", sel_getName(newSelector));
     } else if (!targetIsClass){
-        NSLog(@"add property");
+        ILOG(@"add property");
         [target objcjs_defineProperty:name];
         char *setterName = setterNameFromPropertyName(name);
         [target performSelector:sel_getUid(setterName) withObject:value];
-        NSLog(@"added property with name %s", name);
+        ILOG(@"added property with name %s", name);
     } else {
         RuntimeException(@"only supports instance methods and property declarations");
     }
@@ -197,7 +198,7 @@ void *objcjs_assignProperty(id target,
 
 
 void *objcjs_invoke(void *target, ...){
-    printf("objcjs_invoke(%p, ...)\n", target);
+    ILOG(@"objcjs_invoke(%p, ...)\n", target);
 
     if (!target) {
         RuntimeException(@"nil is not a function");
@@ -217,10 +218,10 @@ void *objcjs_invoke(void *target, ...){
     if (targetIsClass) {
         targetClass = target;
         target = [[targetClass new] autorelease];
-        printf("new instance of %s \n", class_getName(targetClass));
+        ILOG(@"new instance of %s \n", class_getName(targetClass));
     } else if ([(id)target respondsToSelector:@selector(_objcjs_body:)]) {
         targetClass = object_getClass(target);
-        printf("instance of %s\n", class_getName(targetClass));
+        ILOG(@"instance of %s\n", class_getName(targetClass));
     } else {
         RuntimeException(@"objcjs_invoke requires _objcjs_body:");
     }

@@ -37,6 +37,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		C55638191984469300973B9F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B031969155100A381F3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C5686236197637B0001C8B45;
+			remoteInfo = "objcjs-runtime";
+		};
 		C568624D197637B0001C8B45 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B031969155100A381F3 /* Project object */;
@@ -451,11 +458,12 @@
 /* Begin PBXLegacyTarget section */
 		C5F471DB198336DE00F72FAA /* objcjs-js-tests */ = {
 			isa = PBXLegacyTarget;
-			buildArgumentsString = "$(ACTION)";
+			buildArgumentsString = run;
 			buildConfigurationList = C5F471E9198336DE00F72FAA /* Build configuration list for PBXLegacyTarget "objcjs-js-tests" */;
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "/Users/jerrymarino/Projects/objcjs/test-js";
 			dependencies = (
 				C5F471EB1983371700F72FAA /* PBXTargetDependency */,
 			);
@@ -512,6 +520,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				C556381A1984469300973B9F /* PBXTargetDependency */,
 				C5D6F08A19692EF900BB9050 /* PBXTargetDependency */,
 				C5F83BD619691F9900A381F3 /* PBXTargetDependency */,
 				C5F83BD819691F9900A381F3 /* PBXTargetDependency */,
@@ -690,6 +699,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		C556381A1984469300973B9F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
+			targetProxy = C55638191984469300973B9F /* PBXContainerItemProxy */;
+		};
 		C568624E197637B0001C8B45 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
