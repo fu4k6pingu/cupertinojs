@@ -29,10 +29,12 @@
 #include "llvm/Assembly/PrintModulePass.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Bitcode/ReaderWriter.h"
+#include "utils.h"
 
 #define _DEBUG 1
 
 using namespace v8::internal;
+using namespace objcjs;
 
 CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_handle){
     v8::base::TimeDelta parse_time1, parse_time2;
@@ -133,6 +135,51 @@ void runModule(llvm::Module module){
 //    engine->runFunction(main_func, std::vector<llvm::GenericValue>());
 }
 
+
+const char *LLVM_LLC_PATH = "/usr/local/Cellar/llvm/3.4/bin/llc";
+//TODO : this needs to be parsed from the ags,
+//so that a user can specify the output
+const char *BUILD_DIR ="/Users/jerrymarino/Projects/objcjs/build/Debug/";
+const char *OBJCJS_RUNTIME_PATH ="/Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib";
+
+std::string compileModule(v8::Isolate *isolate, std::string filePath){
+    std::string fileName = split(filePath, '/').back();
+    std::string moduleName = split(fileName, '.').front();
+    
+    assert(moduleName.length() && "missing file");
+
+    auto module = ProgramWithSourceHandle(SourceHandleWithName(filePath.c_str(), isolate));
+    
+    CGObjCJS codegen = CGObjCJS(module->zone());
+    codegen.Visit(module->function());
+#if _DEBUG
+    codegen.dump();
+#endif
+    
+    llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);
+    llvm::PassManager PM;
+    std::string error;
+    std::string out;
+    
+    llvm::raw_string_ostream file(out);
+    PM.add(createPrintModulePass(&file));
+    PM.run(*codegen._module);
+    
+    std::string outFileName = string_format("%s/%s.bc", BUILD_DIR, moduleName.c_str());
+    
+    std::ofstream outfile;
+    outfile.open(outFileName);
+    outfile << out;
+    outfile.close();
+    
+    //compile bitcode
+    system(string_format("%s %s",
+                         LLVM_LLC_PATH,
+                         outFileName.c_str()).c_str());
+    std::string llcOutput = string_format("%s/%s.s", BUILD_DIR, moduleName.c_str());
+    return llcOutput;
+}
+
 int main(int argc, const char * argv[])
 {
     //Init a v8 stack
@@ -141,7 +188,6 @@ int main(int argc, const char * argv[])
     v8::V8::InitializePlatform(platform);
    
     //Init an isolate
-    //TODO : should this go somehwere else?
     v8::Isolate* isolate = v8::Isolate::New();
     v8::Isolate::Scope isolate_scope(isolate);
     v8::HandleScope handle_scope(isolate);
@@ -150,34 +196,26 @@ int main(int argc, const char * argv[])
     ASSERT(!context.IsEmpty());
     v8::Context::Scope scope(context);
 
-    auto module = ProgramWithSourceHandle(SourceHandleWithName("/Users/jerrymarino/Projects/objcjs/test-js/test.js", isolate));
-    auto codegen = CGObjCJS(module->zone());
-    codegen.Visit(module->function());
-    codegen.dump();
-  
-    llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);
-    
-    llvm::PassManager PM;
-    std::string error;
-    std::string out;
+    //compile
+    std::vector<std::string> names = parseNames(argc, argv);
+    assert(names.size() && "missing file");
 
-    llvm::raw_string_ostream file(out);
-    PM.add(createPrintModulePass(&file));
-    PM.run(*codegen._module);
- 
-//    llvm::WriteBitcodeToFile(codegen._module, file);
-    std::ofstream myfile;
-    myfile.open("/tmp/module.bc");
-    myfile << out;
-    myfile.close();
-
-    //run module
-    system("/usr/local/Cellar/llvm/3.4/bin/llc /tmp/module.bc");
-    //TODO : load lib from /usr/local/lib
-    system("clang -framework Foundation /Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib /tmp/module.s -o /tmp/a.out");
-    
+    std::string sFiles;
+    for (unsigned i = 0; i < names.size(); i++){
+        std::string filePath = names[i];
+        std::string sFile = compileModule(isolate, filePath);
+        sFiles += " ";
+        sFiles += sFile;
+    }
+   
+    std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/objcjsapp",
+                                         OBJCJS_RUNTIME_PATH,
+                                         sFiles.c_str(),
+                                         BUILD_DIR);
+    system(clangCmd.c_str());
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
     delete platform;
     return 0;
 }
+

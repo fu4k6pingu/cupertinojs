@@ -50,6 +50,13 @@
 			remoteGlobalIDString = 554758952FC3AF9BD4BA01ED;
 			remoteInfo = js2c;
 		};
+		C5F471EA1983371700F72FAA /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B031969155100A381F3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C5F83B0A1969155100A381F3;
+			remoteInfo = objcjs;
+		};
 		C5F83B821969186400A381F3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
@@ -214,10 +221,12 @@
 		C5686252197637B0001C8B45 /* objcjs-runtimeTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "objcjs-runtimeTests-Info.plist"; sourceTree = "<group>"; };
 		C5686254197637B0001C8B45 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtimeTests.m; sourceTree = "<group>"; };
+		C5D3CAE419841DAF00D5F823 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
 		C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
+		C5F471EC198337D200F72FAA /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* objcjs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = objcjs; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5F83B0E1969155100A381F3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		C5F83B101969155100A381F3 /* objcjs.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = objcjs.1; sourceTree = "<group>"; };
@@ -266,6 +275,7 @@
 		C51CE3151971BC4000996E03 /* test-js */ = {
 			isa = PBXGroup;
 			children = (
+				C5F471EC198337D200F72FAA /* Makefile */,
 				C568622519763041001C8B45 /* test3.js */,
 				C568622619763041001C8B45 /* test4.js */,
 				C568622719763041001C8B45 /* test6.js */,
@@ -376,6 +386,7 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0E1969155100A381F3 /* main.cpp */,
+				C5D3CAE419841DAF00D5F823 /* utils.h */,
 				C5D6F09D196A406F00BB9050 /* objccodegen.cpp */,
 				C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */,
 				C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */,
@@ -431,6 +442,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
+
+/* Begin PBXLegacyTarget section */
+		C5F471DB198336DE00F72FAA /* objcjs-js-tests */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = C5F471E9198336DE00F72FAA /* Build configuration list for PBXLegacyTarget "objcjs-js-tests" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			dependencies = (
+				C5F471EB1983371700F72FAA /* PBXTargetDependency */,
+			);
+			name = "objcjs-js-tests";
+			passBuildSettingsInEnvironment = 1;
+			productName = "objcjs-js-tests";
+		};
+/* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
 		C5686236197637B0001C8B45 /* objcjs-runtime */ = {
@@ -532,6 +560,7 @@
 				C5F83B0A1969155100A381F3 /* objcjs */,
 				C5686236197637B0001C8B45 /* objcjs-runtime */,
 				C5686248197637B0001C8B45 /* objcjs-runtimeTests */,
+				C5F471DB198336DE00F72FAA /* objcjs-js-tests */,
 			);
 		};
 /* End PBXProject section */
@@ -665,6 +694,11 @@
 			name = js2c;
 			targetProxy = C5D6F08919692EF900BB9050 /* PBXContainerItemProxy */;
 		};
+		C5F471EB1983371700F72FAA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C5F83B0A1969155100A381F3 /* objcjs */;
+			targetProxy = C5F471EA1983371700F72FAA /* PBXContainerItemProxy */;
+		};
 		C5F83BC519691DFE00A381F3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = v8_base;
@@ -747,6 +781,7 @@
 		C568625C197637B0001C8B45 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/objcjs-runtime.dylib";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
@@ -759,6 +794,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
 			};
 			name = Debug;
@@ -766,6 +802,7 @@
 		C568625D197637B0001C8B45 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/objcjs-runtime.dylib";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
@@ -774,7 +811,37 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+		C5F471DC198336DE00F72FAA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				DEBUGGING_SYMBOLS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		C5F471DD198336DE00F72FAA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -983,6 +1050,15 @@
 			buildConfigurations = (
 				C568625C197637B0001C8B45 /* Debug */,
 				C568625D197637B0001C8B45 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C5F471E9198336DE00F72FAA /* Build configuration list for PBXLegacyTarget "objcjs-js-tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C5F471DC198336DE00F72FAA /* Debug */,
+				C5F471DD198336DE00F72FAA /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
