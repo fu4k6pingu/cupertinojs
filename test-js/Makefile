@@ -1,46 +1,29 @@
 TOPDIR=/Users/jerrymarino/Projects/objcjs
+SOURCEDIR := /build/Debug
 
-CC=clang
-FRAMEWORKS:= -framework Foundation \
-		/usr/local/lib/objcjs-runtime.dylib
-LIBS:= -lobjc 
-
-OBJDIR := /build/Debug
 SOURCES = test.js
-
-# OBJECTS = $(TOPDIR)$(OBJDIR)/$(SOURCES:.js=.s)
-
-CFLAGS=-Wall -Werror $(SOURCE)
-LLVMLDFLAGS=$(LIBS) $(FRAMEWORKS)
 
 all: post-build
 
+BUILD_SCRIPT = $(TOPDIR)$(SOURCEDIR)/build.sh
 
-# objcjs compiles javascripts to .s
+# objcjs compiles javascript to .s
 js-build:
-		$(TOPDIR)$(OBJDIR)/objcjs $(SOURCES)
+		rm -rf $(BUILD_SCRIPT)
+		@echo export OBJCJS_ENV_BUILD_DIR="$(TOPDIR)/build/Debug/" >> $(BUILD_SCRIPT)
+#		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
+		@echo export OBJCJS_ENV_RUNTIME="/Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib" >> $(BUILD_SCRIPT)
+		@echo $(TOPDIR)$(SOURCEDIR)/objcjs $(SOURCES) >> $(BUILD_SCRIPT)
+		chmod +x $(BUILD_SCRIPT)
+		$(BUILD_SCRIPT)
 
-# compile and link .s with CC
-# EX:
-# clang  -o /tmp/a.out
-# -framework Foundation
-# /Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib
-# /tmp/module.s 
-# target: $(OBJECTS)
-#	#$(CC) -o $@ $< $(LLVMLDFLAGS)
-#	@echo $(OBJECTS)
-
-# run build
 main-build: js-build 
-# objcjs outputs a binary by default
-#	    @$(MAKE) target 
 
 post-build:	main-build
 	@echo BUILD_SUCCEEDED!
 
 clean:
-	rm -rf $(OBJECTS) target
+	rm -rf $(OBJECTS) $(TOPDIR)$(SOURCEDIR)/objcjsapp
 
-
-run: post-build
-	$(TOPDIR)$(OBJDIR)/objcjsapp
+run: js-build
+	$(TOPDIR)$(SOURCEDIR)/objcjsapp

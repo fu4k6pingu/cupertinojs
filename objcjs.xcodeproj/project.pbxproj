@@ -23,6 +23,7 @@
 		C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
 		C5686255197637B0001C8B45 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5686253197637B0001C8B45 /* InfoPlist.strings */; };
 		C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		C5D3CB001984355400D5F823 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* compiler.cpp */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };
@@ -222,6 +223,8 @@
 		C5686254197637B0001C8B45 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtimeTests.m; sourceTree = "<group>"; };
 		C5D3CAE419841DAF00D5F823 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		C5D3CAF31984354F00D5F823 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
+		C5D3CAFF1984355400D5F823 /* compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
@@ -386,6 +389,8 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0E1969155100A381F3 /* main.cpp */,
+				C5D3CAF31984354F00D5F823 /* compiler.h */,
+				C5D3CAFF1984355400D5F823 /* compiler.cpp */,
 				C5D3CAE419841DAF00D5F823 /* utils.h */,
 				C5D6F09D196A406F00BB9050 /* objccodegen.cpp */,
 				C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */,
@@ -672,6 +677,7 @@
 			files = (
 				C504ECBF1980CD4B00B2FE6C /* test9.js in Sources */,
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
+				C5D3CB001984355400D5F823 /* compiler.cpp in Sources */,
 				C504ECBE1980CD4B00B2FE6C /* test8.js in Sources */,
 				C504ECC01980CD4B00B2FE6C /* test10.js in Sources */,
 				C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */,
