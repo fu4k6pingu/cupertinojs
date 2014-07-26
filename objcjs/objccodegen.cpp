@@ -47,41 +47,36 @@ CGObjCJS::CGObjCJS(Zone *zone){
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module("jit", Context);
-    
-    //TODO : use llvm to generate this
-    _module->setDataLayout("e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v64:64:64-v128:128:128-a0:0:64-s0:64:64-f80:128:128-n8:16:32:64-S128");
-    _module->setTargetTriple("x86_64-apple-macosx10.9.0");
     _context = new CGContext();
-
     _runtime = new CGObjCJSRuntime(_builder, _module);
     
-    assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string ("objcjs_add:");
-    assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string ("objcjs_subtract:");
-    assignOpSelectorByToken[Token::ASSIGN_MUL] = std::string ("objcjs_multiply:");
-    assignOpSelectorByToken[Token::ASSIGN_DIV] = std::string ("objcjs_divide:");
-    assignOpSelectorByToken[Token::ASSIGN_MOD] = std::string ("objcjs_mod:");
+    assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
+    assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
+    assignOpSelectorByToken[Token::ASSIGN_MUL] = std::string("objcjs_multiply:");
+    assignOpSelectorByToken[Token::ASSIGN_DIV] = std::string("objcjs_divide:");
+    assignOpSelectorByToken[Token::ASSIGN_MOD] = std::string("objcjs_mod:");
     
-    assignOpSelectorByToken[Token::ASSIGN_BIT_OR] = std::string ("objcjs_bitor:");
-    assignOpSelectorByToken[Token::ASSIGN_BIT_XOR] = std::string ("objcjs_bitxor:");
-    assignOpSelectorByToken[Token::ASSIGN_BIT_AND] = std::string ("objcjs_bitand:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_OR] = std::string("objcjs_bitor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_XOR] = std::string("objcjs_bitxor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_AND] = std::string("objcjs_bitand:");
     
-    assignOpSelectorByToken[Token::ASSIGN_SHL] = std::string ("objcjs_shiftleft:");
-    assignOpSelectorByToken[Token::ASSIGN_SAR] = std::string ("objcjs_shiftright:");
-    assignOpSelectorByToken[Token::ASSIGN_SHR] = std::string ("objcjs_shiftrightright:");
+    assignOpSelectorByToken[Token::ASSIGN_SHL] = std::string("objcjs_shiftleft:");
+    assignOpSelectorByToken[Token::ASSIGN_SAR] = std::string("objcjs_shiftright:");
+    assignOpSelectorByToken[Token::ASSIGN_SHR] = std::string("objcjs_shiftrightright:");
     
-    opSelectorByToken[Token::ADD] = std::string ("objcjs_add:");
-    opSelectorByToken[Token::SUB] = std::string ("objcjs_subtract:");
-    opSelectorByToken[Token::MUL] = std::string ("objcjs_multiply:");
-    opSelectorByToken[Token::DIV] = std::string ("objcjs_divide:");
-    opSelectorByToken[Token::MOD] = std::string ("objcjs_mod:");
+    opSelectorByToken[Token::ADD] = std::string("objcjs_add:");
+    opSelectorByToken[Token::SUB] = std::string("objcjs_subtract:");
+    opSelectorByToken[Token::MUL] = std::string("objcjs_multiply:");
+    opSelectorByToken[Token::DIV] = std::string("objcjs_divide:");
+    opSelectorByToken[Token::MOD] = std::string("objcjs_mod:");
     
-    opSelectorByToken[Token::BIT_OR] = std::string ("objcjs_bitor:");
-    opSelectorByToken[Token::BIT_XOR] = std::string ("objcjs_bitxor:");
-    opSelectorByToken[Token::BIT_AND] = std::string ("objcjs_bitand:");
+    opSelectorByToken[Token::BIT_OR] = std::string("objcjs_bitor:");
+    opSelectorByToken[Token::BIT_XOR] = std::string("objcjs_bitxor:");
+    opSelectorByToken[Token::BIT_AND] = std::string("objcjs_bitand:");
     
-    opSelectorByToken[Token::SHL] = std::string ("objcjs_shiftleft:");
-    opSelectorByToken[Token::SAR] = std::string ("objcjs_shiftright:");
-    opSelectorByToken[Token::SHR] = std::string ("objcjs_shiftrightright:");
+    opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
+    opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
+    opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
