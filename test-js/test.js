@@ -11,7 +11,7 @@ function console(identifer){
 }
 
 function objcjs_main(a, b){
-    var c = console(1);
+    var c = new console(1);
     NSLog("c %@", c)
     c.log("sam");
     return 0

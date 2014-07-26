@@ -9,9 +9,11 @@
 #ifndef objcjs_compiler_h
 #define objcjs_compiler_h
 
-#include "cgobjcjs.h"
+#include <string>
+#include <vector>
+#include <iostream>
 
-using namespace v8::internal;
+using namespace std;
 
 namespace objcjs {
 

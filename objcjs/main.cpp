@@ -7,6 +7,7 @@
 //
 
 #include <include/libplatform/libplatform.h>
+#include <src/isolate.h>
 #include "compiler.h"
 
 using namespace objcjs;
