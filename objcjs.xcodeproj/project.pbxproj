@@ -26,7 +26,7 @@
 		C5D3CB001984355400D5F823 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* compiler.cpp */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
-		C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* objccodegen.cpp */; };
+		C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */; };
 		C5F83B0F1969155100A381F3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5F83B0E1969155100A381F3 /* main.cpp */; };
 		C5F83B111969155100A381F3 /* objcjs.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C5F83B101969155100A381F3 /* objcjs.1 */; };
 		C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA619691B2D00A381F3 /* libicudata.a */; };
@@ -226,8 +226,8 @@
 		C5D3CAF31984354F00D5F823 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
 		C5D3CAFF1984355400D5F823 /* compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
-		C5D6F09D196A406F00BB9050 /* objccodegen.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objccodegen.cpp; sourceTree = "<group>"; };
-		C5D6F09E196A406F00BB9050 /* objccodegen.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objccodegen.h; sourceTree = "<group>"; };
+		C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjs.cpp; sourceTree = "<group>"; };
+		C5D6F09E196A406F00BB9050 /* cgobjcjs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcjs.h; sourceTree = "<group>"; };
 		C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
 		C5F471EC198337D200F72FAA /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* objcjs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = objcjs; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -392,10 +392,10 @@
 				C5D3CAF31984354F00D5F823 /* compiler.h */,
 				C5D3CAFF1984355400D5F823 /* compiler.cpp */,
 				C5D3CAE419841DAF00D5F823 /* utils.h */,
-				C5D6F09D196A406F00BB9050 /* objccodegen.cpp */,
+				C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */,
 				C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */,
 				C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */,
-				C5D6F09E196A406F00BB9050 /* objccodegen.h */,
+				C5D6F09E196A406F00BB9050 /* cgobjcjs.h */,
 				C5D6F09A1969F28600BB9050 /* README.md */,
 				C5F83B101969155100A381F3 /* objcjs.1 */,
 			);
@@ -680,7 +680,7 @@
 				C5D3CB001984355400D5F823 /* compiler.cpp in Sources */,
 				C504ECBE1980CD4B00B2FE6C /* test8.js in Sources */,
 				C504ECC01980CD4B00B2FE6C /* test10.js in Sources */,
-				C5D6F09F196A406F00BB9050 /* objccodegen.cpp in Sources */,
+				C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */,
 				C504ECBD1980CD4B00B2FE6C /* test7.js in Sources */,
 				C504ECC11980CD4B00B2FE6C /* test11.js in Sources */,
 				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,

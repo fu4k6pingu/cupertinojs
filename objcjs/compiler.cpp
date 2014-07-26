@@ -26,7 +26,8 @@
 #include "llvm/Bitcode/ReaderWriter.h"
 
 #include "utils.h"
-#include "objccodegen.h"
+#include "cgobjcjs.h"
+
 #include "compiler.h"
 
 using namespace v8::internal;

@@ -9,7 +9,7 @@
 #ifndef objcjs_compiler_h
 #define objcjs_compiler_h
 
-#include "objccodegen.h"
+#include "cgobjcjs.h"
 
 using namespace v8::internal;
 
