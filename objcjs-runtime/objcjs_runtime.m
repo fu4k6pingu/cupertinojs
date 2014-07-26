@@ -42,8 +42,8 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
-+ (void)objcjs_defineProperty:(const char *)propertyName {
-     objcjs_defineProperty(object_getClass(self) , propertyName);
++ (BOOL)objcjs_defineProperty:(const char *)propertyName {
+    return objcjs_defineProperty(object_getClass(self) , propertyName);
 }
 
 - (id)_objcjs_parent {
@@ -59,26 +59,38 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return @0;
 }
 
-static void objcjs_defineProperty(Class selfClass, const char *propertyName){
+BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
+    SEL getterSelector = sel_getUid(propertyName);
+    char *setterName = setterNameFromPropertyName(propertyName);
+    SEL setterSelector = sel_getUid(setterName);
+    
+    if ([selfClass respondsToSelector:getterSelector] &&
+        [selfClass respondsToSelector:setterSelector]) {
+        ILOG(@"%s - already defined", __PRETTY_FUNCTION__);
+        return NO;
+    }
+    
+    ILOG(@"%s: %s", __PRETTY_FUNCTION__, propertyName);
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
         id value = objc_getAssociatedObject(_self, propertyName);
+        ILOG(@"ACCESS VALUE FOR KEY %@ <%p>, %s - %s: %@", _self, _self, __PRETTY_FUNCTION__, propertyName, value);
         return value;
     });
     
-    char *setterName = setterNameFromPropertyName(propertyName);
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
-        objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN);
+        ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, __PRETTY_FUNCTION__, value);
+        objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     });
     
-    SEL gSel = sel_getUid(propertyName);
-    assert(class_addMethod(selfClass, gSel, getter, "@@:"));
-    assert(class_addMethod(selfClass, sel_getUid(setterName), setter, "v@:@"));
+    class_addMethod(selfClass, getterSelector, getter, "@@:");
+    class_addMethod(selfClass, setterSelector, setter, "v@:@");
     
     free(setterName);
+    return YES;
 }
 
-- (void)objcjs_defineProperty:(const char *)propertyName {
-     objcjs_defineProperty([self class], propertyName);
+- (BOOL)objcjs_defineProperty:(const char *)propertyName {
+    return objcjs_defineProperty([self class], propertyName);
 }
 
 char *setterNameFromPropertyName(const char *propertyName){
@@ -176,8 +188,8 @@ void *objcjs_assignProperty(id target,
 
     //get the method body from the class
     //and add it to our class
+    BOOL targetIsClass = ptrIsClass(target);
     if (ptrIsJSFunctionClass(value)){
-        BOOL targetIsClass = ptrIsClass(target);
         ILOG(@"add %@  method", targetIsClass ? @"class" : @"instance");
         Class targetClass = object_getClass(target);
         
@@ -199,10 +211,13 @@ void *objcjs_assignProperty(id target,
         ILOG(@"added method with selector %s", sel_getName(newSelector));
     } else  {
         ILOG(@"add property");
-        [target objcjs_defineProperty:name];
+        BOOL status = [target objcjs_defineProperty:name];
+        ILOG(@"defined property: %d", status);
         char *setterName = setterNameFromPropertyName(name);
         [target performSelector:sel_getUid(setterName) withObject:value];
-        ILOG(@"added property with name %s", name);
+        ILOG(@"added property with name %s value %@", name, value);
+        ILOG(@"accessor returned %@", [target performSelector:sel_getUid(name)]);
+        free(setterName);
     }
     
     return nil;

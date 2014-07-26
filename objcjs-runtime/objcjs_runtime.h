@@ -15,13 +15,13 @@
 
 + (void)_objcjs_setParent:(id)parent;
 + (id)_objcjs_parent;
-+ (void)objcjs_defineProperty:(const char *)propertyName;
++ (BOOL)objcjs_defineProperty:(const char *)propertyName;
 
 - (id)_objcjs_parent;
 
 - (id)_objcjs_body:(id)args,...;
 
-- (void)objcjs_defineProperty:(const char *)propertyName;
+- (BOOL)objcjs_defineProperty:(const char *)propertyName;
 
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key;
 - (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key;

@@ -748,6 +748,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             break;
         }
         case KEYED_PROPERTY: {
+            UNIMPLEMENTED();
             break;
         }
     }
@@ -824,6 +825,11 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     auto varAlloca = _context->valueForKey(variableName);
     if (varAlloca) {
         PushValueToContext(_builder->CreateLoad(varAlloca, variableName));
+        return;
+    }
+    
+    if (symbolIsClass(variableName)){
+        PushValueToContext(_runtime->classNamed(variableName.c_str()));
         return;
     }
    
@@ -1347,4 +1353,9 @@ void CGObjCJS::PushValueToContext(llvm::Value *value) {
 
 llvm::Value *CGObjCJS::PopContext() {
     return _context->Pop();
+}
+
+//SymbolIsClass - this symbol is currently known as a class
+bool CGObjCJS::SymbolIsClass(std::string symbol) {
+    return _module->getFunction(variableName);
 }

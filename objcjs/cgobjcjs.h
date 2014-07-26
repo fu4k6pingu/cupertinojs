@@ -187,6 +187,8 @@ public:
 
     void PushValueToContext(llvm::Value *value);
     llvm::Value *PopContext();
+  
+    bool SymbolIsClass(std::string symbol);
     
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };
