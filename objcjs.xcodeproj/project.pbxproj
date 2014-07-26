@@ -7,11 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C504ECBD1980CD4B00B2FE6C /* test7.js in Sources */ = {isa = PBXBuildFile; fileRef = C504ECB81980CD4B00B2FE6C /* test7.js */; };
-		C504ECBE1980CD4B00B2FE6C /* test8.js in Sources */ = {isa = PBXBuildFile; fileRef = C504ECB91980CD4B00B2FE6C /* test8.js */; };
-		C504ECBF1980CD4B00B2FE6C /* test9.js in Sources */ = {isa = PBXBuildFile; fileRef = C504ECBA1980CD4B00B2FE6C /* test9.js */; };
-		C504ECC01980CD4B00B2FE6C /* test10.js in Sources */ = {isa = PBXBuildFile; fileRef = C504ECBB1980CD4B00B2FE6C /* test10.js */; };
-		C504ECC11980CD4B00B2FE6C /* test11.js in Sources */ = {isa = PBXBuildFile; fileRef = C504ECBC1980CD4B00B2FE6C /* test11.js */; };
 		C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */; };
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -37,13 +32,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		C55638191984469300973B9F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B031969155100A381F3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C5686236197637B0001C8B45;
-			remoteInfo = "objcjs-runtime";
-		};
 		C568624D197637B0001C8B45 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B031969155100A381F3 /* Project object */;
@@ -520,7 +508,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				C556381A1984469300973B9F /* PBXTargetDependency */,
 				C5D6F08A19692EF900BB9050 /* PBXTargetDependency */,
 				C5F83BD619691F9900A381F3 /* PBXTargetDependency */,
 				C5F83BD819691F9900A381F3 /* PBXTargetDependency */,
@@ -684,14 +671,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C504ECBF1980CD4B00B2FE6C /* test9.js in Sources */,
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
 				C5D3CB001984355400D5F823 /* compiler.cpp in Sources */,
-				C504ECBE1980CD4B00B2FE6C /* test8.js in Sources */,
-				C504ECC01980CD4B00B2FE6C /* test10.js in Sources */,
 				C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */,
-				C504ECBD1980CD4B00B2FE6C /* test7.js in Sources */,
-				C504ECC11980CD4B00B2FE6C /* test11.js in Sources */,
 				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -699,11 +681,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		C556381A1984469300973B9F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
-			targetProxy = C55638191984469300973B9F /* PBXContainerItemProxy */;
-		};
 		C568624E197637B0001C8B45 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
@@ -782,6 +759,7 @@
 				);
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Debug;
 		};
@@ -795,13 +773,13 @@
 				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				USER_HEADER_SEARCH_PATHS = "";
 			};
 			name = Release;
 		};
 		C568625C197637B0001C8B45 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/objcjs-runtime.dylib";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
@@ -814,7 +792,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
 			};
 			name = Debug;
@@ -822,7 +799,6 @@
 		C568625D197637B0001C8B45 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				BUNDLE_LOADER = "$(BUILT_PRODUCTS_DIR)/objcjs-runtime.dylib";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				COMBINE_HIDPI_IMAGES = YES;
 				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
@@ -831,7 +807,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				INFOPLIST_FILE = "objcjs-runtimeTests/objcjs-runtimeTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				TEST_HOST = "$(BUNDLE_LOADER)";
 				WRAPPER_EXTENSION = xctest;
 			};
 			name = Release;

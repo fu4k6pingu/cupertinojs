@@ -183,6 +183,23 @@ id impl3(id instance,
     XCTAssertEqual(@1, result, @"It returns the value of the property");
 }
 
+
+- (void)testClassPropertyAssignment {
+    objcjs_defineJSFunction("subclass-8", impl3);
+    Class aClass = objc_getClass("subclass-8");
+    id value = @1;
+    objcjs_assignProperty(aClass, "value", value);
+
+    SEL expectedSetterSelector = NSSelectorFromString(@"setValue:");
+    SEL expectedGetterSelector = NSSelectorFromString(@"value");
+    XCTAssertTrue([aClass respondsToSelector:expectedSetterSelector], @"It adds the setter with the appropriate selector");
+    XCTAssertTrue([aClass respondsToSelector:expectedGetterSelector], @"It adds the gettter with the appropriate selector");
+    
+    id result = objc_msgSend(aClass, expectedGetterSelector);
+
+    XCTAssertEqual(@1, result, @"It returns the value of the property");
+}
+
 #pragma mark - Number tests
 
 - (void)testIncrementReturnPlusOne {

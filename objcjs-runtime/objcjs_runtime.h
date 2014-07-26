@@ -15,6 +15,7 @@
 
 + (void)_objcjs_setParent:(id)parent;
 + (id)_objcjs_parent;
++ (void)objcjs_defineProperty:(const char *)propertyName;
 
 - (id)_objcjs_parent;
 

@@ -42,6 +42,10 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
++ (void)objcjs_defineProperty:(const char *)propertyName {
+     objcjs_defineProperty(object_getClass(self) , propertyName);
+}
+
 - (id)_objcjs_parent {
     return ObjCJSParents[NSStringFromClass(self.class)];
 }
@@ -55,24 +59,26 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return @0;
 }
 
-- (void)objcjs_defineProperty:(const char *)propertyName {
-    Class selfClass = [self class];
-    
+static void objcjs_defineProperty(Class selfClass, const char *propertyName){
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
         id value = objc_getAssociatedObject(_self, propertyName);
         return value;
     });
-
+    
     char *setterName = setterNameFromPropertyName(propertyName);
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
         objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN);
     });
     
     SEL gSel = sel_getUid(propertyName);
-    class_addMethod(selfClass, gSel, getter, "@@:");
-    class_addMethod(selfClass, sel_getUid(setterName), setter, "v@:@");
-
+    assert(class_addMethod(selfClass, gSel, getter, "@@:"));
+    assert(class_addMethod(selfClass, sel_getUid(setterName), setter, "v@:@"));
+    
     free(setterName);
+}
+
+- (void)objcjs_defineProperty:(const char *)propertyName {
+     objcjs_defineProperty([self class], propertyName);
 }
 
 char *setterNameFromPropertyName(const char *propertyName){
@@ -168,7 +174,7 @@ void *objcjs_assignProperty(id target,
         Class targetClass = object_getClass(target);
         
         Class valueClass = value;
-       
+        
         Method valueMethod = class_getInstanceMethod(valueClass, @selector(_objcjs_body:));
 
         size_t nameLen = strlen(name);
@@ -183,14 +189,15 @@ void *objcjs_assignProperty(id target,
                             method_getImplementation(valueMethod),
                             method_getTypeEncoding(valueMethod));
         ILOG(@"added method with selector %s", sel_getName(newSelector));
-    } else if (!targetIsClass){
+    } else if (targetIsClass && valueIsClass){
+        //class method
+        
+    } else  {
         ILOG(@"add property");
         [target objcjs_defineProperty:name];
         char *setterName = setterNameFromPropertyName(name);
         [target performSelector:sel_getUid(setterName) withObject:value];
         ILOG(@"added property with name %s", name);
-    } else {
-        RuntimeException(@"only supports instance methods and property declarations");
     }
     
     return nil;

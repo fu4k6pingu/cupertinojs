@@ -18,8 +18,9 @@ function console(identifer){
 }
 
 function objcjs_main(a, b){
-    var c = new console(42);
-    NSLog("c %@", c.identifer)
-    NSLog("c.log.toString %@", c.log().toString())
+    var c = new console.log();
+    NSLog("c %@", c)
+//    NSLog("c identifer %@", c.identifer)
+//    NSLog("c.log().toString %@", c.log().toString())
     return 0
 }
