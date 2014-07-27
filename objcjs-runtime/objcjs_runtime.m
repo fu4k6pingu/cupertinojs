@@ -13,7 +13,8 @@
 #define RuntimeException(_FMT) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
 
-#define ILOG(A, ...) NSLog(A,##__VA_ARGS__), printf("\n");
+#define ObjCJSRuntimeDEBUG 0
+#define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 @implementation NSObject (ObjCJSFunction)
 

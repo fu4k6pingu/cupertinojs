@@ -176,7 +176,7 @@ std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string fi
     
     auto module = ProgramWithSourceHandle(SourceHandleWithName(filePath.c_str(), isolate), *_options);
     
-    CGObjCJS codegen = CGObjCJS(module->zone());
+    CGObjCJS codegen = CGObjCJS(module->zone(), moduleName);
     codegen.Visit(module->function());
     if (_options->_debug) {
         codegen.dump();

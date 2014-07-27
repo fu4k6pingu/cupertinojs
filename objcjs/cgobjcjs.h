@@ -98,7 +98,7 @@ public:
     
     CGObjCJSRuntime *_runtime;
     
-    CGObjCJS(Zone *zone);
+    CGObjCJS(Zone *zone, std::string name);
 
     virtual~CGObjCJS(){};
 
@@ -164,7 +164,7 @@ public:
                                 Token::Value op) ;
     
     void EmitProperty(Property *property, llvm::Value *value);
-    void EmitPropertyCall(Expression *expr);
+    void EmitPropertyCall(Expression *expr, ZoneList<Expression*>* args);
     
     void EmitVariableLoad(VariableProxy* proxy);
     void EmitVariableStore(VariableProxy* proxy, llvm::Value *value);

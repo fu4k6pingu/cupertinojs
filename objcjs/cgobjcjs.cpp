@@ -18,8 +18,8 @@
 #include "llvm/Support/CFG.h"
 #include "cgobjcjsruntime.h"
 
-#define DEBUG 1
-#define ILOG(A, ...) if (DEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
+#define CGObjCJSDEBUG 0
+#define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;
 
@@ -42,11 +42,11 @@ static std::string FUNCTION_THIS_ARG_NAME("this");
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
-CGObjCJS::CGObjCJS(Zone *zone){
+CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     InitializeAstVisitor(zone);
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
-    _module = new llvm::Module("jit", Context);
+    _module = new llvm::Module(name, Context);
     _context = new CGContext();
     _runtime = new CGObjCJSRuntime(_builder, _module);
     
@@ -828,7 +828,7 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         return;
     }
     
-    if (symbolIsClass(variableName)){
+    if (SymbolIsClass(variableName)){
         PushValueToContext(_runtime->classNamed(variableName.c_str()));
         return;
     }
@@ -930,13 +930,13 @@ void CGObjCJS::VisitCall(Call* node) {
         }
         
     } else if (callType == Call::PROPERTY_CALL){
-        EmitPropertyCall(callee);
+        EmitPropertyCall(callee, node->arguments());
     } else {
         UNIMPLEMENTED();
     }
 }
 
-void CGObjCJS::EmitPropertyCall(Expression *callee){
+void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
     Property *property = callee->AsProperty();
     
     VariableProxy *object = property->obj()->AsVariableProxy();
@@ -952,7 +952,6 @@ void CGObjCJS::EmitPropertyCall(Expression *callee){
     
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
     
-    ZoneList<Expression*>* args = node->arguments();
     for (int i = 0; i <args->length(); i++) {
         //TODO : this should likely retain the values
         Visit(args->at(i));
@@ -1009,7 +1008,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);
     } else if (callType == Call::PROPERTY_CALL){
-        EmitPropertyCall(callee);
+        EmitPropertyCall(callee, node->arguments());
     } else {
         UNIMPLEMENTED();
     }
@@ -1330,5 +1329,5 @@ llvm::Value *CGObjCJS::PopContext() {
 
 //SymbolIsClass - this symbol is currently known as a class
 bool CGObjCJS::SymbolIsClass(std::string symbol) {
-    return _module->getFunction(variableName);
+    return _module->getFunction(symbol);
 }
