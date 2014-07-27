@@ -930,44 +930,46 @@ void CGObjCJS::VisitCall(Call* node) {
         }
         
     } else if (callType == Call::PROPERTY_CALL){
-        Property *property = callee->AsProperty();
-       
-        Expression *object = property->obj();
-        v8::internal::Literal *key = property->key()->AsLiteral();
-        
-        Visit(key);
-        llvm::Value *keyValue = PopContext();
-        assert(keyValue);
-
-        llvm::Value *objValue;
-        Visit(object);
-        objValue = PopContext();
-        assert(objValue);
-       
-        std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
-
-        ZoneList<Expression*>* args = node->arguments();
-        for (int i = 0; i <args->length(); i++) {
-            //TODO : this should likely retain the values
-            Visit(args->at(i));
-        }
-        
-        std::vector<llvm::Value *> finalArgs;
-        for (unsigned i = 0; i < args->length(); i++){
-            llvm::Value *arg = PopContext();
-            finalArgs.push_back(arg);
-        }
-        std::reverse(finalArgs.begin(), finalArgs.end());
-       
-        finalArgs.push_back(ObjcNullPointer());
-        //TODO: fix this!
-        auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
-        PushValueToContext(result);
+        EmitPropertyCall(callee);
     } else {
         UNIMPLEMENTED();
     }
 }
 
+void CGObjCJS::EmitPropertyCall(Expression *callee){
+    Property *property = callee->AsProperty();
+    
+    VariableProxy *object = property->obj()->AsVariableProxy();
+    v8::internal::Literal *key = property->key()->AsLiteral();
+    
+    Visit(key);
+    llvm::Value *keyValue = PopContext();
+    assert(keyValue);
+    
+    Visit(object);
+    llvm::Value *objValue = PopContext();
+    assert(objValue);
+    
+    std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+    
+    ZoneList<Expression*>* args = node->arguments();
+    for (int i = 0; i <args->length(); i++) {
+        //TODO : this should likely retain the values
+        Visit(args->at(i));
+    }
+    
+    std::vector<llvm::Value *> finalArgs;
+    for (unsigned i = 0; i < args->length(); i++){
+        llvm::Value *arg = PopContext();
+        finalArgs.push_back(arg);
+    }
+    std::reverse(finalArgs.begin(), finalArgs.end());
+    
+    finalArgs.push_back(ObjcNullPointer());
+    //TODO: fix this!
+    auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
+    PushValueToContext(result);
+}
 
 void CGObjCJS::VisitCallNew(CallNew* node) {
     Expression *callee = node->expression();
@@ -1007,38 +1009,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);
     } else if (callType == Call::PROPERTY_CALL){
-        Property *property = callee->AsProperty();
-       
-        VariableProxy *object = property->obj()->AsVariableProxy();
-        v8::internal::Literal *key = property->key()->AsLiteral();
-        
-        Visit(key);
-        llvm::Value *keyValue = PopContext();
-        assert(keyValue);
-
-        Visit(object);
-        llvm::Value *objValue = PopContext();
-        assert(objValue);
-
-        std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
-
-        ZoneList<Expression*>* args = node->arguments();
-        for (int i = 0; i <args->length(); i++) {
-            //TODO : this should likely retain the values
-            Visit(args->at(i));
-        }
-        
-        std::vector<llvm::Value *> finalArgs;
-        for (unsigned i = 0; i < args->length(); i++){
-            llvm::Value *arg = PopContext();
-            finalArgs.push_back(arg);
-        }
-        std::reverse(finalArgs.begin(), finalArgs.end());
-       
-        finalArgs.push_back(ObjcNullPointer());
-        //TODO: fix this!
-        auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
-        PushValueToContext(result);
+        EmitPropertyCall(callee);
     } else {
         UNIMPLEMENTED();
     }
@@ -1225,7 +1196,7 @@ static bool IsClassOfTest(CompareOperation* expr) {
 }
  
 void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
-      ASSERT(!HasStackOverflow());
+    ASSERT(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
     
     // Check for a few fast cases. The AST visiting behavior must be in sync
@@ -1291,6 +1262,8 @@ void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
         resultValue = _runtime->messageSend(left, "isEqual:", right);
     } else if (op == Token::EQ_STRICT){
         resultValue = _runtime->messageSend(left, "isEqual:", right);
+    } else {
+        UNIMPLEMENTED();
     }
     
     assert(resultValue);

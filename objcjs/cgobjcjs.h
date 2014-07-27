@@ -164,6 +164,8 @@ public:
                                 Token::Value op) ;
     
     void EmitProperty(Property *property, llvm::Value *value);
+    void EmitPropertyCall(Expression *expr);
+    
     void EmitVariableLoad(VariableProxy* proxy);
     void EmitVariableStore(VariableProxy* proxy, llvm::Value *value);
     void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
