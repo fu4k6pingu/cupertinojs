@@ -1305,20 +1305,6 @@ void CGObjCJS::EndAccumulation() {
     _context = context;
 }
 
-//TODO : ARC
-void CGObjCJS::VisitStartStackAccumulation(AstNode *expr) {
-    assert(0);
-    VisitStartAccumulation(expr, false);
-}
-
-void CGObjCJS::EndStackAccumulation(){
-    assert(0);
-    delete _context;
-    auto context = Contexts.back();
-    Contexts.pop_back();
-    _context = context;
-}
-
 void CGObjCJS::PushValueToContext(llvm::Value *value) {
     _context->Push(value);
 }
