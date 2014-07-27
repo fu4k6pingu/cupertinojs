@@ -43,7 +43,7 @@ const char *COMPILE_ENV_DEBUG = "OBJCJS_ENV_DEBUG_COMPILER";
 
 #pragma mark - CompilerOptions
 
-std::string get_env_var(std::string const & key ) {
+std::string GetEnvVar(std::string const & key ) {
     char * val;
     val = getenv( key.c_str() );
     std::string retval = "";
@@ -53,7 +53,7 @@ std::string get_env_var(std::string const & key ) {
     return retval;
 }
 
-std::vector<std::string> parseNames(int argc, const char * argv[]){
+std::vector<std::string> ParseNames(int argc, const char * argv[]){
     std::vector<std::string> fnames;
     std::string benchmark;
     int repeat = 1;
@@ -78,18 +78,37 @@ std::vector<std::string> parseNames(int argc, const char * argv[]){
 }
 
 objcjs::CompilerOptions::CompilerOptions(int argc, const char * argv[]){
-    _names = parseNames(argc, argv);
-    _runtimePath = get_env_var(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
-    _buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
-    _debug = get_env_var(COMPILE_ENV_DEBUG) == "true";
+    _names = ParseNames(argc, argv);
+    _runtimePath = GetEnvVar(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
+    _buildDir = GetEnvVar(COMPILE_ENV_BUILD_DIR);
+    _debug = GetEnvVar(COMPILE_ENV_DEBUG) == "true";
 }
+
+int objcjs::CompilerOptions::validate(){
+    if(!_names.size()){
+        std::cout << "no input files \n";
+        return 0;
+    }
+    if(!_runtimePath.length()){
+        std::cout << "missing runtime path \n";
+        return 0;
+    }
+    
+    if(!_buildDir.length()){
+        std::cout << "missing build dir \n";
+        return 0;
+    }
+    
+    return 1;
+}
+
+#pragma mark - Compiler
 
 objcjs::Compiler::Compiler(CompilerOptions options, v8::Isolate *isolate){
     _options = &options;
     _isolate = isolate;
 }
 
-#pragma mark - Compiler
 
 class StringResource8 : public v8::String::ExternalAsciiStringResource {
 public:
@@ -168,7 +187,7 @@ void runModule(llvm::Module module){
 }
 
 std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string filePath){
-    std::string buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
+    std::string buildDir = GetEnvVar(COMPILE_ENV_BUILD_DIR);
     std::string fileName = split(filePath, '/').back();
     std::string moduleName = split(fileName, '.').front();
     

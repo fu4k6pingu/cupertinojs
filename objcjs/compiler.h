@@ -13,12 +13,8 @@
 #include <vector>
 #include <iostream>
 
-using namespace std;
-
 namespace objcjs {
-
     class CompilerOptions{
-       
     public:
         std::string _runtimePath;
         std::string _buildDir;
@@ -26,24 +22,7 @@ namespace objcjs {
         bool _debug;
        
         CompilerOptions(int argc, const char * argv[]);
-        
-        int validate(){
-            if(!_names.size()){
-                std::cout << "no input files \n";
-                return 0;
-            }
-            if(!_runtimePath.length()){
-                std::cout << "missing runtime path \n";
-                return 0;
-            }
-            
-            if(!_buildDir.length()){
-                std::cout << "missing build dir \n";
-                return 0;
-            }
-            
-            return 1;
-        }
+        int validate();
     };
     
     class Compiler {
