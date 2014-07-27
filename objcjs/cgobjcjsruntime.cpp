@@ -93,9 +93,9 @@ llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
 //TODO : explicitly specifiy varargs
 #define DefExternFucntion(name){\
 {\
-    std::vector<llvm::Type*> argTypes; \
-    argTypes.push_back(ObjcPointerTy()); \
-    llvm::FunctionType *ft = llvm::FunctionType::get(ObjcPointerTy(), argTypes, true); \
+    std::vector<llvm::Type*> ArgumentTypes; \
+    ArgumentTypes.push_back(ObjcPointerTy()); \
+    llvm::FunctionType *ft = llvm::FunctionType::get(ObjcPointerTy(), ArgumentTypes, true); \
     auto function = llvm::Function::Create( \
         ft, llvm::Function::ExternalLinkage, \
         llvm::Twine(name), \
@@ -105,10 +105,10 @@ llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
 }
 
 static llvm::Function *ObjcMsgSendFPret(llvm::Module *module) {
-        std::vector<llvm::Type*> argTypes;
-    argTypes.push_back(ObjcPointerTy());
+        std::vector<llvm::Type*> ArgumentTypes;
+    ArgumentTypes.push_back(ObjcPointerTy());
     auto doubleTy  = llvm::Type::getDoubleTy(llvm::getGlobalContext());
-    llvm::FunctionType *ft = llvm::FunctionType::get(doubleTy, argTypes, true); \
+    llvm::FunctionType *ft = llvm::FunctionType::get(doubleTy, ArgumentTypes, true); \
     auto function = llvm::Function::Create(
         ft, llvm::Function::ExternalLinkage,
                                            llvm::Twine("objc_msgSend_fpret"), \
@@ -122,12 +122,12 @@ static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
     std::vector<llvm::Type*> ArgumentTypes;
     ArgumentTypes.push_back(ObjcPointerTy());
     
-    llvm::FunctionType* printf_type =
+    llvm::FunctionType* functionType =
     llvm::FunctionType::get(
                             llvm::Type::getInt32Ty(module->getContext()), ArgumentTypes, true);
     
     llvm::Function *function = llvm::Function::Create(
-                                                  printf_type, llvm::Function::ExternalLinkage,
+                                                  functionType, llvm::Function::ExternalLinkage,
                                                   llvm::Twine("NSLog"),
                                                   module
                                                   );
@@ -136,22 +136,22 @@ static llvm::Function* ObjcNSLogPrototye(llvm::Module *module)
 }
 
 static llvm::Function *ObjcMallocPrototype(llvm::Module *module) {
-    std::vector<llvm::Type*>FuncTy_7_args;
-    FuncTy_7_args.push_back(llvm::IntegerType::get(module->getContext(), 64));
-    llvm::FunctionType* FuncTy_7 = llvm::FunctionType::get(
-                                                           /*Result=*/ObjcPointerTy(),
-                                                           /*Params=*/FuncTy_7_args,
-                                                           /*isVarArg=*/false);
-    llvm::Function* func_malloc = module->getFunction("malloc");
-    if (!func_malloc) {
-        func_malloc = llvm::Function::Create(
-                                             /*Type=*/FuncTy_7,
-                                             /*Linkage=*/llvm::GlobalValue::ExternalLinkage,
-                                             /*Name=*/"malloc", module); // (external, no body)
-        func_malloc->setCallingConv(llvm::CallingConv::C);
+    std::vector<llvm::Type*>ArgumentTypes;
+    ArgumentTypes.push_back(llvm::IntegerType::get(module->getContext(), 64));
+    llvm::FunctionType* functionType = llvm::FunctionType::get(
+                                                               ObjcPointerTy(),
+                                                               ArgumentTypes,
+                                                               false);
+    llvm::Function* function = module->getFunction("malloc");
+    if (!function) {
+        function = llvm::Function::Create(
+                                          functionType,
+                                          llvm::GlobalValue::ExternalLinkage,
+                                          "malloc", module); // (external, no body)
+        function->setCallingConv(llvm::CallingConv::C);
     }
     
-    return func_malloc;
+    return function;
 }
 
 std::string asciiStringWithV8String(v8::internal::String *string) {
@@ -192,7 +192,7 @@ llvm::Value *localStringVar(std::string value,
 }
 
 //TODO : move to native JS
-static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder,
+static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*builder,
                                          llvm::Module *module) {
     std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
     
@@ -203,25 +203,22 @@ static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*_builder,
     
     
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    _builder->SetInsertPoint(BB);
+    builder->SetInsertPoint(BB);
     
     llvm::Function::arg_iterator argIterator = function->arg_begin();
     
-    llvm::IRBuilder<> Builder(&function->getEntryBlock(),
-                           function->getEntryBlock().begin());
-   
-    auto *alloca  = Builder.CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
-    _builder->CreateStore(argIterator, alloca);
+    auto *alloca  = builder->CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
+    builder->CreateStore(argIterator, alloca);
 
-    llvm::Value *localVarValue = _builder->CreateLoad(alloca, false, std::string("varr"));
+    llvm::Value *localVarValue = builder->CreateLoad(alloca, false, std::string("varr"));
 
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(localVarValue);
-    _builder->CreateCall(module->getFunction("NSLog"), ArgsV);
+    builder->CreateCall(module->getFunction("NSLog"), ArgsV);
     
     auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-    _builder->CreateRet(zero);
-    _builder->saveAndClearIP();
+    builder->CreateRet(zero);
+    builder->saveAndClearIP();
     return function;
 }
 
@@ -274,26 +271,26 @@ llvm::Value *CGObjCJSRuntime::newNumberWithLLVMValue(llvm::Value *doubleValue){
 llvm::Value *CGObjCJSRuntime::doubleValue(llvm::Value *llvmValue){
     llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string("doubleValue"), _module), "calltmp");
 
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(llvmValue);
-    ArgsV.push_back(sel);
+    std::vector<llvm::Value*> Args;
+    Args.push_back(llvmValue);
+    Args.push_back(sel);
 
-    return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), ArgsV, "calltmp-objc_msgSend_fpret");
+    return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), Args, "calltmp-objc_msgSend_fpret");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *selectorName,
                                           llvm::Value *Arg) {
     llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string(selectorName), _module), "calltmp");
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(receiver);
-    ArgsV.push_back(selector);
+    std::vector<llvm::Value*> Args;
+    Args.push_back(receiver);
+    Args.push_back(selector);
    
     if (Arg){
-        ArgsV.push_back(Arg);
+        Args.push_back(Arg);
     }
    
-    return _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "calltmp-objc_msgSend");
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
@@ -353,11 +350,11 @@ llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
 llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
     llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string("objcjs_boolValue"), _module), "calltmp");
 
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(llvmValue);
-    ArgsV.push_back(sel);
+    std::vector<llvm::Value*> Args;
+    Args.push_back(llvmValue);
+    Args.push_back(sel);
 
-    return _builder->CreateCall(_module->getFunction("objc_msgSend"), ArgsV, "objc_msgSend");
+    return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "objc_msgSend");
 }
 
 llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
