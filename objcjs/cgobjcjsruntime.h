@@ -15,6 +15,7 @@
 #include "llvm/IR/Module.h"
 #include <llvm-c/Core.h>
 #include "src/ast.h"
+#include <set>
 
 extern llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                          const std::string &VarName);
@@ -24,6 +25,9 @@ extern llvm::Function *CGObjCJSFunction(size_t numParams,
                                       std::string name,
                                       llvm::Module *mod);
 
+extern llvm::Function *ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
+                                             llvm::Module *module,
+                                             std::string name);
 extern llvm::Type *ObjcPointerTy();
 extern llvm::Value *ObjcNullPointer();
 extern llvm::Value *localStringVar(const char* data, size_t len, llvm::Module *module);
@@ -31,6 +35,7 @@ extern llvm::Value *localStringVar(const char* data, size_t len, llvm::Module *m
 extern std::string asciiStringWithV8String(v8::internal::String *string);
 
 class CGObjCJSRuntime {
+    std::set <std::string>  _builtins;
 public:
     CGObjCJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
 
@@ -65,6 +70,10 @@ public:
     llvm::Value *assignProperty(llvm::Value *instance,
                                 std::string name,
                                 llvm::Value *value);
+    
+    llvm::Value *declareGlobal(std::string name);
+
+    bool isBuiltin(std::string name);
 };
 
 

@@ -59,6 +59,18 @@ public:
         return _namedValues[key];
     }
     
+    llvm::AllocaInst *lookup(std::vector<CGContext *>contexts, std::string key){
+        llvm::AllocaInst *value = NULL;
+        for (size_t i = contexts.size()-1; i; i--){
+            auto foundValue = contexts[i]->valueForKey(key);
+            if (foundValue){
+                value = foundValue;
+                break;
+            }
+        }
+        return value;
+    }
+    
     void Push(llvm::Value *value) {
         if (value) {
             _context.push_back(value);
@@ -85,6 +97,7 @@ public:
 
 
 class CGObjCJS: public  v8::internal::AstVisitor {
+    std::string *_name;
 public:
     CGContext *_context;
     std::vector<CGContext *> Contexts;
@@ -191,6 +204,8 @@ public:
     llvm::Value *PopContext();
   
     bool SymbolIsClass(std::string symbol);
+    bool SymbolIsJSFunction(std::string symbol);
+    bool IsInGlobalScope();
     
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };

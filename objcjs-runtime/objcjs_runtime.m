@@ -51,6 +51,7 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
+//TODO : undefined!
 - (id)_objcjs_body:(id)args, ... {
     return @"JSFUNCTION-DEFAULT-BODY-RETURN";
 }
@@ -240,13 +241,13 @@ void *objcjs_invoke(void *target, ...){
     }
     va_end(args1);
  
-    // TODO: is there a better way to do this?
     BOOL targetIsClass = ptrIsClass(target);
     Class targetClass = nil;
     if (targetIsClass) {
         targetClass = target;
-        target = [[targetClass new] autorelease];
-        ILOG(@"new instance of %s \n", class_getName(targetClass));
+        target = objcjs_GlobalScope;
+        //TODO  : spec this
+        ILOG(@"global invocation %s \n", class_getName(targetClass));
     } else if ([(id)target respondsToSelector:@selector(_objcjs_body:)]) {
         targetClass = object_getClass(target);
         ILOG(@"instance of %s\n", class_getName(targetClass));

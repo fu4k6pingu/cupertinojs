@@ -6,9 +6,9 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
+#include <malloc/malloc.h>
 #include "cgobjcjsruntime.h"
 #include "string.h"
-#import <malloc/malloc.h>
 
 const auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
 
@@ -86,6 +86,31 @@ llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
 
     auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
     builder->CreateRet(zeroInt);
+    builder->saveAndClearIP();
+    return function;
+}
+
+llvm::Function *ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
+                                      llvm::Module *module,
+                                      std::string name) {
+    std::vector<llvm::Type*> argumentTypes;
+    argumentTypes.push_back(ObjcPointerTy());
+    llvm::FunctionType *functionType = llvm::FunctionType::get(
+                                                        ObjcPointerTy(),
+                                                        argumentTypes,
+                                                        false);
+    
+    llvm::Function *function = llvm::Function::Create(
+                                                  functionType,
+                                                  llvm::Function::ExternalLinkage,
+                                                  llvm::Twine(name),
+                                                  module);
+    
+    function->setCallingConv(llvm::CallingConv::C);
+    
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
+    builder->SetInsertPoint(BB);
+   
     builder->saveAndClearIP();
     return function;
 }
@@ -228,6 +253,9 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
                                  llvm::Module *module){
     _builder = builder;
     _module = module;
+   
+    _builtins.insert("objcjs_main");
+    _builtins.insert("NSLog");
     
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
@@ -388,4 +416,20 @@ llvm::Value *CGObjCJSRuntime::assignProperty(llvm::Value *instance,
     Args.push_back(value);
     
     return _builder->CreateCall(_module->getFunction("objcjs_assignProperty"), Args, "calltmp");
+}
+
+llvm::Value *CGObjCJSRuntime::declareGlobal(std::string name) {
+    llvm::GlobalVariable* var = new llvm::GlobalVariable(*_module,
+                                                         ObjcPointerTy(),
+                                                         false,
+                                                         llvm::GlobalValue::ExternalLinkage,
+                                                         0,
+                                                         name);
+    auto ty = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
+    var->setInitializer(llvm::ConstantPointerNull::get(ty));
+    return var;
+}
+
+bool CGObjCJSRuntime::isBuiltin(std::string name) {
+    return _builtins.count(name) > 0;
 }

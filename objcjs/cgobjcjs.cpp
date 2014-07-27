@@ -44,11 +44,14 @@ static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
 CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     InitializeAstVisitor(zone);
+    _name = &name;
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module(name, Context);
     _context = new CGContext();
     _runtime = new CGObjCJSRuntime(_builder, _module);
+
+    ObjcCodeGenModuleInit(_builder, _module, name);
     
     assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
     assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
@@ -165,6 +168,15 @@ void CGObjCJS::VisitBlock(Block *block){
 }
 
 void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
+    if(IsInGlobalScope()){
+        VariableProxy *var = node->proxy();
+        auto insertPt = _builder->GetInsertBlock();
+        std::string globalName = stringFromV8AstRawString(var->raw_name());
+        _runtime->declareGlobal(globalName);
+        _builder->SetInsertPoint(insertPt);
+        return;
+    }
+    
     std::string name = stringFromV8AstRawString(node->proxy()->raw_name());
     llvm::Function *function = _builder->GetInsertBlock()->getParent();
     llvm::AllocaInst *alloca = CreateEntryBlockAlloca(function, name);
@@ -180,7 +192,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
         ILOG("TODO: support unnamed functions");
     }
 
-    bool isJSFunction = name != std::string("objcjs_main") && name != std::string("NSLog");
+    bool isJSFunction = SymbolIsJSFunction(name);
     if (isJSFunction) {
         assert(!_module->getFunction(name) && "function is already declared");
     }
@@ -195,7 +207,9 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
         mainBB->getInstList().push_front(defineFunction);
 
         //If this is a nested declaration set the parent to this!
-        if (_builder->GetInsertBlock() && _builder->GetInsertBlock()->getParent()) {
+        if (_builder->GetInsertBlock() &&
+            _builder->GetInsertBlock()->getParent() &&
+            !(_builder->GetInsertBlock()->getParent()->getName().equals(*_name))) {
             auto functionClass = _runtime->classNamed(name.c_str());
             auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
             auto jsThis = _builder->CreateLoad(jsThisAlloca, "load-this");
@@ -558,9 +572,22 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
+        //TODO : refactor global scope checking
+        Contexts[0]->_scope = node->scope();
+        
+        auto moduleFunction = _module->getFunction(*_name);
+        _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
         EndAccumulation();
+
+        llvm::BasicBlock *BB = &moduleFunction->getBasicBlockList().front();
+        llvm::ReturnInst::Create(_module->getContext(), ObjcNullPointer(), BB);
+        std::vector<llvm::Value *>Args;
+        Args.push_back(ObjcNullPointer());
+        auto callModuleFunction = llvm::CallInst::Create(moduleFunction,Args);
+        llvm::BasicBlock *MainBB = &_module->getFunction("objcjs_main")->getBasicBlockList().front();
+        MainBB->getInstList().push_front(callModuleFunction);
         return;
     }
     
@@ -570,7 +597,7 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
    
-    bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+    bool isJSFunction = SymbolIsJSFunction(name);
     if (isJSFunction) {
         CreateJSArgumentAllocas(function, node->scope());
     } else {
@@ -715,7 +742,6 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
         : KEYED_PROPERTY;
     }
     
-    //TODO : new scope
     Visit(node->value());
     llvm::Value *value = PopContext();
   
@@ -726,7 +752,9 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             assert(value && "missing value - not implemented");
 
             std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
-            if (node->op() != Token::EQ && node->op() != Token::INIT_VAR){
+            if (node->op() !=Token::ASSIGN &&
+                node->op() != Token::EQ &&
+                node->op() != Token::INIT_VAR){
                 EmitVariableLoad(targetProxy);
                 auto target = PopContext();
                 auto selector = assignOpSelectorByToken[node->op()].c_str();
@@ -738,7 +766,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
                 //TODO : refactor
                 ILOG("INIT_VAR %s", targetName.c_str());
             }
-            
+
             EmitVariableStore(targetProxy, value);
             break;
         } case NAMED_PROPERTY: {
@@ -781,10 +809,9 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
     assert(value && "missing value - not implemented");
     std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
     
-    llvm::AllocaInst *targetAlloca;
     bool scopeHasTarget = _context->valueForKey(targetName);
     if (scopeHasTarget){
-        targetAlloca = _context->valueForKey(targetName);
+        llvm::AllocaInst *targetAlloca = _context->valueForKey(targetName);
         _builder->CreateStore(value, targetAlloca);
        
         //TODO : clean this up as it is killing performance
@@ -804,8 +831,14 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
             Args.push_back(keypathStringValue);
             _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
         }
-    } else {
-        targetAlloca = _builder->CreateAlloca(ObjcPointerTy());
+    } else if (_context->lookup(Contexts, targetName)){
+        UNIMPLEMENTED();
+    } else if (_module->getGlobalVariable(llvm::StringRef(targetName), false)) {
+        llvm::GlobalVariable *global = _module->getGlobalVariable(llvm::StringRef(targetName));
+        assert(!global->isConstant());
+        _builder->CreateStore(value, global);
+    } else if (!_module->getGlobalVariable(llvm::StringRef(targetName), false)){
+        llvm::AllocaInst *targetAlloca = _builder->CreateAlloca(ObjcPointerTy());
         //Set the environment value
         auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
         auto jsThis = _builder->CreateLoad(jsThisAlloca);
@@ -823,16 +856,23 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
 void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
     auto varAlloca = _context->valueForKey(variableName);
+
+    if (SymbolIsClass(variableName) && !varAlloca){
+        PushValueToContext(_runtime->classNamed(variableName.c_str()));
+        return;
+    }
+
     if (varAlloca) {
         PushValueToContext(_builder->CreateLoad(varAlloca, variableName));
         return;
     }
-    
-    if (SymbolIsClass(variableName)){
-        PushValueToContext(_runtime->classNamed(variableName.c_str()));
+
+    auto global = _module->getGlobalVariable(llvm::StringRef(variableName));
+    if (global) {
+        PushValueToContext(_builder->CreateLoad(global));
         return;
     }
-   
+
     //NTS: always create an alloca for an arugment you want to pass to a function!!
     auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "env_var_alloca");
     _builder->CreateStore(_runtime->newString(variableName), environmentVariableAlloca);
@@ -917,7 +957,7 @@ void CGObjCJS::VisitCall(Call* node) {
         }
         std::reverse(finalArgs.begin(), finalArgs.end());
         
-        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
+        bool isJSFunction = SymbolIsJSFunction(name);
         if (isJSFunction) {
             Visit(callee);
             llvm::Value *target = PopContext();
@@ -995,9 +1035,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         }
         std::reverse(finalArgs.begin(), finalArgs.end());
         
-        bool isJSFunction = !(name == std::string("objcjs_main") || name == std::string("NSLog"));
-       
-        assert(isJSFunction);
+        assert(SymbolIsJSFunction(name));
         
         //Create a new instance and invoke the body
         llvm::Value *targetClass = _runtime->classNamed(name.c_str());
@@ -1015,6 +1053,35 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
 }
 
 void CGObjCJS::VisitCallRuntime(CallRuntime* node) {
+    std::string name = stringFromV8AstRawString(node->raw_name());
+    ZoneList<Expression*>* args = node->arguments();
+
+    if (name == "initializeVarGlobal") {
+        //create store for this global in the module initializer
+        
+        //The name is the first arg
+        auto globalRawName = (AstRawString *)args->at(0)->AsLiteral()->raw_value()->AsString();
+        std::string globalName = stringFromV8AstRawString(globalRawName);
+        
+        auto moduleInitBB = &_module->getFunction(*_name)->getBasicBlockList().front();
+        auto insertPt = _builder->GetInsertBlock();
+        
+        _builder->SetInsertPoint(moduleInitBB);
+
+        //The value is the 3rd arg
+        Visit(args->at(2));
+        auto value = PopContext();
+
+        auto global = _module->getGlobalVariable(globalName);
+        assert(global && "global var should be initialized");
+        
+        _builder->CreateStore(value, global);
+        _builder->SetInsertPoint(insertPt);
+        
+        PushValueToContext(_builder->CreateLoad(global));
+        return;
+    }
+    
     UNIMPLEMENTED();
 }
 
@@ -1316,4 +1383,14 @@ llvm::Value *CGObjCJS::PopContext() {
 //SymbolIsClass - this symbol is currently known as a class
 bool CGObjCJS::SymbolIsClass(std::string symbol) {
     return _module->getFunction(symbol);
+}
+
+//SymbolIsJSFunction - this symbol is known jsfunction
+bool CGObjCJS::SymbolIsJSFunction(std::string symbol) {
+    return !_runtime->isBuiltin(symbol);
+}
+
+bool CGObjCJS::IsInGlobalScope() {
+    auto currName = _builder->GetInsertBlock()->getParent()->getName();
+    return *_name == currName;
 }
