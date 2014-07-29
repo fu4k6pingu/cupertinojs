@@ -11,10 +11,26 @@ function log(value){
     NSLog("aGlobal locally %@", aGlobal)
 }
 
-function objcjs_main(a, b){
+function doMain(){
     log(aGlobal)
-   
+  
     //this should log the changed value
-    NSLog("aGlobal end %@", aGlobal)
+    NSLog("aGlobal after log: %@", aGlobal)
+   
+    aGlobal = "local"
+    
+    function inside(){
+        //this should log the "local" value
+        NSLog("aGlobal inside: %@", aGlobal)
+    }
+    
+    inside()
+    
+    NSLog("aGlobal end: %@", aGlobal)
+}
+
+function objcjs_main(a, b){
+    doMain()
     return 0
 }
+

@@ -51,7 +51,8 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     _context = new CGContext();
     _runtime = new CGObjCJSRuntime(_builder, _module);
 
-    ObjcCodeGenModuleInit(_builder, _module, name);
+    auto moduleFunction = ObjcCodeGenModuleInit(_builder, _module, name);
+    SetModuleCtor(_module, moduleFunction);
     
     assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
     assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
@@ -80,6 +81,7 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
     opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
     opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
+
 }
 
 /// CreateArgumentAllocas - Create an alloca for each argument and register the
@@ -199,12 +201,11 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
     
     int numParams = node->fun()->scope()->num_parameters();
     if (isJSFunction){
-        //Add define JSFunction to front of main
-        llvm::Function *main = _module->getFunction("main");
-
-        llvm::BasicBlock *mainBB = &main->getBasicBlockList().front();
+        //Add define JSFunction to front of the module constructor
+        llvm::Function *moduleCtor = _module->getFunction(*_name);
+        llvm::BasicBlock *moduleCtorBB = &moduleCtor->getBasicBlockList().front();
         llvm::Instruction *defineFunction = (llvm::Instruction *)_runtime->defineJSFuction(name.c_str(), numParams);
-        mainBB->getInstList().push_front(defineFunction);
+        moduleCtorBB->getInstList().push_front(defineFunction);
 
         //If this is a nested declaration set the parent to this!
         if (_builder->GetInsertBlock() &&
@@ -569,25 +570,21 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     _builder->saveIP();
     
     auto name = stringFromV8AstRawString(node->raw_name());
-    
-    if (!name.length()){
-        ILOG("TODO: support unnamed functions");
-        //TODO : refactor global scope checking
-        Contexts[0]->_scope = node->scope();
-        
+   
+    //TODO: support unnamed functions
+    bool isModuleContainerFunction = !name.length();
+    if (isModuleContainerFunction){
+        //start module inserting at beginning of init function
         auto moduleFunction = _module->getFunction(*_name);
         _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
+
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
         EndAccumulation();
 
+        //add terminator to module function
         llvm::BasicBlock *BB = &moduleFunction->getBasicBlockList().front();
         llvm::ReturnInst::Create(_module->getContext(), ObjcNullPointer(), BB);
-        std::vector<llvm::Value *>Args;
-        Args.push_back(ObjcNullPointer());
-        auto callModuleFunction = llvm::CallInst::Create(moduleFunction,Args);
-        llvm::BasicBlock *MainBB = &_module->getFunction("objcjs_main")->getBasicBlockList().front();
-        MainBB->getInstList().push_front(callModuleFunction);
         return;
     }
     
@@ -831,13 +828,8 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
             Args.push_back(keypathStringValue);
             _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
         }
+        
     } else if (_context->lookup(Contexts, targetName)){
-        UNIMPLEMENTED();
-    } else if (_module->getGlobalVariable(llvm::StringRef(targetName), false)) {
-        llvm::GlobalVariable *global = _module->getGlobalVariable(llvm::StringRef(targetName));
-        assert(!global->isConstant());
-        _builder->CreateStore(value, global);
-    } else if (!_module->getGlobalVariable(llvm::StringRef(targetName), false)){
         llvm::AllocaInst *targetAlloca = _builder->CreateAlloca(ObjcPointerTy());
         //Set the environment value
         auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
@@ -850,6 +842,12 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
         Args.push_back(value);
         Args.push_back(keypathStringValue);
         _runtime->messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
+    } else if (_module->getGlobalVariable(llvm::StringRef(targetName), false)) {
+        llvm::GlobalVariable *global = _module->getGlobalVariable(llvm::StringRef(targetName));
+        assert(!global->isConstant());
+        _builder->CreateStore(value, global);
+    } else {
+        UNIMPLEMENTED();
     }
 }
 
@@ -867,24 +865,27 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         return;
     }
 
+    auto nestedVarAlloc = _context->lookup(Contexts, variableName);
+    if (nestedVarAlloc) {
+        //NTS: always create an alloca for an arugment you want to pass to a function!!
+        auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "env_var_alloca");
+        _builder->CreateStore(_runtime->newString(variableName), environmentVariableAlloca);
+        auto keypathArgument = _builder->CreateLoad(environmentVariableAlloca);
+        
+        //load the value from the parents environment
+        auto parentFunction = _builder->GetInsertBlock()->getParent();
+        auto parentName = parentFunction ->getName().str();
+        auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_objcjs_parent");
+        auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
+        
+        PushValueToContext(value);
+    }
+    
     auto global = _module->getGlobalVariable(llvm::StringRef(variableName));
     if (global) {
         PushValueToContext(_builder->CreateLoad(global));
         return;
     }
-
-    //NTS: always create an alloca for an arugment you want to pass to a function!!
-    auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "env_var_alloca");
-    _builder->CreateStore(_runtime->newString(variableName), environmentVariableAlloca);
-    auto keypathArgument = _builder->CreateLoad(environmentVariableAlloca);
-   
-    //load the value from the parents environment
-    auto parentFunction = _builder->GetInsertBlock()->getParent();
-    auto parentName = parentFunction ->getName().str();
-    auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_objcjs_parent");
-    auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
-
-    PushValueToContext(value);
 }
 
 void CGObjCJS::VisitYield(Yield* node) {

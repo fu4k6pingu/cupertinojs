@@ -34,6 +34,8 @@ extern llvm::Value *localStringVar(const char* data, size_t len, llvm::Module *m
 
 extern std::string asciiStringWithV8String(v8::internal::String *string);
 
+extern void SetModuleCtor(llvm::Module *mod, llvm::Function *cTor);
+
 class CGObjCJSRuntime {
     std::set <std::string>  _builtins;
 public:

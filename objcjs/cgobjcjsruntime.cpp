@@ -115,6 +115,57 @@ llvm::Function *ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
     return function;
 }
 
+
+void SetModuleCtor(llvm::Module *module, llvm::Function *cTor){
+    llvm::Function* func_init = module->getFunction("objcjs_module_init");
+    assert(!func_init && "module already has a ctor");
+    
+    std::vector<llvm::Type*>FuncTy_args;
+    llvm::FunctionType* FuncTy = llvm::FunctionType::get(
+                                                         llvm::Type::getVoidTy(module->getContext()),
+                                                         FuncTy_args,
+                                                         false);
+    func_init = llvm::Function::Create(
+                                       FuncTy,
+                                       llvm::GlobalValue::ExternalLinkage,
+                                       "objcjs_module_init", module);
+    func_init->setCallingConv(llvm::CallingConv::C);
+    
+    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", func_init);
+    
+    std::vector<llvm::Value *>Args;
+    Args.push_back(ObjcNullPointer());
+    auto callModuleFunction = llvm::CallInst::Create(cTor,Args);
+
+    BB->getInstList().push_front(callModuleFunction);
+    llvm::ReturnInst::Create(module->getContext(), BB);
+    
+    std::vector<llvm::Type*>StructTy_fields;
+    StructTy_fields.push_back(llvm::IntegerType::get(module->getContext(), 32));
+    StructTy_fields.push_back(func_init->getType());
+    
+    llvm::StructType *StructTy = llvm::StructType::get(module->getContext(), StructTy_fields, false);
+    std::vector<llvm::Constant*> const_array_elems;
+
+    std::vector<llvm::Constant*> const_struct_fields;
+    llvm::ConstantInt* const_int32_99 = llvm::ConstantInt::get(module->getContext(),llvm:: APInt(32, llvm::StringRef("65535"), 10));
+    const_struct_fields.push_back(const_int32_99);
+    const_struct_fields.push_back(func_init);
+    llvm::Constant* const_struct = llvm::ConstantStruct::get(StructTy, const_struct_fields);
+    
+    const_array_elems.push_back(const_struct);
+    
+    llvm::ArrayType* ArrayTy = llvm::ArrayType::get(StructTy, 1);
+    llvm::Constant* const_array = llvm::ConstantArray::get(ArrayTy, const_array_elems);
+    llvm::GlobalVariable* gvar_array_llvm_global_ctors = new llvm::GlobalVariable(*module,
+                                                                                  ArrayTy,
+                                                                                  false,
+                                                                                  llvm::GlobalValue::AppendingLinkage,
+                                                                                  0,
+                                                                                  "llvm.global_ctors");
+    gvar_array_llvm_global_ctors->setInitializer(const_array);
+}
+
 //TODO : explicitly specifiy varargs
 #define DefExternFucntion(name){\
 {\
@@ -187,10 +238,10 @@ std::string asciiStringWithV8String(v8::internal::String *string) {
 llvm::Value *localStringVar(const char* data,
                             size_t len,
                             llvm::Module *module) {
-    auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
-    if (exisitingString){
-        return exisitingString;
-    }
+//    auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
+//    if (exisitingString){
+//        return exisitingString;
+//    }
     llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
     //We are adding an extra space for the null terminator!
     auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
