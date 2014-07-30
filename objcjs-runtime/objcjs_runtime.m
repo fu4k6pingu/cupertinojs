@@ -13,12 +13,16 @@
 #define RuntimeException(_FMT) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
 
-#define ObjCJSRuntimeDEBUG 0
+#define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 @implementation NSObject (ObjCJSFunction)
 
 static char * ObjCJSEnvironmentKey;
+
++ (id)objcjs_new {
+    return [[self new] autorelease];
+}
 
 - (NSMutableDictionary *)_objcjs_environment {
     NSMutableDictionary *environment = objc_getAssociatedObject(self, ObjCJSEnvironmentKey);
@@ -36,7 +40,7 @@ static NSMutableDictionary *ObjCJSParents = NULL;
         ObjCJSParents = [[NSMutableDictionary alloc] init];
     }
 
-    ObjCJSParents[NSStringFromClass(self.class)] = [parent retain];
+    ObjCJSParents[NSStringFromClass(self.class)] = parent;
 }
 
 + (id)_objcjs_parent {
@@ -81,7 +85,12 @@ BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
     
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
         ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, __PRETTY_FUNCTION__, value);
-        objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        id _value = objc_getAssociatedObject(_self, propertyName);
+        if (value != _value) {
+            [_value release];
+            objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            ILOG(@"DID SET VALUE");
+        }
     });
     
     class_addMethod(selfClass, getterSelector, getter, "@@:");
@@ -123,7 +132,7 @@ char *setterNameFromPropertyName(const char *propertyName){
         if (![[environment allKeys] containsObject:key]) {
             [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
         } else {
-            environment[[key copy]] = [value retain];
+            environment[[key copy]] = value;
         }   
     }
 }
@@ -133,7 +142,7 @@ char *setterNameFromPropertyName(const char *propertyName){
     if (!value) {
         environment[[key copy]] = [NSNull null];
     } else {
-        environment[[key copy]] = [value retain];
+        environment[[key copy]] = value;
     }
 }
 
@@ -160,11 +169,29 @@ void *objcjs_defineJSFunction(const char *name,
     const char *enc = method_getTypeEncoding(superBody);
     class_addMethod(jsClass, bodySelector, (IMP)body, enc);
     objc_registerClassPair(jsClass);
-   
+  
+    //Tag object
     objc_setAssociatedObject(jsClass, JSFunctionTag, @YES, OBJC_ASSOCIATION_ASSIGN);
+   
+
+    //Override dealloc and retain for debugging
+    Method superDealloc = class_getInstanceMethod(superClass, @selector(dealloc));
+    IMP dealloc = imp_implementationWithBlock(^(id _self, SEL cmd){
+        ILOG(@"DEALLOC %@ %s", _self, sel_getName(cmd));
+        method_getImplementation(superDealloc)(_self, cmd);
+    });
+    class_addMethod(jsClass, @selector(dealloc), dealloc, method_getTypeEncoding(superDealloc));
+    
+    Method superRetain = class_getInstanceMethod(superClass, @selector(retain));
+    IMP retain = imp_implementationWithBlock(^(id _self, SEL cmd){
+        ILOG(@"RETAIN %@", jsClass);
+        return method_getImplementation(superRetain)(_self, cmd);
+    });
+    class_addMethod(jsClass, @selector(retain), retain, method_getTypeEncoding(superRetain));
     
     return jsClass;
 }
+
 
 size_t __NSObjectMallocSize(){
     return 64;

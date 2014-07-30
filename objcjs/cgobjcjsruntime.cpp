@@ -56,7 +56,8 @@ llvm::Function *CGObjCJSFunction(size_t numParams,
 }
 
 llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
-                                         llvm::Module *module) {
+                                         llvm::Module *module,
+                                         CGObjCJSRuntime *runtime) {
     std::vector<llvm::Type*> argumentTypes;
     
     llvm::FunctionType *functionType = llvm::FunctionType::get(
@@ -76,7 +77,8 @@ llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
     builder->SetInsertPoint(BB);
     
     ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
-  
+
+    auto pool = runtime->messageSend(runtime->classNamed("NSAutoreleasePool"), "new");
     //TODO : pass arguments from main
     std::vector<llvm::Value*> ArgsV;
     ArgsV.push_back(ObjcNullPointer());
@@ -84,6 +86,8 @@ llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
     
     builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
 
+    runtime->messageSend(pool, "drain");
+    
     auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
     builder->CreateRet(zeroInt);
     builder->saveAndClearIP();
@@ -325,7 +329,7 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     ObjcNSLogPrototye(_module);
     ObjcCOutPrototype(_builder, _module);
 
-    ObjcCodeGenMainPrototype(_builder, _module);
+    ObjcCodeGenMainPrototype(_builder, _module, this);
 }
 
 llvm::Value *CGObjCJSRuntime::newString(std::string string){
@@ -399,7 +403,16 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
 llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
                                  const char *name,
                                  std::vector<llvm::Value *>ArgsV) {
-   
+    //Check for known NSObject methods otherwise jsinvoke
+    bool isMsgSend = std::string(name) == "release" ||
+                     std::string(name) == "autorelease" ||
+                     std::string(name) == "retainCount" ||
+                     std::string(name) == "retain";
+    
+    if (isMsgSend) {
+        return messageSend(receiver, name, ArgsV);
+    }
+    
     size_t nameLen = strlen(name);
     char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
     memcpy(methodName, name, nameLen);

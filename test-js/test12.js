@@ -9,17 +9,14 @@ function Counter(init){
     return this
 }
 
-function foo(){
+function objcjs_main(a, b){
     var c = new Counter(1)
     c.increment()
     c.increment()
+   
+    NSLog("retainCt %d", c.retainCount)
     NSLog("final %@", c.value)
-}
-
-function objcjs_main(a, b){
-    foo()
-    //c will be deallocated
-    foo()
+    
     return 0
 }
 

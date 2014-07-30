@@ -1040,9 +1040,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         
         //Create a new instance and invoke the body
         llvm::Value *targetClass = _runtime->classNamed(name.c_str());
-        llvm::Value *target = _runtime->messageSend(targetClass, "new");
-      
-        _runtime->messageSend(target, "retain");
+        llvm::Value *target = _runtime->messageSend(targetClass, "objcjs_new");
         
         auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);

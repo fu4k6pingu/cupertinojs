@@ -11,6 +11,8 @@
 
 @interface NSObject (ObjCJSFunction)
 
++ (id)objcjs_new;
+
 - (NSMutableDictionary *)_objcjs_environment;
 
 + (void)_objcjs_setParent:(id)parent;
