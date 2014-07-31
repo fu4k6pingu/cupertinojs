@@ -715,11 +715,54 @@ void CGObjCJS::VisitRegExpLiteral(RegExpLiteral* node) {
 }
 
 void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
-    UNIMPLEMENTED();
+    auto newObject = _runtime->newObject();
+    
+    for (int i = 0; i < node->properties()->length(); i++) {
+        ObjectLiteral::Property* property = node->properties()->at(i);
+
+        Visit(property->value());
+        auto value = PopContext();
+        
+        std::string keyName = stringFromV8AstRawString(property->key()->AsRawPropertyName());
+        localStringVar(keyName, _module);
+        _runtime->assignProperty(newObject, keyName, value);
+    }
+    
+    PushValueToContext(newObject);
 }
 
+//void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
+//    std::vector<llvm::Value *>valuesAndKeys;
+//    for (int i = 0; i < node->properties()->length(); i++) {
+//        ObjectLiteral::Property* property = node->properties()->at(i);
+//        
+//        Visit(property->value());
+//        auto value = PopContext();
+//        
+//        Visit(property->key());
+//        auto key = PopContext();
+//        valuesAndKeys.push_back(value);
+//        valuesAndKeys.push_back(key);
+//    }
+//    
+//    valuesAndKeys.push_back(ObjcNullPointer());
+//    
+//    auto newObject = _runtime->newObject(valuesAndKeys);
+//    PushValueToContext(newObject);
+//}
+//
+//
+
 void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
-    UNIMPLEMENTED();
+    std::vector<llvm::Value *> values;
+    for (int i = 0; i < node->values()->length(); i++) {
+        Visit(node->values()->at(i));
+        values.push_back(PopContext());
+    }
+    
+    values.push_back(ObjcNullPointer());
+    auto array = _runtime->newArray(values);
+    PushValueToContext(array);
 }
 
 void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
@@ -899,7 +942,7 @@ void CGObjCJS::VisitThrow(Throw* node) {
 void CGObjCJS::VisitProperty(Property* node) {
     Property *property = node;
     
-    VariableProxy *object = property->obj()->AsVariableProxy();
+    Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
     
     Visit(key);
@@ -910,9 +953,7 @@ void CGObjCJS::VisitProperty(Property* node) {
     llvm::Value *objValue = PopContext();
     assert(objValue);
     
-    std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
-
     _runtime->declareProperty(objValue, keyName);
 
     PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
@@ -1021,7 +1062,8 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
-        std::string name = stringFromV8AstRawString(proxy->raw_name());
+        Visit(proxy);
+        auto newClass = PopContext();
         
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
@@ -1035,13 +1077,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
             finalArgs.push_back(arg);
         }
         std::reverse(finalArgs.begin(), finalArgs.end());
-        
-        assert(SymbolIsJSFunction(name));
-        
-        //Create a new instance and invoke the body
-        llvm::Value *targetClass = _runtime->classNamed(name.c_str());
-        llvm::Value *target = _runtime->messageSend(targetClass, "objcjs_new");
-        
+        llvm::Value *target = _runtime->messageSend(newClass, "objcjs_new");
         auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);
     } else if (callType == Call::PROPERTY_CALL){

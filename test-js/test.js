@@ -1,25 +1,22 @@
-function Counter(init){
-    this.value = init
+function Platform(version){
+    this.userInfo = {
+        "_version" : version,
+        "identifier" : "OBJCJS",
+        "userInfo" : {
+            "APIKey" : 42
+        },
+    };
     
-    function increment(){
-        this.value = this.value + 1
-    }
-    
-    this.increment = increment
-    return this
-}
-
-function foo(){
-    var c = new Counter(1)
-    c.increment()
-    c.increment()
-    NSLog("final %@", c.value)
+    this.name = "turtle neck"
 }
 
 function objcjs_main(a, b){
-    foo()
-    //c will be deallocated
-    foo()
+    var P = Platform
+    var platform = new P(.1)
+    NSLog("platform %@", platform)
+    NSLog("name %@", platform.userInfo)
+    NSLog("version %@", platform.userInfo._version)
+    NSLog("APIKey %@", platform.userInfo.userInfo.APIKey)
     return 0
 }
 

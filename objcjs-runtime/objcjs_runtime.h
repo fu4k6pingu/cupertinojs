@@ -38,6 +38,8 @@ typedef id JSFunctionBodyIMP (id instance, SEL cmd, id arg1,...);
 extern void *objcjs_defineJSFunction(const char *name,
                               JSFunctionBodyIMP body);
 
+extern void *objcjs_newJSObjectClass(void);
+
 //Value can be a class, or variable pointer
 extern void *objcjs_assignProperty(id instance,
                                    const char *name,

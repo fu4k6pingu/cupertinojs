@@ -89,7 +89,34 @@ id impl3(id instance,
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
 }
 
-- (void)testItCanDefineAPropety{
+#pragma mark - JSObject
+
+- (void)testItCanCreateAJSObjectClass {
+    Class aClass = objcjs_newJSObjectClass();
+    XCTAssertNotNil(aClass, @"It creates a class");
+}
+
+- (void)testItCanRespondToNumberProperties {
+    Class aClass = objcjs_newJSObjectClass();
+    id instance = [aClass new];
+//    [instance performSelector:NSSelectorFromString(@"set4:") withObject:@4];
+//    id result = [instance performSelector:NSSelectorFromString(@"4")];
+//    XCTAssertEqualObjects(result, @4, @"It can use numbers for setters");
+    
+
+    [instance objcjs_defineProperty:"4"];
+    SEL expectedSetterSelector = NSSelectorFromString(@"set4:");
+    SEL expectedGetterSelector = NSSelectorFromString(@"4");
+    XCTAssertTrue([instance respondsToSelector:expectedSetterSelector], @"It adds the setter with the appropriate selector");
+    XCTAssertTrue([instance respondsToSelector:expectedGetterSelector], @"It adds the gettter with the appropriate selector");
+   
+    [instance performSelector:expectedSetterSelector withObject:@"four"];
+    id result = objc_msgSend(instance, expectedGetterSelector);
+
+    XCTAssertEqual(@"four", result, @"It returns the value of the property");
+}
+
+- (void)testItCanDefineAPropety {
     const char *name = "name";
     NSObject *f = [NSObject new];
     [f objcjs_defineProperty:name];

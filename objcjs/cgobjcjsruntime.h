@@ -46,7 +46,12 @@ public:
     
     llvm::Value *newString(std::string string);
     llvm::Value *newNumber(double value);
+    llvm::Value *newObject();
+    llvm::Value *newObject(std::vector<llvm::Value *>values);
+    llvm::Value *newArray(std::vector<llvm::Value *>values);
+
     llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
+    
     llvm::Value *doubleValue(llvm::Value *llvmValue);
     llvm::Value *boolValue(llvm::Value *llvmValue);
     llvm::Value *messageSend(llvm::Value *receiver,

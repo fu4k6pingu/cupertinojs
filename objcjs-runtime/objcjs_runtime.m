@@ -10,8 +10,8 @@
 #import <objc/message.h>
 #import <malloc/malloc.h>
 
-#define RuntimeException(_FMT) \
-    [NSException raise:@"OBJCJSRuntimeException" format:_FMT]
+#define RuntimeException(_FMT, ...) \
+    [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
 #define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
@@ -65,7 +65,19 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return @0;
 }
 
+//FIXME :
+BOOL objcjs_isRestrictedProperty(const char *propertyName){
+    if (strcmp("version", propertyName)) {
+        return NO;
+    }
+    return YES;
+}
+
 BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
+    if (objcjs_isRestrictedProperty(propertyName)) {
+        RuntimeException(@"unsupported - cannot define property '%s'", propertyName);
+    }
+    
     SEL getterSelector = sel_getUid(propertyName);
     char *setterName = setterNameFromPropertyName(propertyName);
     SEL setterSelector = sel_getUid(setterName);
@@ -189,6 +201,43 @@ void *objcjs_defineJSFunction(const char *name,
     });
     class_addMethod(jsClass, @selector(retain), retain, method_getTypeEncoding(superRetain));
     
+    return jsClass;
+}
+
+void *objcjs_newJSObjectClass(void){
+    NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
+    NSString *name = [NSString stringWithFormat:@"JSOBJ_%f", time];
+    
+    ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
+    Class superClass = [NSObject class];
+    Class jsClass = objc_allocateClassPair(superClass, name.cString, 16);
+
+    Method superBody = class_getInstanceMethod(superClass, @selector(_objcjs_body:));
+    IMP body = imp_implementationWithBlock(^(id _self, SEL cmd, ...){
+        RuntimeException(@"object is not a function");
+        return nil;
+    });
+    class_addMethod(jsClass, @selector(_objcjs_body:), body, method_getTypeEncoding(superBody));
+    
+    const char *enc = method_getTypeEncoding(superBody);
+    class_addMethod(jsClass, @selector(_objcjs_body:), (IMP)body, enc);
+    objc_registerClassPair(jsClass);
+  
+    //Override dealloc and retain for debugging
+    Method superDealloc = class_getInstanceMethod(superClass, @selector(dealloc));
+    IMP dealloc = imp_implementationWithBlock(^(id _self, SEL cmd){
+        ILOG(@"DEALLOC %@ %s", _self, sel_getName(cmd));
+        method_getImplementation(superDealloc)(_self, cmd);
+    });
+    class_addMethod(jsClass, @selector(dealloc), dealloc, method_getTypeEncoding(superDealloc));
+    
+    Method superRetain = class_getInstanceMethod(superClass, @selector(retain));
+    IMP retain = imp_implementationWithBlock(^(id _self, SEL cmd){
+        ILOG(@"RETAIN %@", jsClass);
+        return method_getImplementation(superRetain)(_self, cmd);
+    });
+    
+    class_addMethod(jsClass, @selector(retain), retain, method_getTypeEncoding(superRetain));
     return jsClass;
 }
 

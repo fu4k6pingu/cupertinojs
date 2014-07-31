@@ -315,11 +315,12 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
-    DefExternFucntion("objcjs_invoke");
 
     //JSRuntime
+    DefExternFucntion("objcjs_invoke");
     DefExternFucntion("objcjs_defineJSFunction");
    
+    ObjcCodeGenFunction(0, "objcjs_newJSObjectClass", _module);
     ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
     ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
     ObjcCodeGenFunction(3, std::string("objcjs_assignProperty"), _module);
@@ -345,6 +346,20 @@ llvm::Value *CGObjCJSRuntime::classNamed(const char *name){
 llvm::Value *CGObjCJSRuntime::newNumber(double doubleValue){
     auto constValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(doubleValue));
     return messageSend(classNamed("NSNumber"), "numberWithDouble:", constValue);
+}
+
+llvm::Value *CGObjCJSRuntime::newObject() {
+    auto newClass = _builder->CreateCall(_module->getFunction("objcjs_newJSObjectClass"));
+    return messageSend(newClass, "objcjs_new");
+}
+
+llvm::Value *CGObjCJSRuntime::newObject(std::vector<llvm::Value *>values) {
+    auto newClass = _builder->CreateCall(_module->getFunction("objcjs_newJSObjectClass"));
+    return messageSend(newClass, "dictionaryWithObjectsAndKeys:", values);
+}
+
+llvm::Value *CGObjCJSRuntime::newArray(std::vector<llvm::Value *>values) {
+    return messageSend(classNamed("NSMutableArray"), "arrayWithObjects:", values);
 }
 
 llvm::Value *CGObjCJSRuntime::newNumberWithLLVMValue(llvm::Value *doubleValue){
