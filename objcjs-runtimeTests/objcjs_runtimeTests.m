@@ -99,10 +99,6 @@ id impl3(id instance,
 - (void)testItCanRespondToNumberProperties {
     Class aClass = objcjs_newJSObjectClass();
     id instance = [aClass new];
-//    [instance performSelector:NSSelectorFromString(@"set4:") withObject:@4];
-//    id result = [instance performSelector:NSSelectorFromString(@"4")];
-//    XCTAssertEqualObjects(result, @4, @"It can use numbers for setters");
-    
 
     [instance objcjs_defineProperty:"4"];
     SEL expectedSetterSelector = NSSelectorFromString(@"set4:");
@@ -114,6 +110,24 @@ id impl3(id instance,
     id result = objc_msgSend(instance, expectedGetterSelector);
 
     XCTAssertEqual(@"four", result, @"It returns the value of the property");
+}
+
+- (void)testSubscriptingNumbersDefinedByStrings {
+    Class aClass = objcjs_newJSObjectClass();
+    id instance = [aClass new];
+   
+    [instance objcjs_replaceObjectAtIndex:@"1" withObject:@"foo"];
+    XCTAssertEqual([instance objcjs_objectAtIndex:@"1" ], @"foo", @"It can access properties defined by strings as strings");
+    XCTAssertEqual([instance objcjs_objectAtIndex:@1 ], @"foo", @"It can access properties defined by strings as numbers");
+}
+
+- (void)testSubscriptingNumbersDefinedByNumbers {
+    Class aClass = objcjs_newJSObjectClass();
+    id instance = [aClass new];
+   
+    [instance objcjs_replaceObjectAtIndex:@1 withObject:@"foo"];
+    XCTAssertEqual([instance objcjs_objectAtIndex:@"1" ], @"foo", @"It can access properties defined by numbers as strings");
+    XCTAssertEqual([instance objcjs_objectAtIndex:@1 ], @"foo", @"It can access properties defined by numbers as numbers");
 }
 
 - (void)testItCanDefineAPropety {

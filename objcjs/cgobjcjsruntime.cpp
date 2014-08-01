@@ -354,8 +354,9 @@ llvm::Value *CGObjCJSRuntime::newObject() {
 }
 
 llvm::Value *CGObjCJSRuntime::newObject(std::vector<llvm::Value *>values) {
+    UNIMPLEMENTED();
     auto newClass = _builder->CreateCall(_module->getFunction("objcjs_newJSObjectClass"));
-    return messageSend(newClass, "dictionaryWithObjectsAndKeys:", values);
+    return messageSend(newClass, "objcjs_withObjectsAndKeys:", values);
 }
 
 llvm::Value *CGObjCJSRuntime::newArray(std::vector<llvm::Value *>values) {

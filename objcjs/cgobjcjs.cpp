@@ -18,7 +18,7 @@
 #include "llvm/Support/CFG.h"
 #include "cgobjcjsruntime.h"
 
-#define CGObjCJSDEBUG 0
+#define CGObjCJSDEBUG 1
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;
@@ -34,6 +34,21 @@ static std::string stringFromV8AstRawString(const AstRawString *raw) {
         str += data[i];
     }
     return str;
+}
+
+enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
+
+LhsKind GetLhsKind(Expression *node){
+    LhsKind assignType = VARIABLE;
+    Property* property = node->AsProperty();
+    
+    if (property != NULL) {
+        assignType = (property->key()->IsPropertyName())
+        ? NAMED_PROPERTY
+        : KEYED_PROPERTY;
+    }
+    
+    return assignType;
 }
 
 static std::string FUNCTION_CMD_ARG_NAME("_cmd");
@@ -81,11 +96,8 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
     opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
     opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
-
 }
 
-/// CreateArgumentAllocas - Create an alloca for each argument and register the
-/// argument in the symbol table so that references to it will succeed.
 void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     int numParams = scope->num_parameters();
@@ -101,8 +113,6 @@ void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* sco
     }
 }
 
-/// CreateArgumentAllocas - Create an alloca for each argument and register the
-/// argument in the symbol table so that references to it will succeed.
 void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     llvm::Value *argSelf = AI++;
@@ -714,6 +724,53 @@ void CGObjCJS::VisitRegExpLiteral(RegExpLiteral* node) {
     UNIMPLEMENTED();
 }
 
+__attribute__((unused))
+llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
+    std::string keyStringValue;
+    if (key->IsPropertyName()) {
+        keyStringValue = stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+    }
+    
+    if(key->IsLiteral()){
+        auto literalKey = key->AsLiteral();
+        keyStringValue = std::to_string(literalKey->value()->Number());
+    }
+   
+    return localStringVar(keyStringValue, module);
+    
+    if (!keyStringValue.length()) {
+        UNIMPLEMENTED();
+    }
+    return NULL;
+}
+
+std::string makeKeyName(Expression *key, llvm::Module *module){
+    if (key->IsPropertyName()) {
+        return stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+    }
+    
+    if(key->IsLiteral()){
+        auto literalKey = key->AsLiteral();
+        auto str = std::to_string(literalKey->value()->Number());
+        localStringVar(str, module);
+        return str;
+    }
+    
+    UNIMPLEMENTED();
+    return NULL;
+}
+
+__attribute__((unused))
+bool keyIsNumber(Expression *key){
+    if(key->IsLiteral()){
+        Object *oKey = (Object *)key;
+        if (oKey->IsNumber()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
     auto newObject = _runtime->newObject();
     
@@ -723,35 +780,16 @@ void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
         Visit(property->value());
         auto value = PopContext();
         
-        std::string keyName = stringFromV8AstRawString(property->key()->AsRawPropertyName());
-        localStringVar(keyName, _module);
-        _runtime->assignProperty(newObject, keyName, value);
+        Visit(property->key());
+        auto keyValue = PopContext();
+       
+        //TODO : wrap this up
+        EmitKeyedPropertyAssignment(newObject, keyValue, value);
+        PopContext();
     }
     
     PushValueToContext(newObject);
 }
-
-//void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
-//    std::vector<llvm::Value *>valuesAndKeys;
-//    for (int i = 0; i < node->properties()->length(); i++) {
-//        ObjectLiteral::Property* property = node->properties()->at(i);
-//        
-//        Visit(property->value());
-//        auto value = PopContext();
-//        
-//        Visit(property->key());
-//        auto key = PopContext();
-//        valuesAndKeys.push_back(value);
-//        valuesAndKeys.push_back(key);
-//    }
-//    
-//    valuesAndKeys.push_back(ObjcNullPointer());
-//    
-//    auto newObject = _runtime->newObject(valuesAndKeys);
-//    PushValueToContext(newObject);
-//}
-//
-//
 
 void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
     std::vector<llvm::Value *> values;
@@ -768,24 +806,14 @@ void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
 void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
 }
-            
+
 void CGObjCJS::VisitAssignment(Assignment* node) {
     ASSERT(node->target()->IsValidReferenceExpression());
+    LhsKind assignType = GetLhsKind(node->target());
 
-    enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
-    LhsKind assign_type = VARIABLE;
-    Property* property = node->target()->AsProperty();
-    
-    if (property != NULL) {
-        assign_type = (property->key()->IsPropertyName())
-        ? NAMED_PROPERTY
-        : KEYED_PROPERTY;
-    }
-    
     Visit(node->value());
     llvm::Value *value = PopContext();
-  
-    switch (assign_type) {
+    switch (assignType) {
         case VARIABLE: {
             VariableProxy *targetProxy = (VariableProxy *)node->target();
             assert(targetProxy && "target for assignment required");
@@ -803,7 +831,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             }
             
             if (node->op() == Token::INIT_VAR) {
-                //TODO : refactor
+                //FIXME:
                 ILOG("INIT_VAR %s", targetName.c_str());
             }
 
@@ -811,8 +839,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             break;
         } case NAMED_PROPERTY: {
             Property *property = node->target()->AsProperty();
-            EmitProperty(property, value);
-            
+            EmitNamedPropertyAssignment(property, value);
             break;
         }
         case KEYED_PROPERTY: {
@@ -822,8 +849,15 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
     }
 }
 
-void CGObjCJS::EmitProperty(Property *property, llvm::Value *value){
-    VariableProxy *object = property->obj()->AsVariableProxy();
+void CGObjCJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value){
+    std::vector<llvm::Value *>args;
+    args.push_back(key);
+    args.push_back(value);
+    PushValueToContext(_runtime->messageSend(target, "objcjs_replaceObjectAtIndex:withObject:", args));
+}
+
+void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
+    Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
     auto BB = _builder->GetInsertBlock();
 
@@ -837,8 +871,6 @@ void CGObjCJS::EmitProperty(Property *property, llvm::Value *value){
     assert(objValue);
     
     _builder->SetInsertPoint(BB);
-    std::string objectName = stringFromV8AstRawString(object->AsVariableProxy()->raw_name());
-    assert(objectName.length());
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
     _runtime->assignProperty(objValue, keyName, value);
@@ -854,7 +886,6 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
         llvm::AllocaInst *targetAlloca = _context->valueForKey(targetName);
         _builder->CreateStore(value, targetAlloca);
        
-        //TODO : clean this up as it is killing performance
         //Store all assignements in environment if present
         auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
         
@@ -897,17 +928,17 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
 void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
     auto varAlloca = _context->valueForKey(variableName);
-
+    
     if (SymbolIsClass(variableName) && !varAlloca){
         PushValueToContext(_runtime->classNamed(variableName.c_str()));
         return;
     }
-
+    
     if (varAlloca) {
         PushValueToContext(_builder->CreateLoad(varAlloca, variableName));
         return;
     }
-
+    
     auto nestedVarAlloc = _context->lookup(Contexts, variableName);
     if (nestedVarAlloc) {
         //NTS: always create an alloca for an arugment you want to pass to a function!!
@@ -943,20 +974,27 @@ void CGObjCJS::VisitProperty(Property* node) {
     Property *property = node;
     
     Expression *object = property->obj();
-    v8::internal::Literal *key = property->key()->AsLiteral();
+    Expression *key = property->key();
     
     Visit(key);
     llvm::Value *keyValue = PopContext();
     assert(keyValue);
-    
+   
     Visit(object);
     llvm::Value *objValue = PopContext();
     assert(objValue);
+  
+    LhsKind type = GetLhsKind(property);
     
-    std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
-    _runtime->declareProperty(objValue, keyName);
-
-    PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
+    if (type == NAMED_PROPERTY) {
+        std::string keyName = makeKeyName(property->key(), _module);
+        _runtime->declareProperty(objValue, keyName);
+        PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
+    } else if (type == KEYED_PROPERTY) {
+        PushValueToContext(_runtime->messageSend(objValue, "objcjs_objectAtIndex:", keyValue));
+    } else {
+        UNIMPLEMENTED();
+    }
 }
 
 static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
@@ -1125,13 +1163,13 @@ void CGObjCJS::VisitUnaryOperation(UnaryOperation* node) {
 }
 
 void CGObjCJS::VisitCountOperation(CountOperation* node) {
-    enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
-    LhsKind assign_type = VARIABLE;
+    LhsKind assignType = VARIABLE;
+
     Property* prop = node->expression()->AsProperty();
     // In case of a property we use the uninitialized expression context
     // of the key to detect a named property.
     if (prop != NULL) {
-        assign_type =
+        assignType =
         (prop->key()->IsPropertyName()) ? NAMED_PROPERTY : KEYED_PROPERTY;
     }
  
@@ -1140,11 +1178,11 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
 
   
     llvm::AllocaInst *alloca;
-    if (assign_type == VARIABLE){
+    if (assignType == VARIABLE){
         VariableProxy *proxy =  node->expression()->AsVariableProxy();
         alloca = _context->valueForKey(stringFromV8AstRawString(proxy->raw_name()));
         EmitVariableLoad(proxy);
-    } else if (assign_type == NAMED_PROPERTY) {
+    } else if (assignType == NAMED_PROPERTY) {
         UNIMPLEMENTED();
     } else {
         UNIMPLEMENTED();

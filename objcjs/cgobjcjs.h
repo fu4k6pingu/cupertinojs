@@ -176,7 +176,8 @@ public:
     void EmitVariableAssignment(Variable* var,
                                 Token::Value op) ;
     
-    void EmitProperty(Property *property, llvm::Value *value);
+    void EmitNamedPropertyAssignment(Property *property, llvm::Value *value);
+    void EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value);
     void EmitPropertyCall(Expression *expr, ZoneList<Expression*>* args);
     
     void EmitVariableLoad(VariableProxy* proxy);

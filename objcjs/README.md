@@ -3,7 +3,7 @@
 - install v8 with gyp
 https://code.google.com/p/v8/wiki/BuildingWithGYP
 
-make builddeps
+make builddeps (last used revision 258359)
 
 build/gyp_v8 -Dtarget_arch=x64
 

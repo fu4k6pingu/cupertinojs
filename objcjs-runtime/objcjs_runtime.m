@@ -13,8 +13,9 @@
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
-#define ObjCJSRuntimeDEBUG 1
+#define ObjCJSRuntimeDEBUG 0
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
+
 
 @implementation NSObject (ObjCJSFunction)
 
@@ -89,19 +90,32 @@ BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
     }
     
     ILOG(@"%s: %s", __PRETTY_FUNCTION__, propertyName);
+    
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
-        id value = objc_getAssociatedObject(_self, propertyName);
+        id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
+        id value;
+        if ([[[_self _objcjs_keyed_properties] allKeys] containsObject:propertyNameString]) {
+            value = [_self _objcjs_keyed_properties][propertyNameString];
+        } else {
+            value = objc_getAssociatedObject(_self, propertyName);
+        }
+        
         ILOG(@"ACCESS VALUE FOR KEY %@ <%p>, %s - %s: %@", _self, _self, __PRETTY_FUNCTION__, propertyName, value);
         return value;
     });
     
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
         ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, __PRETTY_FUNCTION__, value);
-        id _value = objc_getAssociatedObject(_self, propertyName);
-        if (value != _value) {
-            [_value release];
-            objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-            ILOG(@"DID SET VALUE");
+        id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
+        if ([[[_self _objcjs_keyed_properties] allKeys] containsObject:propertyNameString]) {
+            [_self _objcjs_keyed_properties][propertyNameString] = value;
+        } else {
+            id _value = objc_getAssociatedObject(_self, propertyName);
+            if (value != _value) {
+                [_value release];
+                objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                ILOG(@"DID SET VALUE");
+            }     
         }
     });
     
@@ -131,7 +145,7 @@ char *setterNameFromPropertyName(const char *propertyName){
     setterName[nameLen + 4] = '\0';
     return setterName;
 }
-//TODO : test undefined values!
+
 - (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
     NSMutableDictionary *environment = [self _objcjs_environment];
     if (!value) {
@@ -184,7 +198,6 @@ void *objcjs_defineJSFunction(const char *name,
   
     //Tag object
     objc_setAssociatedObject(jsClass, JSFunctionTag, @YES, OBJC_ASSOCIATION_ASSIGN);
-   
 
     //Override dealloc and retain for debugging
     Method superDealloc = class_getInstanceMethod(superClass, @selector(dealloc));
@@ -239,11 +252,6 @@ void *objcjs_newJSObjectClass(void){
     
     class_addMethod(jsClass, @selector(retain), retain, method_getTypeEncoding(superRetain));
     return jsClass;
-}
-
-
-size_t __NSObjectMallocSize(){
-    return 64;
 }
 
 BOOL ptrIsClass(void *ptr){
@@ -322,7 +330,6 @@ void *objcjs_invoke(void *target, ...){
     if (targetIsClass) {
         targetClass = target;
         target = objcjs_GlobalScope;
-        //TODO  : spec this
         ILOG(@"global invocation %s \n", class_getName(targetClass));
     } else if ([(id)target respondsToSelector:@selector(_objcjs_body:)]) {
         targetClass = object_getClass(target);
@@ -509,3 +516,68 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 }
 
 @end
+
+@implementation NSObject (Subscript)
+
+- (void)objcjs_addObject:(id)anObject {
+    ILOG(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (void)objcjs_insertObject:(id)anObject atIndex:(id)index {
+    ILOG(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (void)objcjs_removeLastObject {
+    ILOG(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (void)objcjs_removeObjectAtIndex:(id)index {
+    ILOG(@"%s", __PRETTY_FUNCTION__);
+}
+
+- (NSMutableDictionary *)_objcjs_keyed_properties {
+    static const char *KeyedPropertiesKey;
+    NSMutableDictionary *keyedProperties = objc_getAssociatedObject(self, KeyedPropertiesKey);
+    if (!keyedProperties) {
+        keyedProperties = [NSMutableDictionary dictionary];
+        objc_setAssociatedObject(self, KeyedPropertiesKey, keyedProperties, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    return keyedProperties;
+}
+
+- (void)objcjs_replaceObjectAtIndex:(id)index withObject:(id)anObject {
+    ILOG(@"%s %@[%@] = %@", __PRETTY_FUNCTION__, self, index, anObject);
+    if ([index isKindOfClass:[NSString class]]) {
+        char *setterName = setterNameFromPropertyName([index cString]);
+        SEL setter = sel_getUid(setterName);
+        free(setterName);
+        
+        if ([self respondsToSelector:setter]) {
+            [self performSelector:setter withObject:anObject];
+        } else {
+            [self _objcjs_keyed_properties][index] = anObject;
+        }
+        
+    } else {
+        [self objcjs_replaceObjectAtIndex:[index stringValue] withObject:anObject];
+    }
+}
+
+- (id)objcjs_objectAtIndex:(id)index {
+    ILOG(@"%s %@[%@]", __PRETTY_FUNCTION__, self, index);
+    if ([index isKindOfClass:[NSString class]]) {
+        char *getterName = [index cString];
+        SEL getter = sel_getUid(getterName);
+        
+        if ([self respondsToSelector:getter]) {
+            return [self performSelector:getter];
+        }
+        
+        return [self _objcjs_keyed_properties][index];
+    }
+
+    return [self objcjs_objectAtIndex:[index stringValue]];
+}
+
+@end
+

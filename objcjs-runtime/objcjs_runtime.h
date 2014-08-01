@@ -98,3 +98,12 @@ extern id objcjs_GlobalScope;
 - (bool)objcjs_boolValue;
 
 @end
+
+@interface NSObject (Subscript)
+
+- (void)objcjs_replaceObjectAtIndex:(id)index withObject:(id)anObject;
+- (id)objcjs_objectAtIndex:(id)index;
+- _objcjs_keyed_properties;
+
+@end
+
