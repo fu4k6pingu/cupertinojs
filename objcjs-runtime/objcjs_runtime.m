@@ -517,7 +517,7 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 
 @end
 
-@implementation NSObject (Subscript)
+@implementation NSObject (ObjCJSSubscripting)
 
 - (void)objcjs_addObject:(id)anObject {
     ILOG(@"%s", __PRETTY_FUNCTION__);
