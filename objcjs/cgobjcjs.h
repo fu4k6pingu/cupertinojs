@@ -10,18 +10,21 @@
 #define __objcjs__codegen__
 
 #include <iostream>
-#include "src/ast.h"
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include <llvm-c/Core.h>
-
 #include <cctype>
 #include <cstdio>
 #include <map>
 #include <string>
 #include <vector>
+
+#include <src/ast.h>
+#include <src/arguments.h>
+
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm-c/Core.h>
+
 #include "cgobjcjsruntime.h"
 
 using namespace v8::internal;
@@ -97,8 +100,8 @@ public:
 
 
 class CGObjCJS: public  v8::internal::AstVisitor {
-    std::string *_name;
 public:
+    std::string *_name;
     CGContext *_context;
     std::vector<CGContext *> Contexts;
     llvm::IRBuilder<> *_builder;
@@ -107,6 +110,13 @@ public:
     llvm::BasicBlock *_currentSetRetBlock;
     std::map <Token::Value, std::string> assignOpSelectorByToken;
     std::map <Token::Value, std::string> opSelectorByToken;
+    std::set <std::string> _classes;
+    
+    // Macros are references to native functions
+    // which override javascript calls
+    typedef void(*CallMacroFnPtr)(CGObjCJS *CG, Call *node);
+    std::map <std::string, CallMacroFnPtr> _macros;
+    
     std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
     
     CGObjCJSRuntime *_runtime;
@@ -207,6 +217,8 @@ public:
     bool SymbolIsClass(std::string symbol);
     bool SymbolIsJSFunction(std::string symbol);
     bool IsInGlobalScope();
+
+    std::vector <llvm::Value *>makeArgs(ZoneList<Expression*>* args);
     
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };

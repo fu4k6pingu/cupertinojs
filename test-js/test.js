@@ -1,85 +1,53 @@
-function Platform(){
-    this.userInfo = {
-        "identifier" : "OBJCJS",
-        "userInfo" : {
-            "APIKey" : 42
-        },
-        2 : 2,
-        "4" : 4,
-    };
-
-    this.name = "turtle neck"
+function Counter(init){
+    this.value = init
+    
+    function increment(){
+        this.value = this.value + 1
+    }
+    
+    this.increment = increment
+    return this
 }
 
 function objcjs_main(a, b){
-    var P = Platform
-    var platform = new P()
+    //TODO : all imports must be put here
+    // needs pass for macros first
+    objc_import("examples/objc-exampleheader.h")
 
-    NSLog("platform %@", platform)
+    var c = new Counter(1)
+    c.increment(null)
+    c.increment(null)
     
-    platform["updatedAt"] = "Monday"
-    platform.createdAt = "Sunday"
+    NSLog("NSArray.arrayWithObject(\"bananna\") %@", 
+          NSArray
+          .arrayWithObject("bananna"))
 
-    NSLog("platform.updatedAt %@", platform.updatedAt)
-    NSLog("platform[\"updatedAt\"] %@", platform["updatedAt"])
-    NSLog("platform.createdAt %@", platform.createdAt)
-    NSLog("platform[\"createdAt\"] %@", platform["createdAt"])
+    NSLog("NSArray.arrayWithObjects(\"bananna\") %@",
+          NSArray
+          .arrayWithObjects("bananna", "kiwi"))
+
+    NSLog("NSArray.alloc().initWithObject(\"apple\") %@",
+          NSArray
+          .alloc()
+          .initWithObject("apple"))
+
+    NSLog("NSArray.alloc.initWithObject(\"apple\") %@",
+          NSArray
+          .alloc
+          .initWithObject("apple"))
+
+    //NSArrays
+    var fruits =  NSArray.arrayWithObjects("bananna", "kiwi")
+    var zero = 0
+    NSLog("First fruit %@", fruits.objectAtIndex(zero.intValue))
+
+    //Native array
+    var fruits =  ["bananna", "kiwi"]
+    NSLog("First fruit %@", fruits[0])
     
-
-    NSLog("NAMED - NAMED")
-    NSLog("name %@", platform.name)
-    NSLog("userInfo %@", platform.userInfo)
-
-    NSLog("NAMED - KEYED")
-    NSLog("name %@", platform["name"])
-    NSLog("userInfo %@", platform["userInfo"])
-
-    NSLog("platform[\"userInfo\"].identifier %@", platform["userInfo"].identifier)
-    
-    
-    NSLog("KEYED - NAMED")
-    NSLog("platform.userInfo %@", platform.userInfo)
-    platform.userInfo.identifier
-    NSLog("platform.userInfo.identifier %@", platform.userInfo.identifier)
-    NSLog("platform.userInfo[\"userInfo\"].APIKey %@", platform.userInfo["userInfo"].APIKey)
-
-    var userInfo = platform.userInfo
-    NSLog("userInfo.identifier %@", userInfo.identifier)
-    NSLog("userInfo[\"identifier\"] %@", userInfo["identifier"])
-    
-    NSLog("KEYED - KEYED")
-    NSLog("platform.userInfo[\"identifier\"] %@", platform.userInfo["identifier"])
-    NSLog("platform.userInfo[\"userInfo\"][\"APIKey\"] %@", platform.userInfo["userInfo"]["APIKey"])
-
-    NSLog("NAMED - NUMBER-KEYED")
-    NSLog("platform.userInfo[2] %@", platform.userInfo[2])
-    NSLog("platform.userInfo[4] %@", platform.userInfo[4])
-
-    NSLog("NAMED - NUMBER-KEYED")
-    NSLog("platform.userInfo[\"2\"] %@", platform.userInfo["2"])
-    NSLog("platform.userInfo[\"4\"] %@", platform.userInfo["4"])
-    
-    platform.userInfo.status = "!!~~BIM~~!!"
-    NSLog("platform.userInfo.status %@", platform.userInfo.status)
-    
-    platform["userInfo"].status = "!!~~BOOMM~~!!"
-    NSLog("platform[\"userInfo\"].status %@", platform["userInfo"].status)
-
-    var four = "4"
-    NSLog("platform.userInfo[four] (\"4\")%@", platform.userInfo[four])
-
-    var four = 4
-    NSLog("platform.userInfo[four] (4)%@", platform.userInfo[four])
-   
-    P.console = "console"
-    NSLog("P[\"console\"] %@", P["console"])
-
-    //TODO :
-//    P[0] = "__first"
-//    NSLog("P[0] %@", P[0])
-    
-    var fruits = ["apples", "banannas"]
-    NSLog("fruits %@", fruits)
-    NSLog("fruits %@", fruits[0])
+    //do crazy stuff like this
+    //TODO : keyed property assignment
+    //fruits[99] = "lemon"
+    //NSLog("100th fruit %@", fruits[99])
     return 0
 }

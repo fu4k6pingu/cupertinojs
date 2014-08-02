@@ -9,12 +9,13 @@
 #ifndef objcjs_objcjsruntime_h
 #define objcjs_objcjsruntime_h
 
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
 #include <llvm-c/Core.h>
-#include "src/ast.h"
+#include <src/ast.h>
+
 #include <set>
 
 extern llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
@@ -80,6 +81,10 @@ public:
     
     llvm::Value *declareGlobal(std::string name);
 
+
+    llvm::Value *selectorByAddingColon(const char *name);
+    llvm::Value *selectorWithName(const char *name);
+    
     bool isBuiltin(std::string name);
 };
 

@@ -7,8 +7,18 @@
 //
 
 #include <malloc/malloc.h>
+#include <string>
+
 #include "cgobjcjsruntime.h"
-#include "string.h"
+
+static char *selectorNameByAddingColon(const char *name){
+    size_t nameLen = strlen(name);
+    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
+    memcpy(methodName, name, nameLen);
+    methodName[nameLen] = ':';
+    methodName[nameLen+1] = '\0';
+    return methodName;
+}
 
 const auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
 
@@ -35,6 +45,15 @@ llvm::Function *ObjcCodeGenFunction(size_t numParams,
                                     llvm::Module *mod) {
     std::vector<llvm::Type*> Params(numParams, ObjcPointerTy());
     llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, false);
+    return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
+}
+
+llvm::Function *ObjcCodeGenFunction(size_t numParams,
+                                    std::string name,
+                                    llvm::Module *mod,
+                                    bool isVarArg) {
+    std::vector<llvm::Type*> Params(numParams, ObjcPointerTy());
+    llvm::FunctionType *FT = llvm::FunctionType::get(ObjcPointerTy(), Params, true);
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
@@ -312,7 +331,6 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     _builtins.insert("objcjs_main");
     _builtins.insert("NSLog");
     
-    DefExternFucntion("objc_msgSend");
     DefExternFucntion("sel_getUid");
     DefExternFucntion("objc_getClass");
 
@@ -320,6 +338,7 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     DefExternFucntion("objcjs_invoke");
     DefExternFucntion("objcjs_defineJSFunction");
    
+    ObjcCodeGenFunction(0, "objc_msgSend", _module, true);
     ObjcCodeGenFunction(0, "objcjs_newJSObjectClass", _module);
     ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
     ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
@@ -395,11 +414,9 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *selectorName,
                                           std::vector<llvm::Value *>ArgsV) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string(selectorName), _module), "calltmp");
     std::vector<llvm::Value*> Args;
     Args.push_back(receiver);
-    Args.push_back(selector);
-   
+    Args.push_back(selectorWithName(selectorName));
     for (int i = 0; i < ArgsV.size(); i++) {
         Args.push_back(ArgsV.at(i));
     }
@@ -408,35 +425,47 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
-                                          const char *selectorName) {
-    llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string(selectorName), _module), "calltmp");
+                                          const char *name) {
     std::vector<llvm::Value*> Args;
     Args.push_back(receiver);
-    Args.push_back(selector);
-    return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
+    Args.push_back(selectorWithName(name));
+    llvm::Function *f = _module->getFunction("objc_msgSend");
+    llvm::FunctionType *ty = (llvm::FunctionType *)f->getType();
+    auto numParams = ty->getNumParams();
+
+    return _builder->CreateCall(f, Args, "calltmp-objc_msgSend");
+}
+
+llvm::Value *CGObjCJSRuntime::selectorByAddingColon(const char *name){
+    auto methodName = selectorByAddingColon(name);
+    auto selector = selectorWithName(name);
+    free(methodName);
+    return selector;
+}
+
+llvm::Value *CGObjCJSRuntime::selectorWithName(const char *name){
+    return _builder->CreateCall(_module->getFunction("sel_getUid"), localStringVar(std::string(name), _module), "calltmp");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
                                  const char *name,
                                  std::vector<llvm::Value *>ArgsV) {
-    //Check for known NSObject methods otherwise jsinvoke
-    bool isMsgSend = std::string(name) == "release" ||
-                     std::string(name) == "autorelease" ||
-                     std::string(name) == "retainCount" ||
-                     std::string(name) == "retain";
+    bool addColon;
     
-    if (isMsgSend) {
-        return messageSend(receiver, name, ArgsV);
+    if (ArgsV.size()) {
+        addColon = true;
+    } else {
+        addColon = false;
     }
     
-    size_t nameLen = strlen(name);
-    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
-    memcpy(methodName, name, nameLen);
-    methodName[nameLen] = ':';
-    methodName[nameLen+1] = '\0';
-    auto retValue = messageSend(receiver, methodName, ArgsV);
-    free(methodName);
-    return retValue;
+    if (addColon) {
+        auto selectorName = selectorNameByAddingColon(name);
+        auto retValue = messageSend(receiver, selectorName, ArgsV);
+        free(selectorName);
+        return retValue;
+    }
+
+    return messageSend(receiver, name, ArgsV);
 }
 
 //Sends a message to a JSFunction instance

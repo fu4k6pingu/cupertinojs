@@ -7,16 +7,18 @@
 //
 
 #include "cgobjcjs.h"
-#include <llvm-c/Core.h>
-#include "llvm/IR/DerivedTypes.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/Casting.h"
-#include "src/scopes.h"
-#include "string.h"
-#include "llvm/Support/CFG.h"
 #include "cgobjcjsruntime.h"
+#include "cgobjcjsclang.h"
+
+#include <src/scopes.h>
+
+#include <llvm-c/Core.h>
+#include <llvm/IR/DerivedTypes.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/IR/LLVMContext.h>
+#include <llvm/IR/Module.h>
+#include <llvm/Support/Casting.h>
+#include <llvm/Support/CFG.h>
 
 #define CGObjCJSDEBUG 1
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
@@ -57,6 +59,55 @@ static std::string FUNCTION_THIS_ARG_NAME("this");
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
+#pragma mark - Call Macros
+
+void MacroImport(CGObjCJS *CG, Call *node){
+    ZoneList<Expression*>* args = node->arguments();
+    auto argExpr = args->at(0);
+    auto importPath = argExpr->AsLiteral()->raw_value()->AsString();
+    if (!importPath) {
+        return;
+    }
+   
+    std::string filePath = stringFromV8AstRawString(importPath);
+    auto clangFile = objcjs::ClangFile(filePath);
+    
+    //Lookup the module init BB
+    llvm::Module *module = CG->_module;
+    llvm::IRBuilder<> *builder = CG->_builder;
+    
+    auto function = module->getFunction(*CG->_name);
+    llvm::BasicBlock *moduleInitBB = &function->getBasicBlockList().front();
+    
+    auto insertPt = builder->GetInsertBlock();
+    builder->SetInsertPoint(moduleInitBB);
+
+    //Declare classes as global variables in the init BB
+    for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
+        objcjs::ObjCClass *newClass = *it;
+        auto className = newClass->_name;
+        localStringVar(className, CG->_module);
+
+        ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
+        
+        for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
+            objcjs::ObjCMethod method = **methodIt;
+            ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
+        }
+        auto global = module->getGlobalVariable(className);
+        assert(!global && "global var shouldn't be initialized");
+        
+        llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
+        builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
+        CG->_classes.insert(className);
+    }
+    
+    //Restore insert point
+    builder->SetInsertPoint(insertPt);
+}
+
+#pragma mark - CGObjCJS
+
 CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     InitializeAstVisitor(zone);
     _name = &name;
@@ -96,6 +147,8 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
     opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
     opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
+    
+    _macros["objc_import"] = MacroImport;
 }
 
 void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
@@ -990,7 +1043,6 @@ void CGObjCJS::VisitProperty(Property* node) {
     
     if (type == NAMED_PROPERTY) {
         std::string keyName = makeKeyName(property->key(), _module);
-        _runtime->declareProperty(objValue, keyName);
         PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
     } else if (type == KEYED_PROPERTY) {
         PushValueToContext(_runtime->messageSend(objValue, "objcjs_objectAtIndex:", keyValue));
@@ -1025,6 +1077,13 @@ void CGObjCJS::VisitCall(Call* node) {
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
         std::string name = stringFromV8AstRawString(proxy->raw_name());
+        
+        //check for macro use and abort
+        CallMacroFnPtr macro = _macros[name];
+        if (macro){
+            macro(this, node);
+            return;
+        }
         
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
@@ -1061,7 +1120,7 @@ void CGObjCJS::VisitCall(Call* node) {
 void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
     Property *property = callee->AsProperty();
     
-    VariableProxy *object = property->obj()->AsVariableProxy();
+    Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
     
     Visit(key);
@@ -1074,22 +1133,28 @@ void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args)
     
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
     
+    auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), makeArgs(args));
+    PushValueToContext(result);
+}
+
+std::vector <llvm::Value *>CGObjCJS::makeArgs(ZoneList<Expression*>* args) {
+    std::vector<llvm::Value *> finalArgs;
+    
+    if (args->length() == 0) {
+        return finalArgs;
+    }
+    
     for (int i = 0; i <args->length(); i++) {
         //TODO : this should likely retain the values
         Visit(args->at(i));
     }
     
-    std::vector<llvm::Value *> finalArgs;
     for (unsigned i = 0; i < args->length(); i++){
         llvm::Value *arg = PopContext();
         finalArgs.push_back(arg);
     }
     std::reverse(finalArgs.begin(), finalArgs.end());
-    
-    finalArgs.push_back(ObjcNullPointer());
-    //TODO: fix this!
-    auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), finalArgs);
-    PushValueToContext(result);
+    return finalArgs;
 }
 
 void CGObjCJS::VisitCallNew(CallNew* node) {
@@ -1127,6 +1192,8 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
     }
 }
 
+// Runtime are only used to support the v8 nature of the AST
+// objcjs should not extend javascript or rely on v8 specific features
 void CGObjCJS::VisitCallRuntime(CallRuntime* node) {
     std::string name = stringFromV8AstRawString(node->raw_name());
     ZoneList<Expression*>* args = node->arguments();
@@ -1423,6 +1490,7 @@ void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     Visit(expr);
 }
 
+//FIXME: name
 void CGObjCJS::enterContext(){
     ILOG("enter context");
     CGContext *context;
@@ -1457,7 +1525,7 @@ llvm::Value *CGObjCJS::PopContext() {
 
 //SymbolIsClass - this symbol is currently known as a class
 bool CGObjCJS::SymbolIsClass(std::string symbol) {
-    return _module->getFunction(symbol);
+    return _classes.count(symbol) || _module->getFunction(symbol);
 }
 
 //SymbolIsJSFunction - this symbol is known jsfunction

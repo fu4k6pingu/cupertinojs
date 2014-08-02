@@ -25,7 +25,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Bitcode/ReaderWriter.h"
 
-#include "utils.h"
+#include "objcjsutils.h"
 #include "cgobjcjs.h"
 
 #include "compiler.h"
@@ -43,15 +43,6 @@ const char *COMPILE_ENV_DEBUG = "OBJCJS_ENV_DEBUG_COMPILER";
 
 #pragma mark - CompilerOptions
 
-std::string GetEnvVar(std::string const & key ) {
-    char * val;
-    val = getenv( key.c_str() );
-    std::string retval = "";
-    if (val != NULL) {
-        retval = val;
-    }
-    return retval;
-}
 
 std::vector<std::string> ParseNames(int argc, const char * argv[]){
     std::vector<std::string> fnames;
@@ -79,9 +70,9 @@ std::vector<std::string> ParseNames(int argc, const char * argv[]){
 
 objcjs::CompilerOptions::CompilerOptions(int argc, const char * argv[]){
     _names = ParseNames(argc, argv);
-    _runtimePath = GetEnvVar(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
-    _buildDir = GetEnvVar(COMPILE_ENV_BUILD_DIR);
-    _debug = GetEnvVar(COMPILE_ENV_DEBUG) == "true";
+    _runtimePath = get_env_var(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
+    _buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
+    _debug = get_env_var(COMPILE_ENV_DEBUG) == "true";
 }
 
 int objcjs::CompilerOptions::validate(){
@@ -187,7 +178,7 @@ void runModule(llvm::Module module){
 }
 
 std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string filePath){
-    std::string buildDir = GetEnvVar(COMPILE_ENV_BUILD_DIR);
+    std::string buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
     std::string fileName = split(filePath, '/').back();
     std::string moduleName = split(fileName, '.').front();
     

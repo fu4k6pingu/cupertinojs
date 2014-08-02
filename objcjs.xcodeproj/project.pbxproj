@@ -11,13 +11,19 @@
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C53C8BFD197664AD00335186 /* objcjs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* objcjs-runtime.dylib */; };
-		C566B4D6196D057A00BAC438 /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */; };
+		C53E1D4619908449000918D9 /* objcjsutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C53E1D4419908449000918D9 /* objcjsutils.cpp */; };
 		C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
 		C5686244197637B0001C8B45 /* objcjs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686243197637B0001C8B45 /* objcjs_runtime.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
 		C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
 		C5686255197637B0001C8B45 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5686253197637B0001C8B45 /* InfoPlist.strings */; };
 		C5686257197637B0001C8B45 /* objcjs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		C579D80D198D6D9600544D8A /* cgobjcjsclang.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C579D80B198D6D9600544D8A /* cgobjcjsclang.cpp */; };
+		C579D81F198D8A2100544D8A /* libclang.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D81D198D895900544D8A /* libclang.dylib */; };
+		C579D821198D908500544D8A /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D820198D908500544D8A /* libLLVM-3.4.dylib */; };
+		C579D83F198DE88700544D8A /* test12.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83C198DE88700544D8A /* test12.js */; };
+		C579D840198DE88700544D8A /* test13.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83D198DE88700544D8A /* test13.js */; };
+		C579D841198DE88700544D8A /* test14.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83E198DE88700544D8A /* test14.js */; };
 		C5D3CB001984355400D5F823 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* compiler.cpp */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
@@ -201,6 +207,9 @@
 		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
 		C51CE3281971F2ED00996E03 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C51CE3291971F2ED00996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
+		C53E1D35199080E1000918D9 /* objc-exampleheader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "objc-exampleheader.h"; sourceTree = "<group>"; };
+		C53E1D4419908449000918D9 /* objcjsutils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objcjsutils.cpp; sourceTree = "<group>"; };
+		C53E1D4519908449000918D9 /* objcjsutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objcjsutils.h; sourceTree = "<group>"; };
 		C568622519763041001C8B45 /* test3.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test3.js; sourceTree = "<group>"; };
 		C568622619763041001C8B45 /* test4.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test4.js; sourceTree = "<group>"; };
 		C568622719763041001C8B45 /* test6.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test6.js; sourceTree = "<group>"; };
@@ -217,13 +226,18 @@
 		C5686252197637B0001C8B45 /* objcjs-runtimeTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "objcjs-runtimeTests-Info.plist"; sourceTree = "<group>"; };
 		C5686254197637B0001C8B45 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C5686256197637B0001C8B45 /* objcjs_runtimeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtimeTests.m; sourceTree = "<group>"; };
-		C5D3CAE419841DAF00D5F823 /* utils.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = utils.h; sourceTree = "<group>"; };
+		C579D80B198D6D9600544D8A /* cgobjcjsclang.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjsclang.cpp; sourceTree = "<group>"; };
+		C579D80C198D6D9600544D8A /* cgobjcjsclang.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcjsclang.h; sourceTree = "<group>"; };
+		C579D81D198D895900544D8A /* libclang.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libclang.dylib; path = ../../../../usr/local/Cellar/llvm/3.4/lib/libclang.dylib; sourceTree = "<group>"; };
+		C579D820198D908500544D8A /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4.2/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
+		C579D83C198DE88700544D8A /* test12.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test12.js; sourceTree = "<group>"; };
+		C579D83D198DE88700544D8A /* test13.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test13.js; sourceTree = "<group>"; };
+		C579D83E198DE88700544D8A /* test14.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test14.js; sourceTree = "<group>"; };
 		C5D3CAF31984354F00D5F823 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
 		C5D3CAFF1984355400D5F823 /* compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjs.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* cgobjcjs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcjs.h; sourceTree = "<group>"; };
-		C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
 		C5F471EC198337D200F72FAA /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* objcjs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = objcjs; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5F83B0E1969155100A381F3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
@@ -255,7 +269,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C566B4D6196D057A00BAC438 /* libLLVM-3.4.dylib in Frameworks */,
+				C579D81F198D8A2100544D8A /* libclang.dylib in Frameworks */,
+				C579D821198D908500544D8A /* libLLVM-3.4.dylib in Frameworks */,
 				C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */,
 				C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */,
 				C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */,
@@ -274,17 +289,20 @@
 			isa = PBXGroup;
 			children = (
 				C5F471EC198337D200F72FAA /* Makefile */,
+				C51CE3161971BC4000996E03 /* test.js */,
+				C51CE3171971BC4000996E03 /* test1.js */,
+				C504ECBB1980CD4B00B2FE6C /* test10.js */,
+				C504ECBC1980CD4B00B2FE6C /* test11.js */,
+				C579D83C198DE88700544D8A /* test12.js */,
+				C579D83D198DE88700544D8A /* test13.js */,
+				C579D83E198DE88700544D8A /* test14.js */,
+				C51CE3181971BC4000996E03 /* test2.js */,
 				C568622519763041001C8B45 /* test3.js */,
 				C568622619763041001C8B45 /* test4.js */,
 				C568622719763041001C8B45 /* test6.js */,
-				C51CE3161971BC4000996E03 /* test.js */,
-				C51CE3171971BC4000996E03 /* test1.js */,
 				C504ECB81980CD4B00B2FE6C /* test7.js */,
 				C504ECB91980CD4B00B2FE6C /* test8.js */,
 				C504ECBA1980CD4B00B2FE6C /* test9.js */,
-				C504ECBB1980CD4B00B2FE6C /* test10.js */,
-				C504ECBC1980CD4B00B2FE6C /* test11.js */,
-				C51CE3181971BC4000996E03 /* test2.js */,
 			);
 			path = "test-js";
 			sourceTree = "<group>";
@@ -292,6 +310,7 @@
 		C51CE3271971F2ED00996E03 /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				C53E1D35199080E1000918D9 /* objc-exampleheader.h */,
 				C51CE3281971F2ED00996E03 /* Makefile */,
 				C51CE3291971F2ED00996E03 /* test.js */,
 			);
@@ -301,6 +320,8 @@
 		C5686238197637B0001C8B45 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C579D820198D908500544D8A /* libLLVM-3.4.dylib */,
+				C579D81D198D895900544D8A /* libclang.dylib */,
 				C5686239197637B0001C8B45 /* Cocoa.framework */,
 				C568624A197637B0001C8B45 /* XCTest.framework */,
 				C568623B197637B0001C8B45 /* Other Frameworks */,
@@ -360,7 +381,6 @@
 				C51CE3271971F2ED00996E03 /* examples */,
 				C51CE3151971BC4000996E03 /* test-js */,
 				C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */,
-				C5D6F0A2196A611900BB9050 /* libLLVM-3.4.dylib */,
 				C5F83B6E1969185A00A381F3 /* v8 */,
 				C5F83B0D1969155100A381F3 /* objcjs */,
 				C568623F197637B0001C8B45 /* objcjs-runtime */,
@@ -386,11 +406,14 @@
 				C5F83B0E1969155100A381F3 /* main.cpp */,
 				C5D3CAF31984354F00D5F823 /* compiler.h */,
 				C5D3CAFF1984355400D5F823 /* compiler.cpp */,
-				C5D3CAE419841DAF00D5F823 /* utils.h */,
+				C53E1D4419908449000918D9 /* objcjsutils.cpp */,
+				C53E1D4519908449000918D9 /* objcjsutils.h */,
 				C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */,
 				C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */,
 				C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */,
 				C5D6F09E196A406F00BB9050 /* cgobjcjs.h */,
+				C579D80B198D6D9600544D8A /* cgobjcjsclang.cpp */,
+				C579D80C198D6D9600544D8A /* cgobjcjsclang.h */,
 				C5D6F09A1969F28600BB9050 /* README.md */,
 				C5F83B101969155100A381F3 /* objcjs.1 */,
 			);
@@ -671,10 +694,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C53E1D4619908449000918D9 /* objcjsutils.cpp in Sources */,
+				C579D80D198D6D9600544D8A /* cgobjcjsclang.cpp in Sources */,
+				C579D841198DE88700544D8A /* test14.js in Sources */,
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
 				C5D3CB001984355400D5F823 /* compiler.cpp in Sources */,
 				C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */,
+				C579D840198DE88700544D8A /* test13.js in Sources */,
 				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,
+				C579D83F198DE88700544D8A /* test12.js in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -921,7 +949,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
-				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
+				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -950,10 +978,12 @@
 					"$(SRCROOT)/deps/v8-trunk/include",
 					/usr/local/Cellar/llvm/3.4/include,
 				);
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/llvm/3.4/include,
 					/usr/local/Cellar/llvm/3.4/lib,
+					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
@@ -977,7 +1007,7 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
-				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
+				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -1006,10 +1036,12 @@
 					"$(SRCROOT)/deps/v8-trunk/include",
 					/usr/local/Cellar/llvm/3.4/include,
 				);
+				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					/usr/local/Cellar/llvm/3.4/include,
 					/usr/local/Cellar/llvm/3.4/lib,
+					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
