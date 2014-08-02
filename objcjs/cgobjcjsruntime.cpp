@@ -360,7 +360,7 @@ llvm::Value *CGObjCJSRuntime::newObject(std::vector<llvm::Value *>values) {
 }
 
 llvm::Value *CGObjCJSRuntime::newArray(std::vector<llvm::Value *>values) {
-    return messageSend(classNamed("NSMutableArray"), "arrayWithObjects:", values);
+    return messageSend(classNamed("OBJCJSMutableArray"), "arrayWithObjects:", values);
 }
 
 llvm::Value *CGObjCJSRuntime::newNumberWithLLVMValue(llvm::Value *doubleValue){

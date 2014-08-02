@@ -792,15 +792,17 @@ void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
 }
 
 void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
-    std::vector<llvm::Value *> values;
+    auto newObject = _runtime->newObject();
+
     for (int i = 0; i < node->values()->length(); i++) {
         Visit(node->values()->at(i));
-        values.push_back(PopContext());
+        auto value = PopContext();
+
+        auto keyValue = _runtime->newString(std::to_string(i));
+        EmitKeyedPropertyAssignment(newObject, keyValue, value);
     }
     
-    values.push_back(ObjcNullPointer());
-    auto array = _runtime->newArray(values);
-    PushValueToContext(array);
+    PushValueToContext(newObject);
 }
 
 void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
