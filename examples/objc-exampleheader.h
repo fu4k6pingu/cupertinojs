@@ -1,8 +1,13 @@
 #import <Foundation/Foundation.h>
 
-@interface Foo : NSObject
+@interface Salamander : NSObject
 
-- (void)test;
+- (void)slide;
 
 @end
 
+@interface NSObject (Extensions)
+
++ (id)extend:(NSString *)name;
+
+@end

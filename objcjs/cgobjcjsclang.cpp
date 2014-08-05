@@ -122,16 +122,17 @@ CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData 
     
     ClangFile *file = (ClangFile *)client_data;
     
-    if (kind == CXCursor_ObjCInterfaceDecl) {
+    if (kind == CXCursor_ObjCInterfaceDecl || kind == CXCursor_ObjCCategoryDecl) {
         std::string className = clang_getCString(name);
         ILOG("\tclass '%s'\n",clang_getCString(name));
         ObjCClass *currentClass = new ObjCClass(className);
         file->_classes.insert(currentClass);
         file->_currentClass = currentClass;
-        return CXChildVisit_Continue;
+        return CXChildVisit_Recurse;
     }
     
-    if (kind == CXCursor_ObjCInstanceMethodDecl && file->_currentClass){
+    if ((kind ==  CXCursor_ObjCClassMethodDecl || kind == CXCursor_ObjCInstanceMethodDecl)
+        && file->_currentClass){
         ObjCMethod *method = new ObjCMethod;
         method->name = clang_getCString(name);
 

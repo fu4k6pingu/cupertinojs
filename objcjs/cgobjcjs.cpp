@@ -95,11 +95,12 @@ void MacroImport(CGObjCJS *CG, Call *node){
             ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
         }
         auto global = module->getGlobalVariable(className);
-        assert(!global && "global var shouldn't be initialized");
-        
-        llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
-        builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
-        CG->_classes.insert(className);
+
+        if (!global) {
+            llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
+            builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
+            CG->_classes.insert(className);
+        }
     }
     
     //Restore insert point

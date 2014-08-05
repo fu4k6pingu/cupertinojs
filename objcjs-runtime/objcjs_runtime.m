@@ -180,6 +180,14 @@ char *setterNameFromPropertyName(const char *propertyName){
 
 @end
 
+@implementation NSObject (ObjCJSExtend)
+
++ (id)extend:(NSString *)name {
+    return objcjs_newSubclass(self.class, name);
+}
+
+@end
+
 const char *JSFunctionTag = "JSFunctionTag";
 
 //an imp signature is id name(_strong id, SEL, ...);
@@ -220,11 +228,14 @@ void *objcjs_defineJSFunction(const char *name,
 void *objcjs_newJSObjectClass(void){
     NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
     NSString *name = [NSString stringWithFormat:@"JSOBJ_%f", time];
-    
-    ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
     Class superClass = [NSObject class];
-    Class jsClass = objc_allocateClassPair(superClass, name.cString, 16);
+    return objcjs_newSubclass(superClass, name);
+}
 
+void *objcjs_newSubclass(Class superClass, NSString *name){
+    ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
+    Class jsClass = objc_allocateClassPair(superClass, name.cString, 16);
+    
     Method superBody = class_getInstanceMethod(superClass, @selector(_objcjs_body:));
     IMP body = imp_implementationWithBlock(^(id _self, SEL cmd, ...){
         RuntimeException(@"object is not a function");
@@ -235,7 +246,7 @@ void *objcjs_newJSObjectClass(void){
     const char *enc = method_getTypeEncoding(superBody);
     class_addMethod(jsClass, @selector(_objcjs_body:), (IMP)body, enc);
     objc_registerClassPair(jsClass);
-  
+    
     //Override dealloc and retain for debugging
     Method superDealloc = class_getInstanceMethod(superClass, @selector(dealloc));
     IMP dealloc = imp_implementationWithBlock(^(id _self, SEL cmd){

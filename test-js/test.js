@@ -9,6 +9,10 @@ function Counter(init){
     return this
 }
 
+function ObjCInt(value){
+    return value.intValue
+}
+
 function objcjs_main(a, b){
     //TODO : all imports must be put here
     // needs pass for macros first
@@ -44,10 +48,19 @@ function objcjs_main(a, b){
     //Native array
     var fruits =  ["bananna", "kiwi"]
     NSLog("First fruit %@", fruits[0])
-    
+   
     //do crazy stuff like this
     //TODO : keyed property assignment
     //fruits[99] = "lemon"
     //NSLog("100th fruit %@", fruits[99])
+   
+    //Subclass my array
+    var MyError = NSError.extend("MyError")
+    NSLog("MyError %@", MyError)
+
+    var error = MyError["errorWithDomain:code:userInfo"]("Javascript", ObjCInt(1337), null)
+   
+    NSLog("My friuts %d", error.code)
+    
     return 0
 }

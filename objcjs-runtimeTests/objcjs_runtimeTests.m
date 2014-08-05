@@ -96,6 +96,11 @@ id impl3(id instance,
     XCTAssertNotNil(aClass, @"It creates a class");
 }
 
+- (void)testItCanCreateASubclassWithName {
+    Class aClass = objcjs_newSubclass([NSObject class], @"Foo");
+    XCTAssertTrue(aClass == objc_getClass("Foo"), @"It creates a subclass");
+}
+
 - (void)testItCanRespondToNumberProperties {
     Class aClass = objcjs_newJSObjectClass();
     id instance = [aClass new];
