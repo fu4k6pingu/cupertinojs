@@ -56,11 +56,16 @@ function objcjs_main(a, b){
    
     //Subclass my array
     var MyError = NSError.extend("MyError")
-    NSLog("MyError %@", MyError)
+    NSLog("MyError Class: %@", MyError)
 
-    var error = MyError["errorWithDomain:code:userInfo"]("Javascript", ObjCInt(1337), null)
-   
-    NSLog("My friuts %d", error.code)
+    
+    var error = MyError["errorWithDomain:code:userInfo:"]("Javascript", ObjCInt(1337), null)
+    NSLog("error code %d", error.code)
+    
+    var mySwiftyStyleCreatedError = MyError.errorWithDomainCodeUserInfo("Javascript",
+                                                                        ObjCInt(42),
+                                                                        null)
+    NSLog("mySwiftyStyleCreatedError code %d", mySwiftyStyleCreatedError.code)
     
     return 0
 }

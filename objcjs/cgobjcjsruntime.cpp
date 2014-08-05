@@ -453,7 +453,14 @@ llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
     bool addColon;
     
     if (ArgsV.size()) {
-        addColon = true;
+        size_t nameLength = strlen(name);
+        // FIXME : this will not work with selectors ending in N > 1 colons
+        // but we can accept that for now.
+        if (name[nameLength - 1] == ':') {
+            addColon = false;
+        } else {
+            addColon = true;
+        }
     } else {
         addColon = false;
     }

@@ -61,6 +61,29 @@ static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
 #pragma mark - Call Macros
 
+char *ObjCSelectorToJS(std::string objCSelector){
+    char *jsSelector = (char *)malloc(sizeof(char) * objCSelector.length());
+    
+    size_t length = objCSelector.length();
+    int jsSelectorPos = 0;
+    for (int i = 0; i < length; i++) {
+        char current = objCSelector.at(i);
+        if (current == ':'){
+            i++;
+            if (i == length) {
+                break;
+            }
+            current = objCSelector.at(i);
+            jsSelector[jsSelectorPos] = toupper(current);
+        } else {
+            jsSelector[jsSelectorPos] = current;
+        }
+        jsSelectorPos++;
+    }
+
+    return jsSelector;
+}
+
 void MacroImport(CGObjCJS *CG, Call *node){
     ZoneList<Expression*>* args = node->arguments();
     auto argExpr = args->at(0);
@@ -93,9 +116,17 @@ void MacroImport(CGObjCJS *CG, Call *node){
         for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
             objcjs::ObjCMethod method = **methodIt;
             ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
-        }
-        auto global = module->getGlobalVariable(className);
 
+            std::string objCSelector = method.name;
+            if(!CG->_objCSelectorBySelector[objCSelector].size()){
+                char *jsSelector = ObjCSelectorToJS(objCSelector);
+                CG->_objCSelectorBySelector[jsSelector] = objCSelector;
+                free(jsSelector);
+                ILOG("JS selector name %s", jsSelector);
+            }
+        }
+       
+        auto global = module->getGlobalVariable(className);
         if (!global) {
             llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
             builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
@@ -899,6 +930,7 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             break;
         }
         case KEYED_PROPERTY: {
+            //TODO :
             UNIMPLEMENTED();
             break;
         }
@@ -1133,6 +1165,11 @@ void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args)
     assert(objValue);
     
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
+  
+    auto objcSelector = _objCSelectorBySelector[keyName];
+    if (objcSelector.length()){
+        keyName = objcSelector;
+    }
     
     auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), makeArgs(args));
     PushValueToContext(result);

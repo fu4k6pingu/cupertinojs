@@ -110,6 +110,8 @@ public:
     llvm::BasicBlock *_currentSetRetBlock;
     std::map <Token::Value, std::string> assignOpSelectorByToken;
     std::map <Token::Value, std::string> opSelectorByToken;
+
+    std::map <std::string, std::string> _objCSelectorBySelector;
     std::set <std::string> _classes;
     
     // Macros are references to native functions
