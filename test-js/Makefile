@@ -11,7 +11,7 @@ BUILD_SCRIPT = $(TOPDIR)$(SOURCEDIR)/build.sh
 js-build:
 		rm -rf $(BUILD_SCRIPT)
 		@echo export OBJCJS_ENV_BUILD_DIR="$(TOPDIR)/build/Debug/" >> $(BUILD_SCRIPT)
-#		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
+		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
 		@echo export OBJCJS_ENV_RUNTIME="/Users/jerrymarino/Projects/objcjs/build/Debug/objcjs-runtime.dylib" >> $(BUILD_SCRIPT)
 		@echo export OBJCJS_ENV_PROJECT_ROOT_DIR="/Users/jerrymarino/Projects/objcjs/" >> $(BUILD_SCRIPT)
 		@echo $(TOPDIR)$(SOURCEDIR)/objcjs $(SOURCES) >> $(BUILD_SCRIPT)

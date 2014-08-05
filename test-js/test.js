@@ -1,3 +1,10 @@
+// Fixme : this needs to be here!!
+// it is an unused function but forces the import macros to be parsed first
+
+function ObjCImport(){
+    objc_import("examples/objc-exampleheader.h")
+}
+
 function Counter(init){
     this.value = init
     
@@ -13,59 +20,48 @@ function ObjCInt(value){
     return value.intValue
 }
 
+function makeError(){
+    //NSError is exposed via the implicit global
+    //variable 'NSError' because of our import
+    NSLog("Error class %@", NSError)
+
+    //Extend NSError
+    var JSCountedError = NSError.extend("JSCountedError")
+    
+    function CountedErrorFactory(domain, code, userInfo){
+        this.counter.increment(0)
+        NSLog("CountedErrorFactory errors created %@", this.counter.value)
+        
+        return NSError.errorWithDomainCodeUserInfo(domain,
+                                                   code,
+                                                   userInfo)
+    }
+   
+    //Override like a boss
+    //TODO : this should allow setting of methods with the :
+    JSCountedError["errorWithDomain:code:userInfo"] = CountedErrorFactory
+    JSCountedError.counter = new Counter(0)
+    
+    var fancyError = JSCountedError.errorWithDomainCodeUserInfo("Too much whisky!",
+                                                                ObjCInt(1984),
+                                                                null)
+    NSLog("fancyError %@", fancyError)
+    
+    return fancyError
+}
+
 function objcjs_main(a, b){
-    //TODO : all imports must be put here
-    // needs pass for macros first
-    objc_import("examples/objc-exampleheader.h")
-
-    var c = new Counter(1)
-    c.increment(null)
-    c.increment(null)
-    
-    NSLog("NSArray.arrayWithObject(\"bananna\") %@", 
-          NSArray
-          .arrayWithObject("bananna"))
-
-    NSLog("NSArray.arrayWithObjects(\"bananna\") %@",
-          NSArray
-          .arrayWithObjects("bananna", "kiwi"))
-
-    NSLog("NSArray.alloc().initWithObject(\"apple\") %@",
-          NSArray
-          .alloc()
-          .initWithObject("apple"))
-
-    NSLog("NSArray.alloc.initWithObject(\"apple\") %@",
-          NSArray
-          .alloc
-          .initWithObject("apple"))
-
-    //NSArrays
-    var fruits =  NSArray.arrayWithObjects("bananna", "kiwi")
-    var zero = 0
-    NSLog("First fruit %@", fruits.objectAtIndex(zero.intValue))
-
-    //Native array
-    var fruits =  ["bananna", "kiwi"]
-    NSLog("First fruit %@", fruits[0])
+    makeError()
    
-    //do crazy stuff like this
-    //TODO : keyed property assignment
-    //fruits[99] = "lemon"
-    //NSLog("100th fruit %@", fruits[99])
-   
-    //Subclass my array
-    var MyError = NSError.extend("MyError")
-    NSLog("MyError Class: %@", MyError)
-
+    var JSError = NSError.extend("JSError2")
+    NSLog("JSError Class: %@", JSError)
     
-    var error = MyError["errorWithDomain:code:userInfo:"]("Javascript", ObjCInt(1337), null)
+    var error = JSError["errorWithDomain:code:userInfo:"]("Javascript", ObjCInt(1337), null)
     NSLog("error code %d", error.code)
-    
-    var mySwiftyStyleCreatedError = MyError.errorWithDomainCodeUserInfo("Javascript",
+
+    var mySwiftyStyleCreatedError = JSError.errorWithDomainCodeUserInfo("Javascript",
                                                                         ObjCInt(42),
                                                                         null)
     NSLog("mySwiftyStyleCreatedError code %d", mySwiftyStyleCreatedError.code)
-    
     return 0
 }

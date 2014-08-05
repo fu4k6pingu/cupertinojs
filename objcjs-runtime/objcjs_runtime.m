@@ -13,7 +13,7 @@
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
-#define ObjCJSRuntimeDEBUG 0
+#define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 
@@ -234,7 +234,12 @@ void *objcjs_newJSObjectClass(void){
 
 void *objcjs_newSubclass(Class superClass, NSString *name){
     ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
-    Class jsClass = objc_allocateClassPair(superClass, name.cString, 16);
+    const char *className = name.cString;
+    if (objc_getClass(className)) {
+        RuntimeException(@"tried to override exising class %@", name);
+    }
+    
+    Class jsClass = objc_allocateClassPair(superClass, className, 16);
     
     Method superBody = class_getInstanceMethod(superClass, @selector(_objcjs_body:));
     IMP body = imp_implementationWithBlock(^(id _self, SEL cmd, ...){
@@ -300,7 +305,7 @@ void *objcjs_assignProperty(id target,
         memcpy(methodName, name, nameLen);
         methodName[nameLen] = ':';
         methodName[nameLen+1] = '\0';
-        
+       
         SEL newSelector = sel_getUid(methodName);
         class_replaceMethod(targetClass, newSelector,
                             method_getImplementation(valueMethod),

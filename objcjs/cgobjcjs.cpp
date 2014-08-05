@@ -110,7 +110,7 @@ void MacroImport(CGObjCJS *CG, Call *node){
         objcjs::ObjCClass *newClass = *it;
         auto className = newClass->_name;
         localStringVar(className, CG->_module);
-
+        
         ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
         
         for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
@@ -308,8 +308,12 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
             !(_builder->GetInsertBlock()->getParent()->getName().equals(*_name))) {
             auto functionClass = _runtime->classNamed(name.c_str());
             auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
-            auto jsThis = _builder->CreateLoad(jsThisAlloca, "load-this");
-            _runtime->messageSend(functionClass, "_objcjs_setParent:", jsThis);
+            if (jsThisAlloca) {
+                auto jsThis = _builder->CreateLoad(jsThisAlloca, "load-this");
+                _runtime->messageSend(functionClass, "_objcjs_setParent:", jsThis);
+            } else {
+                ILOG("warning missing this.. something is broken!");
+            }
         }
     }
     
@@ -1048,6 +1052,8 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         PushValueToContext(_builder->CreateLoad(global));
         return;
     }
+    
+    UNIMPLEMENTED();
 }
 
 void CGObjCJS::VisitYield(Yield* node) {
@@ -1127,6 +1133,7 @@ void CGObjCJS::VisitCall(Call* node) {
         std::vector<llvm::Value *> finalArgs;
         for (unsigned i = 0; i < args->length(); i++){
             llvm::Value *arg = PopContext();
+            assert(arg);
             finalArgs.push_back(arg);
         }
         std::reverse(finalArgs.begin(), finalArgs.end());

@@ -101,6 +101,19 @@ id impl3(id instance,
     XCTAssertTrue(aClass == objc_getClass("Foo"), @"It creates a subclass");
 }
 
+- (void)testItCanSubclassMethods {
+    Class MyError = objcjs_newSubclass([NSError class], @"MyError");
+
+    Class bodyClass = objcjs_defineJSFunction("MyErrorBody", echoFirstArgImp);
+
+    objcjs_assignProperty(MyError, "errorWithDomain:code:userInfo:", bodyClass);
+
+    id result = [(id)MyError errorWithDomain:@"four" code:3 userInfo:@{}];
+    
+    XCTAssertEqual(@"four", result, @"It returns the value of the property");
+    
+}
+
 - (void)testItCanRespondToNumberProperties {
     Class aClass = objcjs_newJSObjectClass();
     id instance = [aClass new];
