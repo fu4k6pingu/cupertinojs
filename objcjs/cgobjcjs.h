@@ -113,12 +113,7 @@ public:
 
     std::map <std::string, std::string> _objCSelectorBySelector;
     std::set <std::string> _classes;
-    
-    // Macros are references to native functions
-    // which override javascript calls
-    typedef void(*CallMacroFnPtr)(CGObjCJS *CG, Call *node);
-    std::map <std::string, CallMacroFnPtr> _macros;
-    
+
     std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
     
     CGObjCJSRuntime *_runtime;

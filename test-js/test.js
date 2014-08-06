@@ -20,6 +20,39 @@ function ObjCInt(value){
     return value.intValue
 }
 
+function makeErrorWithClosedProperty(){
+    //NSError is exposed via the implicit global
+    //variable 'NSError' because of our import
+    NSLog("Error class %@", NSError)
+
+    //Extend NSError
+    var JSCountedError = NSError.extend("JSCountedError")
+    var counter = new Counter(0)
+
+    function CountedErrorFactory(domain, code, userInfo){
+        counter.increment(0)
+        NSLog("CountedErrorFactory errors created %@", this.counter.value)
+        
+        return NSError.errorWithDomainCodeUserInfo(domain,
+                                                   code,
+                                                   userInfo)
+    }
+   
+    //Override like a boss
+    //TODO : this should allow setting of methods with the :
+    JSCountedError["errorWithDomain:code:userInfo"] = CountedErrorFactory
+
+    NSLog("JSCounterError - parent %@", JSCountedError._objcjs_parent);
+    NSLog("CountedErrorFactory - parent %@", CountedErrorFactory._objcjs_parent);
+    
+    var fancyError = JSCountedError.errorWithDomainCodeUserInfo("Too much whisky!",
+                                                                ObjCInt(1984),
+                                                                null)
+    NSLog("fancyError %@", fancyError)
+    
+    return fancyError
+}
+
 function makeError(){
     //NSError is exposed via the implicit global
     //variable 'NSError' because of our import
@@ -41,6 +74,8 @@ function makeError(){
     //TODO : this should allow setting of methods with the :
     JSCountedError["errorWithDomain:code:userInfo"] = CountedErrorFactory
     JSCountedError.counter = new Counter(0)
+
+    NSLog("JSCounterError - parent %@", JSCountedError._objcjs_parent);
     
     var fancyError = JSCountedError.errorWithDomainCodeUserInfo("Too much whisky!",
                                                                 ObjCInt(1984),
@@ -51,7 +86,7 @@ function makeError(){
 }
 
 function objcjs_main(a, b){
-    makeError()
+    makeErrorWithClosedProperty()
    
     var JSError = NSError.extend("JSError2")
     NSLog("JSError Class: %@", JSError)
