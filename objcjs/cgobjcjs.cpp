@@ -12,6 +12,7 @@
 #include "cgobjcsmacrovisitor.h"
 
 #include <src/scopes.h>
+#include <src/zone.h>
 
 #include <llvm-c/Core.h>
 #include <llvm/IR/DerivedTypes.h>
@@ -87,11 +88,10 @@ char *ObjCSelectorToJS(std::string objCSelector){
 
 #pragma mark - CGObjCJS
 
-CGObjCJS::CGObjCJS(Zone *zone, std::string name){
-    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone);
-    _macros = macroVisitor._macros;
-   
-    InitializeAstVisitor(zone);
+CGObjCJS::CGObjCJS(Zone *zone,
+                   std::string name,
+                   CompilationInfoWithZone *info)
+{
     _name = &name;
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
@@ -101,6 +101,16 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
 
     auto moduleFunction = ObjcCodeGenModuleInit(_builder, _module, name);
     SetModuleCtor(_module, moduleFunction);
+
+    //start module inserting at beginning of init function
+    _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
+    
+    
+    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone);
+    macroVisitor.Visit(info->function());
+    _macros = macroVisitor._macros;
+    
+    InitializeAstVisitor(zone);
     
     assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
     assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
@@ -621,10 +631,12 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     //TODO: support unnamed functions
     bool isModuleContainerFunction = !name.length();
     if (isModuleContainerFunction){
-        //start module inserting at beginning of init function
+       //start module inserting at beginning of init function
         auto moduleFunction = _module->getFunction(*_name);
         _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
 
+
+        
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
         EndAccumulation();
@@ -993,6 +1005,7 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
         
         PushValueToContext(value);
+        return;
     }
     
     auto global = _module->getGlobalVariable(llvm::StringRef(variableName));

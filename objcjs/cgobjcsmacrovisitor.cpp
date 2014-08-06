@@ -76,33 +76,15 @@ CGObjCJSMacroVisitor::CGObjCJSMacroVisitor(CGObjCJS *CG, v8::internal::Zone *zon
 }
 
 void CGObjCJSMacroVisitor::VisitDeclarations(ZoneList<Declaration*>* declarations){
-//    if (declarations->length() > 0) {
-//        auto preBB = _builder->GetInsertBlock();
-//        for (int i = 0; i < declarations->length(); i++) {
-//            auto BB = _builder->GetInsertBlock();
-//            Visit(declarations->at(i));
-//            if (BB){
-//                _builder->SetInsertPoint(BB);
-//            } else {
-//                if (preBB)
-//                    _builder->SetInsertPoint(preBB);
-//            }
-//        }
-//    }
+    for (int i = 0; i < declarations->length(); i++) {
+        Visit(declarations->at(i));
+    }
 }
 
 void CGObjCJSMacroVisitor::VisitStatements(ZoneList<Statement*>* statements){
-//    auto preBB = _builder->GetInsertBlock();
-//    for (int i = 0; i < statements->length(); i++) {
-//        auto BB = _builder->GetInsertBlock();
-//        Visit(statements->at(i));
-//        if (BB){
-//            _builder->SetInsertPoint(BB);
-//        } else {
-//            if (preBB)
-//                _builder->SetInsertPoint(preBB);
-//        }
-//    }
+    for (int i = 0; i < statements->length(); i++) {
+        Visit(statements->at(i));
+    }
 }
 
 void CGObjCJSMacroVisitor::VisitBlock(Block *block){
@@ -135,7 +117,9 @@ void CGObjCJSMacroVisitor::VisitModuleStatement(ModuleStatement* node) {}
 
 #pragma mark - Statements
 
-void CGObjCJSMacroVisitor::VisitExpressionStatement(ExpressionStatement* node) {}
+void CGObjCJSMacroVisitor::VisitExpressionStatement(ExpressionStatement* node) {
+    Visit(node->expression());
+}
 
 void CGObjCJSMacroVisitor::VisitEmptyStatement(EmptyStatement* node) {}
 
@@ -179,7 +163,10 @@ void CGObjCJSMacroVisitor::VisitTryFinallyStatement(TryFinallyStatement* node) {
 void CGObjCJSMacroVisitor::VisitDebuggerStatement(DebuggerStatement* node) {}
 
 //Define the body of the function
-void CGObjCJSMacroVisitor::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {}
+void CGObjCJSMacroVisitor::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+    VisitDeclarations(node->scope()->declarations());
+    VisitStatements(node->body());
+}
 
 void CGObjCJSMacroVisitor::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {}
 
@@ -221,17 +208,13 @@ static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
 void CGObjCJSMacroVisitor::VisitCall(Call* node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(callee, isolate());
-    
     if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
         std::string name = stringFromV8AstRawString(proxy->raw_name());
-        
-        //check for macro use and abort
+
         CallMacroFnPtr macro = _macros[name];
-        if (macro){
-            macro(_cg, node);
-            return;
-        }
+        macro(_cg, node);
+        return;
     }
 }
 

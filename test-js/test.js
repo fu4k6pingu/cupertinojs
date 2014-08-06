@@ -1,9 +1,4 @@
-// Fixme : this needs to be here!!
-// it is an unused function but forces the import macros to be parsed first
-
-function ObjCImport(){
-    objc_import("examples/objc-exampleheader.h")
-}
+objc_import("examples/objc-exampleheader.h")
 
 function Counter(init){
     this.value = init
@@ -20,7 +15,7 @@ function ObjCInt(value){
     return value.intValue
 }
 
-function makeErrorWithClosedProperty(){
+function makeError(){
     //NSError is exposed via the implicit global
     //variable 'NSError' because of our import
     NSLog("Error class %@", NSError)
@@ -31,7 +26,7 @@ function makeErrorWithClosedProperty(){
 
     function CountedErrorFactory(domain, code, userInfo){
         counter.increment(0)
-        NSLog("CountedErrorFactory errors created %@", this.counter.value)
+        NSLog("CountedErrorFactory errors created %@", counter.value)
         
         return NSError.errorWithDomainCodeUserInfo(domain,
                                                    code,
@@ -53,40 +48,8 @@ function makeErrorWithClosedProperty(){
     return fancyError
 }
 
-function makeError(){
-    //NSError is exposed via the implicit global
-    //variable 'NSError' because of our import
-    NSLog("Error class %@", NSError)
-
-    //Extend NSError
-    var JSCountedError = NSError.extend("JSCountedError")
-    
-    function CountedErrorFactory(domain, code, userInfo){
-        this.counter.increment(0)
-        NSLog("CountedErrorFactory errors created %@", this.counter.value)
-        
-        return NSError.errorWithDomainCodeUserInfo(domain,
-                                                   code,
-                                                   userInfo)
-    }
-   
-    //Override like a boss
-    //TODO : this should allow setting of methods with the :
-    JSCountedError["errorWithDomain:code:userInfo"] = CountedErrorFactory
-    JSCountedError.counter = new Counter(0)
-
-    NSLog("JSCounterError - parent %@", JSCountedError._objcjs_parent);
-    
-    var fancyError = JSCountedError.errorWithDomainCodeUserInfo("Too much whisky!",
-                                                                ObjCInt(1984),
-                                                                null)
-    NSLog("fancyError %@", fancyError)
-    
-    return fancyError
-}
-
 function objcjs_main(a, b){
-    makeErrorWithClosedProperty()
+    makeError()
    
     var JSError = NSError.extend("JSError2")
     NSLog("JSError Class: %@", JSError)

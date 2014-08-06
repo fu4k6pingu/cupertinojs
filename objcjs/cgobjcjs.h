@@ -18,6 +18,9 @@
 
 #include <src/ast.h>
 #include <src/arguments.h>
+#include <src/parser.h>
+#include <src/prettyprinter.h>
+#include <include/libplatform/libplatform.h>
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
@@ -125,7 +128,9 @@ public:
     CGObjCJSRuntime *_runtime;
     void *_macroVisitor;
     
-    CGObjCJS(Zone *zone, std::string name);
+    CGObjCJS(Zone *zone,
+             std::string name,
+             CompilationInfoWithZone *info);
 
     virtual~CGObjCJS(){};
 
