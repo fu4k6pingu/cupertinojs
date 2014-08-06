@@ -10,13 +10,10 @@
 		C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */; };
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C521AB301991E89300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
-		C521AB351991E89300948556 /* objcjs_runtime_ios.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = C521AB341991E89300948556 /* objcjs_runtime_ios.h */; };
 		C521AB3D1991E89300948556 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
 		C521AB3E1991E89300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
 		C521AB401991E89300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB3F1991E89300948556 /* UIKit.framework */; };
 		C521AB431991E89300948556 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2E1991E89300948556 /* libobjcjs-runtime-ios.a */; };
-		C521AB491991E89300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AB471991E89300948556 /* InfoPlist.strings */; };
-		C521AB4B1991E89300948556 /* objcjs_runtime_iosTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AB4A1991E89300948556 /* objcjs_runtime_iosTests.m */; };
 		C521AB5D1991E8B300948556 /* objcjs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686243197637B0001C8B45 /* objcjs_runtime.m */; };
 		C53A0A7F1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C53A0A7D1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp */; };
 		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
@@ -220,7 +217,6 @@
 			dstSubfolderSpec = 16;
 			files = (
 				C56206B71991EC6E00646947 /* objcjs_runtime.h in CopyFiles */,
-				C521AB351991E89300948556 /* objcjs_runtime_ios.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,13 +249,8 @@
 		C521AB2E1991E89300948556 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libobjcjs-runtime-ios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AB2F1991E89300948556 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C521AB331991E89300948556 /* objcjs-runtime-ios-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "objcjs-runtime-ios-Prefix.pch"; sourceTree = "<group>"; };
-		C521AB341991E89300948556 /* objcjs_runtime_ios.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = objcjs_runtime_ios.h; sourceTree = "<group>"; };
-		C521AB361991E89300948556 /* objcjs_runtime_ios.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtime_ios.m; sourceTree = "<group>"; };
 		C521AB3C1991E89300948556 /* objcjs-runtime-iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "objcjs-runtime-iosTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AB3F1991E89300948556 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
-		C521AB461991E89300948556 /* objcjs-runtime-iosTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "objcjs-runtime-iosTests-Info.plist"; sourceTree = "<group>"; };
-		C521AB481991E89300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		C521AB4A1991E89300948556 /* objcjs_runtime_iosTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtime_iosTests.m; sourceTree = "<group>"; };
 		C521AB5E1991E90400948556 /* Todoie.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Todoie.xcodeproj; path = Todoie/Todoie.xcodeproj; sourceTree = "<group>"; };
 		C53A0A7D1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcsmacrovisitor.cpp; sourceTree = "<group>"; };
 		C53A0A7E1991B91B00B62C49 /* cgobjcsmacrovisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcsmacrovisitor.h; sourceTree = "<group>"; };
@@ -396,8 +387,6 @@
 		C521AB311991E89300948556 /* objcjs-runtime-ios */ = {
 			isa = PBXGroup;
 			children = (
-				C521AB341991E89300948556 /* objcjs_runtime_ios.h */,
-				C521AB361991E89300948556 /* objcjs_runtime_ios.m */,
 				C521AB321991E89300948556 /* Supporting Files */,
 			);
 			path = "objcjs-runtime-ios";
@@ -407,24 +396,6 @@
 			isa = PBXGroup;
 			children = (
 				C521AB331991E89300948556 /* objcjs-runtime-ios-Prefix.pch */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
-		C521AB441991E89300948556 /* objcjs-runtime-iosTests */ = {
-			isa = PBXGroup;
-			children = (
-				C521AB4A1991E89300948556 /* objcjs_runtime_iosTests.m */,
-				C521AB451991E89300948556 /* Supporting Files */,
-			);
-			path = "objcjs-runtime-iosTests";
-			sourceTree = "<group>";
-		};
-		C521AB451991E89300948556 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				C521AB461991E89300948556 /* objcjs-runtime-iosTests-Info.plist */,
-				C521AB471991E89300948556 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -509,7 +480,6 @@
 				C568623F197637B0001C8B45 /* objcjs-runtime */,
 				C5686250197637B0001C8B45 /* objcjs-runtimeTests */,
 				C521AB311991E89300948556 /* objcjs-runtime-ios */,
-				C521AB441991E89300948556 /* objcjs-runtime-iosTests */,
 				C5686238197637B0001C8B45 /* Frameworks */,
 				C5F83B0C1969155100A381F3 /* Products */,
 			);
@@ -854,7 +824,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C521AB491991E89300948556 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -881,7 +850,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C521AB4B1991E89300948556 /* objcjs_runtime_iosTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -979,14 +947,6 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		C521AB471991E89300948556 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				C521AB481991E89300948556 /* en */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
 		C5686253197637B0001C8B45 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
