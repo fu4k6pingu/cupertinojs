@@ -7,10 +7,73 @@
 //
 
 #include "cgobjcsmacrovisitor.h"
-
+#include "cgobjcjsclang.h"
 
 using namespace v8::internal;
 using namespace objcjs;
+
+#define CGObjCJSDEBUG 1
+#define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
+
+void MacroImport(CGObjCJS *CG, Call *node){
+    ZoneList<Expression*>* args = node->arguments();
+    auto argExpr = args->at(0);
+    auto importPath = argExpr->AsLiteral()->raw_value()->AsString();
+    if (!importPath) {
+        return;
+    }
+   
+    std::string filePath = stringFromV8AstRawString(importPath);
+    auto clangFile = objcjs::ClangFile(filePath);
+    
+    //Lookup the module init BB
+    llvm::Module *module = CG->_module;
+    llvm::IRBuilder<> *builder = CG->_builder;
+    
+    auto function = module->getFunction(*CG->_name);
+    llvm::BasicBlock *moduleInitBB = &function->getBasicBlockList().front();
+    
+    auto insertPt = builder->GetInsertBlock();
+    builder->SetInsertPoint(moduleInitBB);
+
+    //Declare classes as global variables in the init BB
+    for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
+        objcjs::ObjCClass *newClass = *it;
+        auto className = newClass->_name;
+        localStringVar(className, CG->_module);
+        
+        ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
+        
+        for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
+            objcjs::ObjCMethod method = **methodIt;
+            ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
+
+            std::string objCSelector = method.name;
+            if(!CG->_objCSelectorBySelector[objCSelector].size()){
+                char *jsSelector = ObjCSelectorToJS(objCSelector);
+                CG->_objCSelectorBySelector[jsSelector] = objCSelector;
+                free(jsSelector);
+                ILOG("JS selector name %s", jsSelector);
+            }
+        }
+       
+        auto global = module->getGlobalVariable(className);
+        if (!global) {
+            llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
+            builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
+            CG->_classes.insert(className);
+        }
+    }
+    
+    //Restore insert point
+    builder->SetInsertPoint(insertPt);
+}
+
+CGObjCJSMacroVisitor::CGObjCJSMacroVisitor(CGObjCJS *CG) {
+    InitializeAstVisitor(CG->_zone());
+    _cg = CG;
+    _macros["objc_import"] = MacroImport;
+}
 
 void CGObjCJSMacroVisitor::VisitDeclarations(ZoneList<Declaration*>* declarations){
 //    if (declarations->length() > 0) {
@@ -166,7 +229,7 @@ void CGObjCJSMacroVisitor::VisitCall(Call* node) {
         //check for macro use and abort
         CallMacroFnPtr macro = _macros[name];
         if (macro){
-            macro(this, node);
+            macro(_cg, node);
             return;
         }
     }

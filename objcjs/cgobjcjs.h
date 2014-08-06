@@ -29,6 +29,9 @@
 
 using namespace v8::internal;
 
+std::string stringFromV8AstRawString(const AstRawString *raw);
+char *ObjCSelectorToJS(std::string objCSelector);
+
 class CGContext {
 public:
     Scope *_scope;
@@ -216,6 +219,10 @@ public:
     bool IsInGlobalScope();
 
     std::vector <llvm::Value *>makeArgs(ZoneList<Expression*>* args);
+
+    v8::internal::Zone *_zone(){
+        return zone();
+    }
     
     DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
 };

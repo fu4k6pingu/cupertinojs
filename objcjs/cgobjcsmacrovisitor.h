@@ -14,6 +14,7 @@
 
 namespace objcjs {
     class CGObjCJSMacroVisitor: public  v8::internal::AstVisitor {
+        CGObjCJS *_cg;
 public:
         
     // Macros are references to native functions

@@ -28,7 +28,7 @@ using namespace v8::internal;
 #define CALL_LOG(STR)\
     _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString(STR))
 
-static std::string stringFromV8AstRawString(const AstRawString *raw) {
+std::string stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
     size_t size = raw->length();
     const unsigned char *data = raw->raw_data();
@@ -84,60 +84,6 @@ char *ObjCSelectorToJS(std::string objCSelector){
     return jsSelector;
 }
 
-void MacroImport(CGObjCJS *CG, Call *node){
-    ZoneList<Expression*>* args = node->arguments();
-    auto argExpr = args->at(0);
-    auto importPath = argExpr->AsLiteral()->raw_value()->AsString();
-    if (!importPath) {
-        return;
-    }
-   
-    std::string filePath = stringFromV8AstRawString(importPath);
-    auto clangFile = objcjs::ClangFile(filePath);
-    
-    //Lookup the module init BB
-    llvm::Module *module = CG->_module;
-    llvm::IRBuilder<> *builder = CG->_builder;
-    
-    auto function = module->getFunction(*CG->_name);
-    llvm::BasicBlock *moduleInitBB = &function->getBasicBlockList().front();
-    
-    auto insertPt = builder->GetInsertBlock();
-    builder->SetInsertPoint(moduleInitBB);
-
-    //Declare classes as global variables in the init BB
-    for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
-        objcjs::ObjCClass *newClass = *it;
-        auto className = newClass->_name;
-        localStringVar(className, CG->_module);
-        
-        ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
-        
-        for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
-            objcjs::ObjCMethod method = **methodIt;
-            ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
-
-            std::string objCSelector = method.name;
-            if(!CG->_objCSelectorBySelector[objCSelector].size()){
-                char *jsSelector = ObjCSelectorToJS(objCSelector);
-                CG->_objCSelectorBySelector[jsSelector] = objCSelector;
-                free(jsSelector);
-                ILOG("JS selector name %s", jsSelector);
-            }
-        }
-       
-        auto global = module->getGlobalVariable(className);
-        if (!global) {
-            llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
-            builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
-            CG->_classes.insert(className);
-        }
-    }
-    
-    //Restore insert point
-    builder->SetInsertPoint(insertPt);
-}
-
 #pragma mark - CGObjCJS
 
 CGObjCJS::CGObjCJS(Zone *zone, std::string name){
@@ -179,8 +125,6 @@ CGObjCJS::CGObjCJS(Zone *zone, std::string name){
     opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
     opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
     opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
-    
-    _macros["objc_import"] = MacroImport;
 }
 
 void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
@@ -1116,14 +1060,7 @@ void CGObjCJS::VisitCall(Call* node) {
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
         std::string name = stringFromV8AstRawString(proxy->raw_name());
-        
-        //check for macro use and abort
-        CallMacroFnPtr macro = _macros[name];
-        if (macro){
-            macro(this, node);
-            return;
-        }
-        
+
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
             //TODO : this should likely retain the values
