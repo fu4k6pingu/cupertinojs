@@ -22,6 +22,7 @@
 		C53C8BFC1976649300335186 /* objcjs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		C53C8BFD197664AD00335186 /* objcjs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* objcjs-runtime.dylib */; };
 		C53E1D4619908449000918D9 /* objcjsutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C53E1D4419908449000918D9 /* objcjsutils.cpp */; };
+		C56206B71991EC6E00646947 /* objcjs_runtime.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = C5686242197637B0001C8B45 /* objcjs_runtime.h */; };
 		C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
 		C5686244197637B0001C8B45 /* objcjs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5686243197637B0001C8B45 /* objcjs_runtime.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
@@ -54,6 +55,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = C521AB2D1991E89300948556;
 			remoteInfo = "objcjs-runtime-ios";
+		};
+		C521AB631991E90500948556 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C521AB5E1991E90400948556 /* Todoie.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = C521AA7B1991E4B300948556;
+			remoteInfo = Todoie;
+		};
+		C521AB651991E90500948556 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C521AB5E1991E90400948556 /* Todoie.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = C521AA961991E4B300948556;
+			remoteInfo = TodoieTests;
 		};
 		C568624D197637B0001C8B45 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -204,6 +219,7 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
+				C56206B71991EC6E00646947 /* objcjs_runtime.h in CopyFiles */,
 				C521AB351991E89300948556 /* objcjs_runtime_ios.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -244,6 +260,7 @@
 		C521AB461991E89300948556 /* objcjs-runtime-iosTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "objcjs-runtime-iosTests-Info.plist"; sourceTree = "<group>"; };
 		C521AB481991E89300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C521AB4A1991E89300948556 /* objcjs_runtime_iosTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = objcjs_runtime_iosTests.m; sourceTree = "<group>"; };
+		C521AB5E1991E90400948556 /* Todoie.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Todoie.xcodeproj; path = Todoie/Todoie.xcodeproj; sourceTree = "<group>"; };
 		C53A0A7D1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcsmacrovisitor.cpp; sourceTree = "<group>"; };
 		C53A0A7E1991B91B00B62C49 /* cgobjcsmacrovisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcsmacrovisitor.h; sourceTree = "<group>"; };
 		C53E1D35199080E1000918D9 /* objc-exampleheader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "objc-exampleheader.h"; sourceTree = "<group>"; };
@@ -369,6 +386,7 @@
 			isa = PBXGroup;
 			children = (
 				C53E1D35199080E1000918D9 /* objc-exampleheader.h */,
+				C521AB5E1991E90400948556 /* Todoie.xcodeproj */,
 				C51CE3281971F2ED00996E03 /* Makefile */,
 				C51CE3291971F2ED00996E03 /* test.js */,
 			);
@@ -409,6 +427,15 @@
 				C521AB471991E89300948556 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C521AB5F1991E90400948556 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C521AB641991E90500948556 /* Todoie.app */,
+				C521AB661991E90500948556 /* TodoieTests.xctest */,
+			);
+			name = Products;
 			sourceTree = "<group>";
 		};
 		C5686238197637B0001C8B45 /* Frameworks */ = {
@@ -715,6 +742,10 @@
 					ProjectRef = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
 				},
 				{
+					ProductGroup = C521AB5F1991E90400948556 /* Products */;
+					ProjectRef = C521AB5E1991E90400948556 /* Todoie.xcodeproj */;
+				},
+				{
 					ProductGroup = C5F83B701969186400A381F3 /* Products */;
 					ProjectRef = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
 				},
@@ -732,6 +763,20 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
+		C521AB641991E90500948556 /* Todoie.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = Todoie.app;
+			remoteRef = C521AB631991E90500948556 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		C521AB661991E90500948556 /* TodoieTests.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = TodoieTests.xctest;
+			remoteRef = C521AB651991E90500948556 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 		C5F83B831969186400A381F3 /* libv8_snapshot.a */ = {
 			isa = PBXReferenceProxy;
 			fileType = archive.ar;
@@ -959,6 +1004,7 @@
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = NO;
+				DEAD_CODE_STRIPPING = NO;
 				DSTROOT = /tmp/objcjs_runtime_ios.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "objcjs-runtime-ios/objcjs-runtime-ios-Prefix.pch";
@@ -968,11 +1014,12 @@
 				);
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
-				ONLY_ACTIVE_ARCH = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
+				VALID_ARCHS = "x86_64 i386";
 			};
 			name = Debug;
 		};
@@ -982,16 +1029,19 @@
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = NO;
+				DEAD_CODE_STRIPPING = NO;
 				DSTROOT = /tmp/objcjs_runtime_ios.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "objcjs-runtime-ios/objcjs-runtime-ios-Prefix.pch";
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "-ObjC";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SKIP_INSTALL = YES;
 				VALIDATE_PRODUCT = YES;
+				VALID_ARCHS = "x86_64 i386";
 			};
 			name = Release;
 		};
@@ -1348,6 +1398,7 @@
 				C521AB4D1991E89300948556 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C521AB5C1991E89300948556 /* Build configuration list for PBXNativeTarget "objcjs-runtime-iosTests" */ = {
 			isa = XCConfigurationList;
@@ -1356,6 +1407,7 @@
 				C521AB4F1991E89300948556 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C5686258197637B0001C8B45 /* Build configuration list for PBXNativeTarget "objcjs-runtime" */ = {
 			isa = XCConfigurationList;

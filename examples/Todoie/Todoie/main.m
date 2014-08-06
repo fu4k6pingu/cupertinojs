@@ -7,12 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
-
-#import "AppDelegate.h"
+#import <Foundation/Foundation.h>
+#import "objcjs_runtime.h"
 
 int main(int argc, char * argv[])
 {
     @autoreleasepool {
-        return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
+        id scope = objcjs_GlobalScope;
+//        [NSObject objcjs_new];
+        NSLog(@"%@ scope", scope);
+        return UIApplicationMain(argc, argv, nil, @"UIResponder");
     }
 }

@@ -12,13 +12,13 @@
 		C521AA831991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
 		C521AA891991E4B300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AA871991E4B300948556 /* InfoPlist.strings */; };
 		C521AA8B1991E4B300948556 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AA8A1991E4B300948556 /* main.m */; };
-		C521AA8F1991E4B300948556 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AA8E1991E4B300948556 /* AppDelegate.m */; };
 		C521AA911991E4B300948556 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C521AA901991E4B300948556 /* Images.xcassets */; };
 		C521AA981991E4B300948556 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA971991E4B300948556 /* XCTest.framework */; };
 		C521AA991991E4B300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA7E1991E4B300948556 /* Foundation.framework */; };
 		C521AA9A1991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
 		C521AAA21991E4B300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AAA01991E4B300948556 /* InfoPlist.strings */; };
 		C521AAA41991E4B300948556 /* TodoieTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AAA31991E4B300948556 /* TodoieTests.m */; };
+		C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,14 +40,14 @@
 		C521AA881991E4B300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C521AA8A1991E4B300948556 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C521AA8C1991E4B300948556 /* Todoie-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Todoie-Prefix.pch"; sourceTree = "<group>"; };
-		C521AA8D1991E4B300948556 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
-		C521AA8E1991E4B300948556 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		C521AA901991E4B300948556 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		C521AA961991E4B300948556 /* TodoieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AA971991E4B300948556 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		C521AA9F1991E4B300948556 /* TodoieTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "TodoieTests-Info.plist"; sourceTree = "<group>"; };
 		C521AAA11991E4B300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C521AAA31991E4B300948556 /* TodoieTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TodoieTests.m; sourceTree = "<group>"; };
+		C521AB671991E93200948556 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphoneos/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
+		C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphonesimulator/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +55,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */,
 				C521AA811991E4B300948556 /* CoreGraphics.framework in Frameworks */,
 				C521AA831991E4B300948556 /* UIKit.framework in Frameworks */,
 				C521AA7F1991E4B300948556 /* Foundation.framework in Frameworks */,
@@ -96,6 +97,8 @@
 		C521AA7D1991E4B300948556 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */,
+				C521AB671991E93200948556 /* libobjcjs-runtime-ios.a */,
 				C521AA7E1991E4B300948556 /* Foundation.framework */,
 				C521AA801991E4B300948556 /* CoreGraphics.framework */,
 				C521AA821991E4B300948556 /* UIKit.framework */,
@@ -107,8 +110,6 @@
 		C521AA841991E4B300948556 /* Todoie */ = {
 			isa = PBXGroup;
 			children = (
-				C521AA8D1991E4B300948556 /* AppDelegate.h */,
-				C521AA8E1991E4B300948556 /* AppDelegate.m */,
 				C521AA901991E4B300948556 /* Images.xcassets */,
 				C521AA851991E4B300948556 /* Supporting Files */,
 			);
@@ -239,7 +240,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C521AA8F1991E4B300948556 /* AppDelegate.m in Sources */,
 				C521AA8B1991E4B300948556 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -361,7 +361,20 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Todoie/Todoie-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"../../objcjs-runtime",
+				);
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/jerrymarino/Projects/objcjs/build/Debug-iphonesimulator/**",
+				);
+				OTHER_LDFLAGS = (
+					"-all_load",
+					"-ObjC",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -374,7 +387,20 @@
 				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Todoie/Todoie-Prefix.pch";
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"../../objcjs-runtime",
+				);
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/jerrymarino/Projects/objcjs/build/Debug-iphonesimulator/**",
+				);
+				OTHER_LDFLAGS = (
+					"-all_load",
+					"-ObjC",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = app;
 			};
@@ -441,6 +467,7 @@
 				C521AAA91991E4B300948556 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		C521AAAA1991E4B300948556 /* Build configuration list for PBXNativeTarget "TodoieTests" */ = {
 			isa = XCConfigurationList;
@@ -449,6 +476,7 @@
 				C521AAAC1991E4B300948556 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
