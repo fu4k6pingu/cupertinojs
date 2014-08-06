@@ -32,9 +32,12 @@ function makeError(){
                                                    code,
                                                    userInfo)
     }
-   
-    JSCountedError["errorWithDomain:code:userInfo:"] = CountedErrorFactory
-//    JSCountedError.errorWithDomainCodeUserInfo = CountedErrorFactory
+  
+    //Use fancy selector name conversion
+    JSCountedError.errorWithDomainCodeUserInfo = CountedErrorFactory
+
+    //which is equivilant to this
+    // JSCountedError["errorWithDomain:code:userInfo:"] = CountedErrorFactory
 
     NSLog("CountedErrorFactory - parent %@", CountedErrorFactory._objcjs_parent);
     

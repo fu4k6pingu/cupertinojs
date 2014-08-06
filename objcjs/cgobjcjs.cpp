@@ -985,6 +985,11 @@ void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *valu
     _builder->SetInsertPoint(BB);
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
+    auto selectorName = _objCSelectorBySelector[keyName];
+    if (selectorName.length()) {
+        keyName = selectorName;
+    }
+    
     _runtime->assignProperty(objValue, keyName, value);
 }
 
