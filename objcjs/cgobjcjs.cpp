@@ -6,11 +6,6 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#include "cgobjcjs.h"
-#include "cgobjcjsruntime.h"
-#include "cgobjcjsclang.h"
-#include "cgobjcsmacrovisitor.h"
-
 #include <src/scopes.h>
 #include <src/zone.h>
 
@@ -21,6 +16,12 @@
 #include <llvm/IR/Module.h>
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/CFG.h>
+
+#include "cgobjcjs.h"
+#include "cgobjcjsruntime.h"
+#include "cgobjcjsclang.h"
+#include "cgobjcsmacrovisitor.h"
+
 
 #define CGObjCJSDEBUG 1
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
