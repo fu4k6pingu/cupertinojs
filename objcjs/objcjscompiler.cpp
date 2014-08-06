@@ -1,5 +1,5 @@
 //
-//  compiler.cpp
+//  objcjscompiler.cpp
 //  objcjs
 //
 //  Created by Jerry Marino on 7/26/14.
@@ -28,7 +28,7 @@
 #include "objcjsutils.h"
 #include "cgobjcjs.h"
 
-#include "compiler.h"
+#include "objcjscompiler.h"
 
 using namespace v8::internal;
 using namespace objcjs;
@@ -42,7 +42,6 @@ const char *COMPILE_ENV_OBJCJS_RUNTIME_PATH = "OBJCJS_ENV_RUNTIME";
 const char *COMPILE_ENV_DEBUG = "OBJCJS_ENV_DEBUG_COMPILER";
 
 #pragma mark - CompilerOptions
-
 
 std::vector<std::string> ParseNames(int argc, const char * argv[]){
     std::vector<std::string> fnames;
@@ -186,10 +185,10 @@ std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string fi
     
     auto module = ProgramWithSourceHandle(SourceHandleWithName(filePath.c_str(), isolate), *_options);
     
-    CGObjCJS codegen = CGObjCJS(module->zone(), moduleName, module);
-    codegen.Visit(module->function());
+    CGObjCJS codegen = CGObjCJS(moduleName, module);
+    codegen.Codegen();
     if (_options->_debug) {
-        codegen.dump();
+        codegen.Dump();
     }
     
     llvm::verifyModule(*codegen._module, llvm::PrintMessageAction);

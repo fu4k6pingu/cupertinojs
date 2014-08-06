@@ -25,7 +25,7 @@
 		C579D83F198DE88700544D8A /* test12.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83C198DE88700544D8A /* test12.js */; };
 		C579D840198DE88700544D8A /* test13.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83D198DE88700544D8A /* test13.js */; };
 		C579D841198DE88700544D8A /* test14.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83E198DE88700544D8A /* test14.js */; };
-		C5D3CB001984355400D5F823 /* compiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* compiler.cpp */; };
+		C5D3CB001984355400D5F823 /* objcjscompiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* objcjscompiler.cpp */; };
 		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */; };
@@ -236,8 +236,8 @@
 		C579D83C198DE88700544D8A /* test12.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test12.js; sourceTree = "<group>"; };
 		C579D83D198DE88700544D8A /* test13.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test13.js; sourceTree = "<group>"; };
 		C579D83E198DE88700544D8A /* test14.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test14.js; sourceTree = "<group>"; };
-		C5D3CAF31984354F00D5F823 /* compiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = compiler.h; sourceTree = "<group>"; };
-		C5D3CAFF1984355400D5F823 /* compiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = compiler.cpp; sourceTree = "<group>"; };
+		C5D3CAF31984354F00D5F823 /* objcjscompiler.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = objcjscompiler.h; sourceTree = "<group>"; };
+		C5D3CAFF1984355400D5F823 /* objcjscompiler.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objcjscompiler.cpp; sourceTree = "<group>"; };
 		C5D6F09A1969F28600BB9050 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README.md; sourceTree = "<group>"; };
 		C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjs.cpp; sourceTree = "<group>"; };
 		C5D6F09E196A406F00BB9050 /* cgobjcjs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcjs.h; sourceTree = "<group>"; };
@@ -407,8 +407,8 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0E1969155100A381F3 /* main.cpp */,
-				C5D3CAF31984354F00D5F823 /* compiler.h */,
-				C5D3CAFF1984355400D5F823 /* compiler.cpp */,
+				C5D3CAF31984354F00D5F823 /* objcjscompiler.h */,
+				C5D3CAFF1984355400D5F823 /* objcjscompiler.cpp */,
 				C53E1D4419908449000918D9 /* objcjsutils.cpp */,
 				C53E1D4519908449000918D9 /* objcjsutils.h */,
 				C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */,
@@ -704,7 +704,7 @@
 				C579D841198DE88700544D8A /* test14.js in Sources */,
 				C53A0A7F1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp in Sources */,
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
-				C5D3CB001984355400D5F823 /* compiler.cpp in Sources */,
+				C5D3CB001984355400D5F823 /* objcjscompiler.cpp in Sources */,
 				C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */,
 				C579D840198DE88700544D8A /* test13.js in Sources */,
 				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,

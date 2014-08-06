@@ -8,7 +8,7 @@
 
 #include <include/libplatform/libplatform.h>
 #include <src/isolate.h>
-#include "compiler.h"
+#include "objcjscompiler.h"
 
 using namespace objcjs;
 using namespace v8::internal;

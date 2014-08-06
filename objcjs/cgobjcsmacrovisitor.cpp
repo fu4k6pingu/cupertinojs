@@ -6,8 +6,10 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
+#include "cgobjcjs.h"
 #include "cgobjcsmacrovisitor.h"
 #include "cgobjcjsclang.h"
+#include "cgobjcjsruntime.h"
 
 using namespace v8::internal;
 using namespace objcjs;
@@ -40,7 +42,7 @@ void MacroImport(CGObjCJS *CG, Call *node){
     for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
         objcjs::ObjCClass *newClass = *it;
         auto className = newClass->_name;
-        localStringVar(className, CG->_module);
+        NewLocalStringVar(className, CG->_module);
         
         ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
         

@@ -1,5 +1,5 @@
 //
-//  compiler.h
+//  objcjscompiler.h
 //  objcjs
 //
 //  Created by Jerry Marino on 7/26/14.

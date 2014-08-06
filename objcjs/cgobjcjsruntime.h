@@ -18,75 +18,74 @@
 
 #include <set>
 
-extern llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
-                                         const std::string &VarName);
-extern llvm::Value *localStringVar(std::string value, llvm::Module *module);
-
-extern llvm::Function *CGObjCJSFunction(size_t numParams,
-                                      std::string name,
-                                      llvm::Module *mod);
-
-extern llvm::Function *ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
-                                             llvm::Module *module,
-                                             std::string name);
-extern llvm::Type *ObjcPointerTy();
-extern llvm::Value *ObjcNullPointer();
-extern llvm::Value *localStringVar(const char* data, size_t len, llvm::Module *module);
-
-extern std::string asciiStringWithV8String(v8::internal::String *string);
-
-extern void SetModuleCtor(llvm::Module *mod, llvm::Function *cTor);
-
-class CGObjCJSRuntime {
-    std::set <std::string>  _builtins;
-public:
-    CGObjCJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
-
-    llvm::IRBuilder<> *_builder;
-    llvm::Module *_module;
+namespace objcjs {
+    char *ObjCSelectorToJS(std::string objCSelector);
+    llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
+                                             const std::string &VarName);
+    llvm::Value *NewLocalStringVar(std::string value, llvm::Module *module);
+    llvm::Function *CGObjCJSFunction(size_t numParams,
+                                     std::string name,
+                                     llvm::Module *mod);
     
-    llvm::Value *newString(std::string string);
-    llvm::Value *newNumber(double value);
-    llvm::Value *newObject();
-    llvm::Value *newObject(std::vector<llvm::Value *>values);
-    llvm::Value *newArray(std::vector<llvm::Value *>values);
-
-    llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
+    llvm::Function *ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
+                                          llvm::Module *module,
+                                          std::string name);
+    llvm::Type *ObjcPointerTy();
+    llvm::Value *ObjcNullPointer();
+    llvm::Value *NewLocalStringVar(const char* data, size_t len, llvm::Module *module);
     
-    llvm::Value *doubleValue(llvm::Value *llvmValue);
-    llvm::Value *boolValue(llvm::Value *llvmValue);
-    llvm::Value *messageSend(llvm::Value *receiver,
-                             const char *selector,
-                             std::vector<llvm::Value *>ArgsV);
-    llvm::Value *messageSend(llvm::Value *receiver,
-                             const char *selector,
-                             llvm::Value *Arg);
-    llvm::Value *messageSend(llvm::Value *receiver,
-                             const char *selector);
-   
-    llvm::Value *messageSendProperty(llvm::Value *receiver,
-                                     const char *selector,
-                                     std::vector<llvm::Value *>ArgsV);
-    llvm::Value *invokeJSValue(llvm::Value *instance,
-                                       std::vector<llvm::Value *>ArgsV);
-    llvm::Value *classNamed(const char *name);
-    llvm::Value *defineJSFuction(const char *name,
-                                 unsigned nArgs
-                                    );
-    llvm::Value *declareProperty(llvm::Value *instance,
-                                 std::string name);
-    llvm::Value *assignProperty(llvm::Value *instance,
-                                std::string name,
-                                llvm::Value *value);
+    void SetModuleCtor(llvm::Module *mod, llvm::Function *cTor);
     
-    llvm::Value *declareGlobal(std::string name);
-
-
-    llvm::Value *selectorByAddingColon(const char *name);
-    llvm::Value *selectorWithName(const char *name);
-    
-    bool isBuiltin(std::string name);
+    class CGObjCJSRuntime {
+        std::set <std::string>  _builtins;
+    public:
+        CGObjCJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
+        
+        llvm::IRBuilder<> *_builder;
+        llvm::Module *_module;
+        
+        llvm::Value *newString(std::string string);
+        llvm::Value *newNumber(double value);
+        llvm::Value *newObject();
+        llvm::Value *newObject(std::vector<llvm::Value *>values);
+        llvm::Value *newArray(std::vector<llvm::Value *>values);
+        
+        llvm::Value *newNumberWithLLVMValue(llvm::Value *value);
+        
+        llvm::Value *doubleValue(llvm::Value *llvmValue);
+        llvm::Value *boolValue(llvm::Value *llvmValue);
+        llvm::Value *messageSend(llvm::Value *receiver,
+                                 const char *selector,
+                                 std::vector<llvm::Value *>ArgsV);
+        llvm::Value *messageSend(llvm::Value *receiver,
+                                 const char *selector,
+                                 llvm::Value *Arg);
+        llvm::Value *messageSend(llvm::Value *receiver,
+                                 const char *selector);
+        
+        llvm::Value *messageSendProperty(llvm::Value *receiver,
+                                         const char *selector,
+                                         std::vector<llvm::Value *>ArgsV);
+        llvm::Value *invokeJSValue(llvm::Value *instance,
+                                   std::vector<llvm::Value *>ArgsV);
+        llvm::Value *classNamed(const char *name);
+        llvm::Value *defineJSFuction(const char *name,
+                                     unsigned nArgs
+                                     );
+        llvm::Value *declareProperty(llvm::Value *instance,
+                                     std::string name);
+        llvm::Value *assignProperty(llvm::Value *instance,
+                                    std::string name,
+                                    llvm::Value *value);
+        
+        llvm::Value *declareGlobal(std::string name);
+        
+        
+        llvm::Value *selectorByAddingColon(const char *name);
+        llvm::Value *selectorWithName(const char *name);
+        
+        bool isBuiltin(std::string name);
+    };
 };
-
 
 #endif

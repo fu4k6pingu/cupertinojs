@@ -9,9 +9,6 @@
 #ifndef __objcjs__cgobjcsmacrovisitor__
 #define __objcjs__cgobjcsmacrovisitor__
 
-
-#include "cgobjcjs.h"
-
 namespace objcjs {
     class CGObjCJSMacroVisitor: public  v8::internal::AstVisitor {
         CGObjCJS *_cg;

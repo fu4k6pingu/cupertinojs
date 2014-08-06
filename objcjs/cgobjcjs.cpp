@@ -26,11 +26,83 @@
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;
+using namespace objcjs;
+
+class objcjs::CGContext {
+public:
+    Scope *_scope;
+    std::vector<llvm::Value *> _context;
+    std::map<std::string, llvm::AllocaInst*> _namedValues;
+    
+    CGContext *Extend(){
+        auto extended = new CGContext();
+        return extended;
+    }
+  
+    ~CGContext(){ };
+    
+    void dump(){
+        for (unsigned i = 0; i < _context.size(); i++){
+            _context[i]->dump();
+        }
+    }
+    
+    size_t size(){
+        return _context.size();
+    }
+    
+    void setValue(std::string key, llvm::AllocaInst *value) {
+        if (_namedValues[key]){
+            std::cout << "waring: tried to set existing value for key" << key << "\n";
+            return;
+        }
+        _namedValues[key] = value;
+    }
+   
+    llvm::AllocaInst *valueForKey(std::string key) {
+        return _namedValues[key];
+    }
+    
+    llvm::AllocaInst *lookup(std::vector<CGContext *>contexts, std::string key){
+        llvm::AllocaInst *value = NULL;
+        for (size_t i = contexts.size()-1; i; i--){
+            auto foundValue = contexts[i]->valueForKey(key);
+            if (foundValue){
+                value = foundValue;
+                break;
+            }
+        }
+        return value;
+    }
+    
+    void Push(llvm::Value *value) {
+        if (value) {
+            _context.push_back(value);
+        } else {
+            printf("warning: tried to push null value \n");
+        }   
+    }
+    
+    void EmptyStack(){
+        while (size()) {
+            Pop();
+        }
+    }
+    
+    llvm::Value *Pop(){
+        if (!size()) {
+            return NULL;
+        }
+        llvm::Value *value = _context.back();
+        _context.pop_back();
+        return value;
+    };
+};
 
 #define CALL_LOG(STR)\
     _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString(STR))
 
-std::string stringFromV8AstRawString(const AstRawString *raw) {
+std::string objcjs::stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
     size_t size = raw->length();
     const unsigned char *data = raw->raw_data();
@@ -61,56 +133,21 @@ static std::string FUNCTION_THIS_ARG_NAME("this");
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
-#pragma mark - Call Macros
-
-char *ObjCSelectorToJS(std::string objCSelector){
-    char *jsSelector = (char *)malloc(sizeof(char) * objCSelector.length());
-    
-    size_t length = objCSelector.length();
-    int jsSelectorPos = 0;
-    for (int i = 0; i < length; i++) {
-        char current = objCSelector.at(i);
-        if (current == ':'){
-            i++;
-            if (i == length) {
-                break;
-            }
-            current = objCSelector.at(i);
-            jsSelector[jsSelectorPos] = toupper(current);
-        } else {
-            jsSelector[jsSelectorPos] = current;
-        }
-        jsSelectorPos++;
-    }
-
-    return jsSelector;
-}
-
 #pragma mark - CGObjCJS
 
-CGObjCJS::CGObjCJS(Zone *zone,
-                   std::string name,
+CGObjCJS::CGObjCJS(std::string name,
                    CompilationInfoWithZone *info)
 {
+
+    _info = info;
+    InitializeAstVisitor(info->zone());
+    
     _name = &name;
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module(name, Context);
     _context = new CGContext();
     _runtime = new CGObjCJSRuntime(_builder, _module);
-
-    auto moduleFunction = ObjcCodeGenModuleInit(_builder, _module, name);
-    SetModuleCtor(_module, moduleFunction);
-
-    //start module inserting at beginning of init function
-    _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
-    
-    
-    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone);
-    macroVisitor.Visit(info->function());
-    _macros = macroVisitor._macros;
-    
-    InitializeAstVisitor(zone);
     
     assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
     assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
@@ -141,6 +178,30 @@ CGObjCJS::CGObjCJS(Zone *zone,
     opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
 }
 
+CGObjCJS::~CGObjCJS() {
+    delete _builder;
+    delete _module;
+    delete _runtime;
+};
+
+void CGObjCJS::Codegen() {
+    auto moduleFunction = ObjcCodeGenModuleInit(_builder, _module, *_name);
+    SetModuleCtor(_module, moduleFunction);
+
+    //start module inserting at beginning of init function
+    _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
+    
+    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone());
+    macroVisitor.Visit(_info->function());
+    _macros = macroVisitor._macros;   
+
+    Visit(_info->function());
+}
+
+void CGObjCJS::Dump(){
+    _module->dump();
+}
+
 void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     int numParams = scope->num_parameters();
@@ -161,12 +222,12 @@ void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* s
     llvm::Value *argSelf = AI++;
     int numParams = scope->num_parameters();
    
-    localStringVar(FUNCTION_THIS_ARG_NAME, _module);
+    NewLocalStringVar(FUNCTION_THIS_ARG_NAME, _module);
     llvm::AllocaInst *allocaThis = CreateEntryBlockAlloca(F, FUNCTION_THIS_ARG_NAME);
     _builder->CreateStore(argSelf, allocaThis);
     _context->setValue(FUNCTION_THIS_ARG_NAME, allocaThis);
    
-    localStringVar(FUNCTION_CMD_ARG_NAME, _module);
+    NewLocalStringVar(FUNCTION_CMD_ARG_NAME, _module);
     llvm::AllocaInst *allocaCMD = CreateEntryBlockAlloca(F, FUNCTION_CMD_ARG_NAME);
     llvm::Value *argCMD = AI++;
     _builder->CreateStore(argCMD, allocaCMD);
@@ -182,10 +243,6 @@ void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* s
         _builder->CreateStore(AI, alloca);
         _context->setValue(str, alloca);
     }
-}
-
-void CGObjCJS::dump(){
-    _module->dump();
 }
 
 void CGObjCJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
@@ -394,13 +451,13 @@ void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
     bool start = false;
     llvm::BasicBlock *jumpTarget = NULL;
-    for (llvm::Function::iterator block = function->end(), e = function->begin(); block != e; --block){
-        if (block == *currentBlock) {
+    for (llvm::Function::iterator BB = function->end(), e = function->begin(); BB != e; --BB){
+        if (BB == *currentBlock) {
             start = true;
         }
         
-        if (start && block->getName().startswith(llvm::StringRef("loop.next"))) {
-            jumpTarget = block;
+        if (start && BB->getName().startswith(llvm::StringRef("loop.next"))) {
+            jumpTarget = BB;
             break;
         }
     }
@@ -418,13 +475,13 @@ void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
     
     bool start = false;
     llvm::BasicBlock *jumpTarget = NULL;
-    for (llvm::Function::iterator block = function->end(), e = function->begin(); block != e; --block){
-        if (block == *currentBlock) {
+    for (llvm::Function::iterator BB = function->end(), e = function->begin(); BB != e; --BB){
+        if (BB == *currentBlock) {
             start = true;
         }
         
-        if (start && block->getName().startswith(llvm::StringRef("loop.after"))) {
-            jumpTarget = block;
+        if (start && BB->getName().startswith(llvm::StringRef("loop.after"))) {
+            jumpTarget = BB;
             break;
         }
     }
@@ -592,9 +649,9 @@ void CGObjCJS::VisitDebuggerStatement(DebuggerStatement* node) {
 }
 
 static void CleanupInstructionsAfterBreaks(llvm::Function *function){
-    for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
+    for (llvm::Function::iterator BB = function->begin(), e = function->end(); BB != e; ++BB){
         bool didBreak = false;
-        for (llvm::BasicBlock::iterator i = block->begin(), h = block->end();  i && i != h; ++i){
+        for (llvm::BasicBlock::iterator i = BB->begin(), h = BB->end();  i && i != h; ++i){
             if (llvm::ReturnInst::classof(i) || llvm::BranchInst::classof(i)){
                 didBreak = true;
             } else if (didBreak) {
@@ -623,7 +680,7 @@ static void AppendImplicitReturn(llvm::Function *function, llvm::Value *value){
 
 //Define the body of the function
 void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
-    enterContext();
+    EnterContext();
     _builder->saveIP();
     
     auto name = stringFromV8AstRawString(node->raw_name());
@@ -634,8 +691,6 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
        //start module inserting at beginning of init function
         auto moduleFunction = _module->getFunction(*_name);
         _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
-
-
         
         VisitDeclarations(node->scope()->declarations());
         VisitStatements(node->body());
@@ -718,12 +773,17 @@ void CGObjCJS::VisitLiteral(class Literal* node) {
 
 #pragma mark - Literals
 
+std::string StringWithV8String(v8::internal::String *string) {
+    char *ascii = string->ToAsciiArray();
+    return std::string(ascii);
+}
+
 llvm::Value *CGObjCJS::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
         String* string = String::cast(object);
-        auto name = asciiStringWithV8String(string);
+        auto name = StringWithV8String(string);
         if (name.length()){
             lvalue = _runtime->newString(name);
         }
@@ -777,7 +837,7 @@ __attribute__((unused))
 llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
     std::string keyStringValue;
     if (key->IsPropertyName()) {
-        keyStringValue = stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+        keyStringValue = objcjs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
     }
     
     if(key->IsLiteral()){
@@ -785,7 +845,7 @@ llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
         keyStringValue = std::to_string(literalKey->value()->Number());
     }
    
-    return localStringVar(keyStringValue, module);
+    return NewLocalStringVar(keyStringValue, module);
     
     if (!keyStringValue.length()) {
         UNIMPLEMENTED();
@@ -795,13 +855,13 @@ llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
 
 std::string makeKeyName(Expression *key, llvm::Module *module){
     if (key->IsPropertyName()) {
-        return stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+        return objcjs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
     }
     
     if(key->IsLiteral()){
         auto literalKey = key->AsLiteral();
         auto str = std::to_string(literalKey->value()->Number());
-        localStringVar(str, module);
+        NewLocalStringVar(str, module);
         return str;
     }
     
@@ -955,7 +1015,7 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
             _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
         }
         
-    } else if (_context->lookup(Contexts, targetName)){
+    } else if (_context->lookup(_contexts, targetName)){
         llvm::AllocaInst *targetAlloca = _builder->CreateAlloca(ObjcPointerTy());
         //Set the environment value
         auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
@@ -991,7 +1051,7 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         return;
     }
     
-    auto nestedVarAlloc = _context->lookup(Contexts, variableName);
+    auto nestedVarAlloc = _context->lookup(_contexts, variableName);
     if (nestedVarAlloc) {
         //NTS: always create an alloca for an arugment you want to pass to a function!!
         auto environmentVariableAlloca = _builder->CreateAlloca(ObjcPointerTy(), 0, "env_var_alloca");
@@ -1489,14 +1549,13 @@ void CGObjCJS::VisitThisFunction(ThisFunction* node) {
 
 void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     if (extendContext){
-        enterContext();
+        EnterContext();
     }
     
     Visit(expr);
 }
 
-//FIXME: name
-void CGObjCJS::enterContext(){
+void CGObjCJS::EnterContext(){
     ILOG("enter context");
     CGContext *context;
     if (_context) {
@@ -1505,7 +1564,7 @@ void CGObjCJS::enterContext(){
         context = new CGContext();
     }
     
-    Contexts.push_back(context);
+    _contexts.push_back(context);
     _context = context;   
 }
 
@@ -1514,9 +1573,9 @@ void CGObjCJS::VisitStartAccumulation(AstNode *expr) {
 }
 
 void CGObjCJS::EndAccumulation() {
-    Contexts.pop_back();
+    _contexts.pop_back();
     delete _context;
-    auto context = Contexts.back();
+    auto context = _contexts.back();
     _context = context;
 }
 
