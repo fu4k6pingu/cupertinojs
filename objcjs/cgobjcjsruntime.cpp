@@ -36,12 +36,15 @@ char *objcjs::ObjCSelectorToJS(std::string objCSelector){
     return jsSelector;
 }
 
-static char *selectorNameByAddingColon(const char *name){
+static char *selectorNameByAddingColonIfNecessary(const char *name){
     size_t nameLen = strlen(name);
     char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
     memcpy(methodName, name, nameLen);
-    methodName[nameLen] = ':';
-    methodName[nameLen+1] = '\0';
+    if (name[nameLen - 1] != ':') {
+        methodName[nameLen] = ':';
+        methodName[nameLen+1] = '\0';
+    }
+    
     return methodName;
 }
 
@@ -484,7 +487,7 @@ llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
     }
     
     if (addColon) {
-        auto selectorName = selectorNameByAddingColon(name);
+        auto selectorName = selectorNameByAddingColonIfNecessary(name);
         auto retValue = messageSend(receiver, selectorName, ArgsV);
         free(selectorName);
         return retValue;

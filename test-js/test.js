@@ -33,11 +33,9 @@ function makeError(){
                                                    userInfo)
     }
    
-    //Override like a boss
-    //TODO : this should allow setting of methods with the :
-    JSCountedError["errorWithDomain:code:userInfo"] = CountedErrorFactory
+    JSCountedError["errorWithDomain:code:userInfo:"] = CountedErrorFactory
+//    JSCountedError.errorWithDomainCodeUserInfo = CountedErrorFactory
 
-    NSLog("JSCounterError - parent %@", JSCountedError._objcjs_parent);
     NSLog("CountedErrorFactory - parent %@", CountedErrorFactory._objcjs_parent);
     
     var fancyError = JSCountedError.errorWithDomainCodeUserInfo("Too much whisky!",
