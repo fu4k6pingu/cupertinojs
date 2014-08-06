@@ -110,6 +110,9 @@ public:
     llvm::IRBuilder<> *_builder;
     llvm::Module *_module;
     
+    typedef void(*CallMacroFnPtr)(CGObjCJS *CG, Call *node);
+    std::map <std::string, CallMacroFnPtr> _macros;
+    
     llvm::BasicBlock *_currentSetRetBlock;
     std::map <Token::Value, std::string> assignOpSelectorByToken;
     std::map <Token::Value, std::string> opSelectorByToken;
@@ -118,8 +121,9 @@ public:
     std::set <std::string> _classes;
 
     std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
-    
+   
     CGObjCJSRuntime *_runtime;
+    void *_macroVisitor;
     
     CGObjCJS(Zone *zone, std::string name);
 

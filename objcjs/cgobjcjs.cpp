@@ -9,6 +9,7 @@
 #include "cgobjcjs.h"
 #include "cgobjcjsruntime.h"
 #include "cgobjcjsclang.h"
+#include "cgobjcsmacrovisitor.h"
 
 #include <src/scopes.h>
 
@@ -87,6 +88,9 @@ char *ObjCSelectorToJS(std::string objCSelector){
 #pragma mark - CGObjCJS
 
 CGObjCJS::CGObjCJS(Zone *zone, std::string name){
+    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone);
+    _macros = macroVisitor._macros;
+   
     InitializeAstVisitor(zone);
     _name = &name;
     llvm::LLVMContext &Context = llvm::getGlobalContext();
@@ -1060,7 +1064,13 @@ void CGObjCJS::VisitCall(Call* node) {
     } else if (callType == Call::OTHER_CALL){
         VariableProxy* proxy = callee->AsVariableProxy();
         std::string name = stringFromV8AstRawString(proxy->raw_name());
-
+       
+        auto macro = _macros[name];
+        if (macro){
+            macro(this, node);
+            return;
+        }
+        
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
             //TODO : this should likely retain the values

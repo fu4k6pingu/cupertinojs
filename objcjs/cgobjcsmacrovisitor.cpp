@@ -69,8 +69,8 @@ void MacroImport(CGObjCJS *CG, Call *node){
     builder->SetInsertPoint(insertPt);
 }
 
-CGObjCJSMacroVisitor::CGObjCJSMacroVisitor(CGObjCJS *CG) {
-    InitializeAstVisitor(CG->_zone());
+CGObjCJSMacroVisitor::CGObjCJSMacroVisitor(CGObjCJS *CG, v8::internal::Zone *zone) {
+    InitializeAstVisitor(zone);
     _cg = CG;
     _macros["objc_import"] = MacroImport;
 }
