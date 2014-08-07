@@ -597,3 +597,30 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 
 @end
 
+@implementation NSObject (ObjCJSDebug)
+
+- (void)objcjs_printMethods
+{
+    [self.class objcjs_printMethods];
+}
+
++ (void)objcjs_printMethods
+{
+     // Iterate over the class and all superclasses
+    Class currentClass = [self class];
+    while (currentClass) {
+        // Iterate over all instance methods for this class
+        unsigned int methodCount;
+        Method *methodList = class_copyMethodList(currentClass, &methodCount);
+        unsigned int i = 0;
+        for (; i < methodCount; i++) {
+            NSLog(@"%@ - %@", [NSString stringWithCString:class_getName(currentClass) encoding:NSUTF8StringEncoding], [NSString stringWithCString:sel_getName(method_getName(methodList[i])) encoding:NSUTF8StringEncoding]);
+        }
+        
+        free(methodList);
+        currentClass = class_getSuperclass(currentClass);
+    }   
+}
+
+@end
+

@@ -127,3 +127,7 @@ extern id objcjs_GlobalScope;
 
 @end
 
+@interface NSObject (ObjCJSDebug)
+
+@end
+
