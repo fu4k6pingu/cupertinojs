@@ -233,7 +233,7 @@ void objcjs::Compiler::run(){
     }
 
     if (options._createExecutable){
-//        -march=i386 
+//        
         std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/objcjsapp",
                                              options._runtimePath.c_str(),
                                              sFiles.c_str(),
