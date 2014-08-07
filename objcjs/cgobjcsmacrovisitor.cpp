@@ -215,8 +215,9 @@ void CGObjCJSMacroVisitor::VisitCall(Call* node) {
         std::string name = stringFromV8AstRawString(proxy->raw_name());
 
         CallMacroFnPtr macro = _macros[name];
-        macro(_cg, node);
-        return;
+        if (macro){
+            macro(_cg, node);
+        }
     }
 }
 
