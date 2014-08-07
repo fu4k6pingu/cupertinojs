@@ -47,15 +47,16 @@ void MacroImport(CGObjCJS *CG, Call *node){
         ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
         
         for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
-            objcjs::ObjCMethod method = **methodIt;
-            ILOG("Method (%d) %s: %lu ", method.type, method.name.c_str(), method.params.size());
+            objcjs::ObjCMethod *method = *methodIt;
+            ILOG("Method (%d) %s: %lu ", method->type, method->name.c_str(), method->params.size());
 
-            std::string objCSelector = method.name;
-            if(!CG->_objCSelectorBySelector[objCSelector].size()){
-                char *jsSelector = ObjCSelectorToJS(objCSelector);
-                CG->_objCSelectorBySelector[jsSelector] = objCSelector;
-                free(jsSelector);
-                ILOG("JS selector name %s", jsSelector);
+            std::string objCSelector = method->name;
+            auto jsSelector = ObjCSelectorToJS(objCSelector);
+            
+            ObjCMethod *existingMethod = ((ObjCMethod *)CG->_objCMethodBySelector[jsSelector]);
+            if(!existingMethod){
+                CG->_objCMethodBySelector[jsSelector] = method;
+                ILOG("JS selector name %s", jsSelector.c_str());
             }
         }
        

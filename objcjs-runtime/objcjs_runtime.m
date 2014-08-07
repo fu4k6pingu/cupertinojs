@@ -324,15 +324,7 @@ void *objcjs_assignProperty(id target,
         
         Method valueMethod = class_getInstanceMethod(valueClass, @selector(_objcjs_body:));
 
-        size_t nameLen = strlen(name);
-        char *methodName = malloc((sizeof(char) * nameLen) + 2);
-      
-        //Blindly add a colon to the end of the name
-        memcpy(methodName, name, nameLen);
-        methodName[nameLen] = ':';
-        methodName[nameLen+1] = '\0';
-       
-        SEL newSelector = sel_getUid(methodName);
+        SEL newSelector = sel_getUid(name);
         class_replaceMethod(targetClass, newSelector,
                             method_getImplementation(valueMethod),
                             method_getTypeEncoding(valueMethod));

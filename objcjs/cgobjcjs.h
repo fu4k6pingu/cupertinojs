@@ -37,6 +37,8 @@ namespace objcjs{
     class CGContext;
     class CGObjCJSRuntime;
     class CGObjCJSMacroVisitor;
+   
+    struct ObjCMethod;
     
     class CGObjCJS: public  v8::internal::AstVisitor {
         CompilationInfoWithZone *_info;
@@ -55,7 +57,7 @@ namespace objcjs{
         std::map <Token::Value, std::string> assignOpSelectorByToken;
         std::map <Token::Value, std::string> opSelectorByToken;
         
-        std::map <std::string, std::string> _objCSelectorBySelector;
+        std::map <std::string, ObjCMethod *> _objCMethodBySelector;
         std::set <std::string> _classes;
         
         std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;

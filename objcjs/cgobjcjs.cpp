@@ -969,6 +969,21 @@ void CGObjCJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key
     PushValueToContext(_runtime->messageSend(target, "objcjs_replaceObjectAtIndex:withObject:", args));
 }
 
+
+static char *nameByAddingColon(const char *name){
+    size_t nameLen = strlen(name);
+    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
+    memcpy(methodName, name, nameLen);
+    methodName[nameLen] = ':';
+    methodName[nameLen+1] = '\0';
+    return methodName;
+}
+
+static bool nameHasColonAtEnd(const char *name){
+    size_t nameLen = strlen(name);
+    return name[nameLen -1] == ':';
+}
+
 void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
     Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
@@ -986,9 +1001,10 @@ void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *valu
     _builder->SetInsertPoint(BB);
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
-    auto selectorName = _objCSelectorBySelector[keyName];
-    if (selectorName.length()) {
-        keyName = selectorName;
+    //send to property
+    ObjCMethod *method = ((ObjCMethod *)_objCMethodBySelector[keyName]);
+    if (method && method->name.length()) {
+        keyName = method->name;
     }
     
     _runtime->assignProperty(objValue, keyName, value);
@@ -1198,13 +1214,15 @@ void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args)
     assert(objValue);
     
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
-  
-    auto objcSelector = _objCSelectorBySelector[keyName];
-    if (objcSelector.length()){
-        keyName = objcSelector;
+
+    //send to property
+    ObjCMethod *method = ((ObjCMethod *)_objCMethodBySelector[keyName.c_str()]);
+    if (method) {
+        printf("found method %s", method->name.c_str());
+        keyName = method->name;
     }
     
-    auto result = _runtime->messageSendProperty(objValue, keyName.c_str(), makeArgs(args));
+    llvm::Value *result = _runtime->messageSend(objValue, keyName.c_str(), makeArgs(args));
     PushValueToContext(result);
 }
 

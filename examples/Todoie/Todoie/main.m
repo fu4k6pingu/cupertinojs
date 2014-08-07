@@ -6,43 +6,46 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-//#import <UIKit/UIKit.h>
+#import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
 #import "objcjs_runtime.h"
 
-@implementation NSObject (ObjCJS)
+@implementation UIApplication (ObjCJS)
 
 + (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName
 {
     @autoreleasepool {
-        int value = UIApplicationMain(argc, argv, nil, appDelegateName);
-        return value;
+        UIApplicationMain(argc, argv, nil, appDelegateName);
+        return 0;
     }
 }
 
 @end
 
-@interface _TodoieAppDelegate : NSObject  <UIApplicationDelegate>
+@implementation UIView (ObjCJS)
 
-@end
+- (instancetype)initWithFrameValue:(id)frameValue {
+    CGRect frame = CGRectMake(
+                              [[frameValue objcjs_objectAtIndex:@"x"] floatValue],
+                              [[frameValue objcjs_objectAtIndex:@"y"] floatValue],
+                              [[frameValue objcjs_objectAtIndex:@"width"] floatValue],
+                              [[frameValue objcjs_objectAtIndex:@"height"] floatValue]
+                              );
+    return [self initWithFrame:frame];
+}
 
-@implementation _TodoieAppDelegate
-
--(id)init{
-    if (self = [super init]) {
-    }
-    return self;
+- (id)frameValue {
+    CGRect frame = self.frame;
+    NSObject *frameValue = [NSObject new];
+    [frameValue objcjs_replaceObjectAtIndex:@"x"
+                                 withObject:@(frame.origin.x)];
+    [frameValue objcjs_replaceObjectAtIndex:@"y"
+                                 withObject:@(frame.origin.y)];
+    [frameValue objcjs_replaceObjectAtIndex:@"width"
+                                 withObject:@(frame.size.width)];
+    [frameValue objcjs_replaceObjectAtIndex:@"height"
+                                 withObject:@(frame.size.height)];
+    return frameValue;
 }
 
 @end
-
-//int main(int argc, char * argv[])
-//{
-//    @autoreleasepool {
-//        id scope = objcjs_GlobalScope;
-//        id instance = [(id)AppDelegate new];
-//        NSLog(@"instance %@", instance);
-//        [instance application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:@{}];
-//        return UIApplicationMain(argc, argv, nil, @"_TodoieAppDelegate");
-//    }
-//}

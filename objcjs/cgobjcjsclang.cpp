@@ -62,10 +62,7 @@ ClangFile::ClangFile(std::string name) {
     assert(translationUnit);
 }
 
-ClangFile::~ClangFile() {
-    delete _currentClass;
-    delete _currentMethod;
-}
+ClangFile::~ClangFile() {}
 
 void printDiagnostics(CXTranslationUnit translationUnit){
     int nbDiag = clang_getNumDiagnostics(translationUnit);
@@ -140,13 +137,13 @@ CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData 
     if ((kind ==  CXCursor_ObjCClassMethodDecl || kind == CXCursor_ObjCInstanceMethodDecl)
         && file->_currentClass){
         ObjCMethod *method = new ObjCMethod;
-        method->name = clang_getCString(name);
+        method->name = std::string(clang_getCString(name));
 
         auto retType = clang_getCursorResultType(cursor);
         method->type = (ObjCType)retType.kind;
         
         file->_currentMethod = method;
-        ILOG("method '%s'\n",method->name.c_str());
+        ILOG("method '%s' type: %d \n",method->name.c_str(), retType.kind);
        
         // visit method childs
         clang_visitChildren(cursor, *functionDeclVisitor,file);

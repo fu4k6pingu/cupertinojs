@@ -216,7 +216,7 @@ id impl3(id instance,
     id instance = [aClass new];
     objcjs_assignProperty(instance, "aMethod", methodClass);
 
-    SEL expectedSelector = NSSelectorFromString(@"aMethod:");
+    SEL expectedSelector = NSSelectorFromString(@"aMethod");
     XCTAssertTrue([instance respondsToSelector:expectedSelector], @"It adds the instance method with the selector");
     id result = objc_msgSend(instance, expectedSelector, CFRetain(@"An Arg"), nil);
 
@@ -269,7 +269,7 @@ id impl3(id instance,
 
     objcjs_assignProperty(aClass, "aMethod", methodClass);
 
-    SEL expectedSelector = NSSelectorFromString(@"aMethod:");
+    SEL expectedSelector = NSSelectorFromString(@"aMethod");
     XCTAssertTrue([aClass respondsToSelector:expectedSelector], @"It adds the aClass method with the selector");
     id result = objc_msgSend(aClass, expectedSelector, CFRetain(@"An Arg"), nil);
 

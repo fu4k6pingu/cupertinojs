@@ -157,15 +157,32 @@
 		};
 /* End PBXGroup section */
 
+/* Begin PBXLegacyTarget section */
+		C578A6E5199347CA0071F353 /* CompileJS */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "$(ACTION)";
+			buildConfigurationList = C578A6E6199347CA0071F353 /* Build configuration list for PBXLegacyTarget "CompileJS" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "${SRCROOT}/Todoie";
+			dependencies = (
+			);
+			name = CompileJS;
+			passBuildSettingsInEnvironment = 1;
+			productName = CompileJS;
+		};
+/* End PBXLegacyTarget section */
+
 /* Begin PBXNativeTarget section */
 		C521AA7A1991E4B300948556 /* Todoie */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = C521AAA71991E4B300948556 /* Build configuration list for PBXNativeTarget "Todoie" */;
 			buildPhases = (
-				C578A6D71993172C0071F353 /* ShellScript */,
-				C521AA771991E4B300948556 /* Sources */,
 				C521AA781991E4B300948556 /* Frameworks */,
 				C521AA791991E4B300948556 /* Resources */,
+				C578A6EB199349740071F353 /* ShellScript */,
+				C521AA771991E4B300948556 /* Sources */,
 			);
 			buildRules = (
 			);
@@ -222,6 +239,7 @@
 			targets = (
 				C521AA7A1991E4B300948556 /* Todoie */,
 				C521AA951991E4B300948556 /* TodoieTests */,
+				C578A6E5199347CA0071F353 /* CompileJS */,
 			);
 		};
 /* End PBXProject section */
@@ -247,7 +265,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		C578A6D71993172C0071F353 /* ShellScript */ = {
+		C578A6EB199349740071F353 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -258,7 +276,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd ${SRCROOT}/${PROJECT_NAME} make";
+			shellScript = "# Xcode reads the output of this which isn't a good idea to use\ncd ${SRCROOT}/Todoie && make\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -477,6 +495,38 @@
 			};
 			name = Release;
 		};
+		C578A6E7199347CA0071F353 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUGGING_SYMBOLS = YES;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		C578A6E8199347CA0071F353 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -506,6 +556,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		C578A6E6199347CA0071F353 /* Build configuration list for PBXLegacyTarget "CompileJS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C578A6E7199347CA0071F353 /* Debug */,
+				C578A6E8199347CA0071F353 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};

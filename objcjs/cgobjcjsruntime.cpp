@@ -13,39 +13,28 @@
 
 using namespace objcjs;
 
-char *objcjs::ObjCSelectorToJS(std::string objCSelector){
-    char *jsSelector = (char *)malloc(sizeof(char) * objCSelector.length());
-    
+std::string objcjs::ObjCSelectorToJS(std::string objCSelector){
+    std::string jsSelector;
     size_t length = objCSelector.length();
+    int remove = 0;
     int jsSelectorPos = 0;
     for (int i = 0; i < length; i++) {
         char current = objCSelector.at(i);
         if (current == ':'){
             i++;
+            remove++;
             if (i == length) {
                 break;
             }
             current = objCSelector.at(i);
-            jsSelector[jsSelectorPos] = toupper(current);
+            jsSelector += toupper(current);
         } else {
-            jsSelector[jsSelectorPos] = current;
+            jsSelector += current;
         }
         jsSelectorPos++;
     }
 
     return jsSelector;
-}
-
-static char *selectorNameByAddingColonIfNecessary(const char *name){
-    size_t nameLen = strlen(name);
-    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
-    memcpy(methodName, name, nameLen);
-    if (name[nameLen - 1] != ':') {
-        methodName[nameLen] = ':';
-        methodName[nameLen+1] = '\0';
-    }
-    
-    return methodName;
 }
 
 const auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
@@ -444,6 +433,20 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     }
   
     return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
+
+}
+
+llvm::Value *CGObjCJSRuntime::messageSendFP(llvm::Value *receiver,
+                                          const char *selectorName,
+                                          std::vector<llvm::Value *>ArgsV) {
+    std::vector<llvm::Value*> Args;
+    Args.push_back(receiver);
+    Args.push_back(selectorWithName(selectorName));
+    for (int i = 0; i < ArgsV.size(); i++) {
+        Args.push_back(ArgsV.at(i));
+    }
+  
+    return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), Args, "calltmp-objc_msgSend");
 }
 
 llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
@@ -455,13 +458,6 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     return _builder->CreateCall(function, Args, "calltmp-objc_msgSend");
 }
 
-llvm::Value *CGObjCJSRuntime::selectorByAddingColon(const char *name){
-    auto methodName = selectorByAddingColon(name);
-    auto selector = selectorWithName(name);
-    free(methodName);
-    return selector;
-}
-
 llvm::Value *CGObjCJSRuntime::selectorWithName(const char *name){
     return _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string(name), _module), "calltmp");
 }
@@ -469,28 +465,6 @@ llvm::Value *CGObjCJSRuntime::selectorWithName(const char *name){
 llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
                                  const char *name,
                                  std::vector<llvm::Value *>ArgsV) {
-    bool addColon;
-    
-    if (ArgsV.size()) {
-        size_t nameLength = strlen(name);
-        // FIXME : this will not work with selectors ending in N > 1 colons
-        // but we can accept that for now.
-        if (name[nameLength - 1] == ':') {
-            addColon = false;
-        } else {
-            addColon = true;
-        }
-    } else {
-        addColon = false;
-    }
-    
-    if (addColon) {
-        auto selectorName = selectorNameByAddingColonIfNecessary(name);
-        auto retValue = messageSend(receiver, selectorName, ArgsV);
-        free(selectorName);
-        return retValue;
-    }
-
     return messageSend(receiver, name, ArgsV);
 }
 

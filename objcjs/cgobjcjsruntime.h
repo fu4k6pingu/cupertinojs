@@ -19,7 +19,7 @@
 #include <set>
 
 namespace objcjs {
-    char *ObjCSelectorToJS(std::string objCSelector);
+    std::string ObjCSelectorToJS(std::string objCSelector);
     llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                              const std::string &VarName);
     llvm::Value *NewLocalStringVar(std::string value, llvm::Module *module);
@@ -57,6 +57,9 @@ namespace objcjs {
         llvm::Value *messageSend(llvm::Value *receiver,
                                  const char *selector,
                                  std::vector<llvm::Value *>ArgsV);
+        llvm::Value *messageSendFP(llvm::Value *receiver,
+                                   const char *selectorName,
+                                   std::vector<llvm::Value *>ArgsV);
         llvm::Value *messageSend(llvm::Value *receiver,
                                  const char *selector,
                                  llvm::Value *Arg);
