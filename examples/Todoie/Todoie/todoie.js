@@ -1,22 +1,27 @@
 objc_import("imports.h")
 
 
-function TodoieAppDelegate(){
-    function _init(){
+function documentLoaded(){
+    NSLog("Document loaded")
+    
+    function TodoieAppDelegate(){}
+    
+    function didFinish(a, b){
+        NSLog("Did finish launching!")
+    }
+
+//    TodoieAppDelegate.prototype["application:didFinishLaunchingWithOptions"] = didFinish
+    TodoieAppDelegate.prototype.applicationDidFinishLaunchingWithOptions = didFinish
+
+    function TodoieAppDelegateInit(){
         NSLog("Init!")
         return this
     }
-    
-    function didFinish(){
-        NSLog("Init!")
-    }
-    
-    this.init = _init;
-    this.applicationDidFinishLaunchingWithOptions = didFinish
-    
-    return todoie
+    TodoieAppDelegate.prototype.init = TodoieAppDelegateInit
 }
 
-function run(){
-    new TodoieAppDelegate()
+function main(a, b){
+    documentLoaded()
+    return NSObject.applicationMainArgVName(a, b, "TodoieAppDelegate")
 }
+

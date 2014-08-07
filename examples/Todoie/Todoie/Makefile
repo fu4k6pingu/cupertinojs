@@ -11,11 +11,18 @@ BUILD_SCRIPT = $(TOPDIR)$(SOURCEDIR)/build.sh
 # objcjs compiles javascript to .s
 js-build:
 		rm -rf $(BUILD_SCRIPT)
+
 		@echo export OBJCJS_ENV_BUILD_DIR="$(TOPDIR)/build/Debug-iphonesimulator/" >> $(BUILD_SCRIPT)
 		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
-		@echo export OBJCJS_ENV_CREATE_EXECUTABLE=true >> $(BUILD_SCRIPT)
+
+#		@echo export OBJCJS_ENV_CREATE_EXECUTABLE=false >> $(BUILD_SCRIPT)
+        # compile for simulator
+		@echo export OBJCJS_ENV_MTRIPEL="-mtriple=i386-unknown-ios" >> $(BUILD_SCRIPT)
+
 #		@echo export OBJCJS_ENV_RUNTIME="" >> $(BUILD_SCRIPT)
+
 		@echo export OBJCJS_ENV_PROJECT_ROOT_DIR="/Users/jerrymarino/Projects/objcjs/examples/Todoie/Todoie/" >> $(BUILD_SCRIPT)
+
 		@echo $(OBJCJS) $(SOURCES) >> $(BUILD_SCRIPT)
 		chmod +x $(BUILD_SCRIPT)
 		$(BUILD_SCRIPT)

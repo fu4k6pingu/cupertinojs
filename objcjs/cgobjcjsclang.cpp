@@ -39,7 +39,13 @@ ClangFile::ClangFile(std::string name) {
         "-I.",
         "-c",
         "-x",
-        "objective-c"
+        "objective-c",
+
+        //Required for iOS/UIKit
+        "-miphoneos-version-min=3.0",
+        "-isysroot/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator7.0.sdk",
+        "-framework",
+        "UIKit",
     };
    
     std::string rootDir = get_env_var(ENV_PROJECT_ROOT_DIR);

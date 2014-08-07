@@ -6,13 +6,21 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import <UIKit/UIKitDefines.h>
 #import <UIKit/UIResponer.h>
+#import <UIKit/UIApplication.h>
+#import <Foundation/Foundation.h>
 
 @interface NSObject (Extensions)
 
 + (id)extend:(NSString *)name;
++ (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName;
 
+@end
+
+@interface UIApplication (ObjCJS)
+
+
++ (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName;
 @end

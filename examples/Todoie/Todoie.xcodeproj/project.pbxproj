@@ -162,6 +162,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C521AAA71991E4B300948556 /* Build configuration list for PBXNativeTarget "Todoie" */;
 			buildPhases = (
+				C578A6D71993172C0071F353 /* ShellScript */,
 				C521AA771991E4B300948556 /* Sources */,
 				C521AA781991E4B300948556 /* Frameworks */,
 				C521AA791991E4B300948556 /* Resources */,
@@ -244,6 +245,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		C578A6D71993172C0071F353 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd ${SRCROOT}/${PROJECT_NAME} make";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		C521AA771991E4B300948556 /* Sources */ = {
