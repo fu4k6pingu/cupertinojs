@@ -40,6 +40,8 @@ const char *LLVM_LLC_PATH = "/usr/local/Cellar/llvm/3.4/bin/llc";
 const char *COMPILE_ENV_BUILD_DIR = "OBJCJS_ENV_BUILD_DIR";
 const char *COMPILE_ENV_OBJCJS_RUNTIME_PATH = "OBJCJS_ENV_RUNTIME";
 const char *COMPILE_ENV_DEBUG = "OBJCJS_ENV_DEBUG_COMPILER";
+const char *COMPILE_ENV_CREATE_EXECUTABLE = "OBJCJS_ENV_CREATE_EXECUTABLE";
+const char *COMPILE_ENV_MTRIPEL = "OBJCJS_ENV_MTRIPEL";
 
 #pragma mark - CompilerOptions
 
@@ -72,6 +74,8 @@ objcjs::CompilerOptions::CompilerOptions(int argc, const char * argv[]){
     _runtimePath = get_env_var(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
     _buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
     _debug = get_env_var(COMPILE_ENV_DEBUG) == "true";
+    _createExecutable = get_env_var(COMPILE_ENV_CREATE_EXECUTABLE) == "true";
+    _mTripel = get_env_var(COMPILE_ENV_MTRIPEL);
 }
 
 int objcjs::CompilerOptions::validate(){
@@ -79,10 +83,12 @@ int objcjs::CompilerOptions::validate(){
         std::cout << "no input files \n";
         return 0;
     }
-    if(!_runtimePath.length()){
-        std::cout << "missing runtime path \n";
-        return 0;
-    }
+    
+//FIXME: this is only necessary when performing complete build with clang
+//    if(!_runtimePath.length()){
+//        std::cout << "missing runtime path \n";
+//        return 0;
+//    }
     
     if(!_buildDir.length()){
         std::cout << "missing build dir \n";
@@ -206,10 +212,11 @@ std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string fi
     outfile.open(outFileName);
     outfile << out;
     outfile.close();
-    
+
     //compile bitcode
-    system(string_format("%s %s",
+    system(string_format("%s %s %s",
                          LLVM_LLC_PATH,
+                         _options->_mTripel.c_str(),
                          outFileName.c_str()).c_str());
     std::string llcOutput = string_format("%s/%s.s", buildDir.c_str(), moduleName.c_str());
     return llcOutput;
@@ -224,10 +231,12 @@ void objcjs::Compiler::run(){
         sFiles += " ";
         sFiles += sFile;
     }
-    
-    std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/objcjsapp",
-                                         options._runtimePath.c_str(),
-                                         sFiles.c_str(),
-                                         options._buildDir.c_str());
-    system(clangCmd.c_str());
+
+    if (options._createExecutable){
+        std::string clangCmd = string_format("clang -march=i386 -framework Foundation %s %s -o %s/objcjsapp",
+                                             options._runtimePath.c_str(),
+                                             sFiles.c_str(),
+                                             options._buildDir.c_str());
+        system(clangCmd.c_str());
+    }
 }

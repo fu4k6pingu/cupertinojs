@@ -18,6 +18,9 @@ namespace objcjs {
     public:
         std::string _runtimePath;
         std::string _buildDir;
+        std::string _mTripel;
+        bool _createExecutable;
+        
         std::vector<std::string> _names;
         bool _debug;
        
