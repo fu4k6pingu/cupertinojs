@@ -14,8 +14,12 @@ int main(int argc, char * argv[])
 {
     @autoreleasepool {
         id scope = objcjs_GlobalScope;
-//        [NSObject objcjs_new];
         NSLog(@"%@ scope", scope);
-        return UIApplicationMain(argc, argv, nil, @"UIResponder");
+        Class AppDelegate = NSClassFromString(@"TodoieAppDelegate");
+        
+        id instance = [[AppDelegate alloc] init];
+        NSLog(@"instance %@", instance);
+        [instance application:[UIApplication sharedApplication] didFinishLaunchingWithOptions:@{}];
+        return UIApplicationMain(argc, argv, nil, @"TodoieAppDelegate");
     }
 }

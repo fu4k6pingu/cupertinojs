@@ -1277,12 +1277,16 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
+					"-m32",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first,",
+					"-m32",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
@@ -1335,12 +1339,16 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
+					"-m32",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
+				OTHER_LDFLAGS = (
+					"-Wl,-search_paths_first,",
+					"-m32",
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
