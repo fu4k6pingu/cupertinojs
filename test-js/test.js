@@ -49,7 +49,7 @@ function makeError(){
     return fancyError
 }
 
-function objcjs_main(a, b){
+function main(a, b){
     makeError()
    
     var JSError = NSError.extend("JSError2")
@@ -62,5 +62,6 @@ function objcjs_main(a, b){
                                                                         ObjCInt(42),
                                                                         null)
     NSLog("mySwiftyStyleCreatedError code %d", mySwiftyStyleCreatedError.code)
-    return 0
+    
+    return ObjCInt(0)
 }

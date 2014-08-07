@@ -102,6 +102,7 @@ llvm::Function *objcjs::CGObjCJSFunction(size_t numParams,
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
+__attribute__((unused))
 llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
                                          llvm::Module *module,
                                          CGObjCJSRuntime *runtime) {
@@ -352,7 +353,6 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     _builder = builder;
     _module = module;
    
-    _builtins.insert("objcjs_main");
     _builtins.insert("NSLog");
     
     DefExternFucntion("sel_getUid");
@@ -372,8 +372,6 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     ObjcMallocPrototype(_module);
     ObjcNSLogPrototye(_module);
     ObjcCOutPrototype(_builder, _module);
-
-    ObjcCodeGenMainPrototype(_builder, _module, this);
 }
 
 llvm::Value *CGObjCJSRuntime::newString(std::string string){
