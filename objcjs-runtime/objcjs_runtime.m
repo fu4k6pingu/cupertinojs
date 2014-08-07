@@ -13,7 +13,7 @@
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
-#define ObjCJSRuntimeDEBUG 0
+#define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 
@@ -178,6 +178,23 @@ char *setterNameFromPropertyName(const char *propertyName){
     return value && ![value isKindOfClass:[NSNull class]] ? value : [[self _objcjs_parent] _objcjs_env_valueForKey:key];
 }
 
+static const char *NSObjectPrototypeKey;
+
++ (id)prototype {
+    NSLog(@"%s", __PRETTY_FUNCTION__);
+    ObjCJSPrototype *prototype = objc_getAssociatedObject(self, NSObjectPrototypeKey);
+    if (!prototype) {
+        prototype = [[ObjCJSPrototype new] retain];
+        prototype.targetClass = NSClassFromString(NSStringFromClass(self.class));
+        [self setPrototype:prototype];
+    }
+    return prototype;
+}
+
++ (void)setPrototype:(id)prototype{
+    objc_setAssociatedObject(self, NSObjectPrototypeKey, prototype, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+}
+
 @end
 
 @implementation NSObject (ObjCJSExtend)
@@ -292,16 +309,25 @@ void *objcjs_assignProperty(id target,
     //and add it to our class
     BOOL targetIsClass = ptrIsClass(target);
     if (ptrIsJSFunctionClass(value)){
-        ILOG(@"add %@  method", targetIsClass ? @"class" : @"instance");
-        Class targetClass = object_getClass(target);
+        Class targetClass;
+
+        if ([target respondsToSelector:@selector(targetClass)]) {
+            targetClass = [(id)target targetClass];
+            ILOG(@"Prototype:");
+        } else {
+            targetClass =  object_getClass(target);
+        }
         
+        ILOG(@"add %@ method to class %@", targetIsClass ? @"class" : @"instance", (id)targetClass);
+       
         Class valueClass = value;
         
         Method valueMethod = class_getInstanceMethod(valueClass, @selector(_objcjs_body:));
 
         size_t nameLen = strlen(name);
         char *methodName = malloc((sizeof(char) * nameLen) + 2);
-       
+      
+        //Blindly add a colon to the end of the name
         memcpy(methodName, name, nameLen);
         methodName[nameLen] = ':';
         methodName[nameLen+1] = '\0';
@@ -624,3 +650,6 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 
 @end
 
+@implementation ObjCJSPrototype
+
+@end

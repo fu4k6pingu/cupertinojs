@@ -131,3 +131,9 @@ extern id objcjs_GlobalScope;
 
 @end
 
+@interface ObjCJSPrototype : NSObject
+
+@property (nonatomic) Class targetClass;
+
+@end
+
