@@ -863,17 +863,6 @@ std::string makeKeyName(Expression *key, llvm::Module *module){
     return NULL;
 }
 
-__attribute__((unused))
-bool keyIsNumber(Expression *key){
-    if(key->IsLiteral()){
-        Object *oKey = (Object *)key;
-        if (oKey->IsNumber()) {
-            return true;
-        }
-    }
-    return false;
-}
-
 void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
     auto newObject = _runtime->newObject();
     
