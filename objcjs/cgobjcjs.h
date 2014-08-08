@@ -56,7 +56,8 @@ namespace objcjs{
         llvm::BasicBlock *_currentSetRetBlock;
         std::map <Token::Value, std::string> assignOpSelectorByToken;
         std::map <Token::Value, std::string> opSelectorByToken;
-        
+        std::map <int, std::string> _nameByFunctionID;
+
         std::map <std::string, ObjCMethod *> _objCMethodBySelector;
         std::set <std::string> _classes;
         

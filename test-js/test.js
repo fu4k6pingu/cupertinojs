@@ -4,20 +4,21 @@ function Counter(init){
     this.value = init
     this.increment = function(){
         this.value = this.value + 1
+        return this.value
     }
 
-    NSLog("foo")
     return this
 }
 
 function makeRun(){
     var c = new Counter(9)
-    c.increment()
+     NSLog("incremented %@", c.increment())
     return this
 }
 
 
 function main(a,b){
     makeRun()
-    return 0
+    var zero = 0
+    return zero.intValue
 }

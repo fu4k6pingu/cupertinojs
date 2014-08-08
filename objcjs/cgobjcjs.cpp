@@ -21,7 +21,7 @@
 #include "cgobjcjsruntime.h"
 #include "cgobjcjsclang.h"
 #include "cgobjcsmacrovisitor.h"
-
+#include "objcjsutils.h"
 
 #define CGObjCJSDEBUG 1
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
@@ -147,7 +147,7 @@ CGObjCJS::CGObjCJS(std::string name,
     llvm::LLVMContext &Context = llvm::getGlobalContext();
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module(name, Context);
-    _context = new CGContext();
+    _context = NULL;
     _runtime = new CGObjCJSRuntime(_builder, _module);
     
     assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
@@ -300,14 +300,16 @@ void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node)
 }
 
 void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
-    EmitFunctionPrototype(node->fun());
     Visit(node->fun());
 }
 
 void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
-     std::string name = stringFromV8AstRawString(node->raw_name());
+    auto anonName = _nameByFunctionID[node->id().ToInt()];
+    std::string name = anonName.length() ? anonName : stringFromV8AstRawString(node->raw_name());
+
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
+        abort();
     }
 
     bool isJSFunction = SymbolIsJSFunction(name);
@@ -319,6 +321,7 @@ void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
     if (isJSFunction){
         //Add define JSFunction to front of the module constructor
         llvm::Function *moduleCtor = _module->getFunction(*_name);
+        assert(moduleCtor);
         llvm::BasicBlock *moduleCtorBB = &moduleCtor->getBasicBlockList().front();
         llvm::Instruction *defineFunction = (llvm::Instruction *)_runtime->defineJSFuction(name.c_str(), numParams);
         moduleCtorBB->getInstList().push_front(defineFunction);
@@ -672,25 +675,21 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     }
 }
 
-static bool isInModuleInit = true;
-
 //Define the body of the function
 void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
-    EnterContext();
-    auto ip = _builder->saveIP();
-    
+    auto startIB = _builder->GetInsertBlock();
     auto name = stringFromV8AstRawString(node->raw_name());
-  
-    _builder->restoreIP(ip);
-    
-    if (isInModuleInit){
-        isInModuleInit = false;
+    if (!_context){
+        EnterContext();
        //start module inserting at beginning of init function
         auto moduleFunction = _module->getFunction(*_name);
         _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
-        
+       
+        auto _BB = _builder->GetInsertBlock();
         VisitDeclarations(node->scope()->declarations());
+        _builder->SetInsertPoint(_BB);
         VisitStatements(node->body());
+        _builder->SetInsertPoint(_BB);
         EndAccumulation();
 
         //add terminator to module function
@@ -698,9 +697,27 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
         llvm::ReturnInst::Create(_module->getContext(), ObjcNullPointer(), BB);
         return;
     }
+
+    if (!name.length()) {
+        name = string_format("JSFUNC_%s", std::to_string(rand()).c_str());
+        _nameByFunctionID[node->id().ToInt()] = name;
+        _runtime->newString(name);
+        NewLocalStringVar(name, _module);
+
+        EmitFunctionPrototype(node);
+    }
     
     auto function = _module->getFunction(name);
-
+  
+    if (!function) {
+        EmitFunctionPrototype(node);
+        function = _module->getFunction(name);
+        EnterContext();
+    } else {
+        EnterContext();
+        
+    }
+    
     // Create a new basic block to start insertion into.
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "entry", function);
     _builder->SetInsertPoint(BB);
@@ -757,6 +774,11 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     }
     
     EndAccumulation();
+    
+    // Return to starting basic block and push
+    // this function in case of assignment
+    _builder->SetInsertPoint(startIB);
+    PushValueToContext(_runtime->classNamed(name.c_str()));
 }
 
 void CGObjCJS::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
@@ -911,7 +933,10 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
     assert(node->target()->IsValidReferenceExpression());
     LhsKind assignType = GetLhsKind(node->target());
 
+    auto BB = _builder->GetInsertBlock();
     Visit(node->value());
+    _builder->SetInsertPoint(BB);
+    
     llvm::Value *value = PopContext();
     switch (assignType) {
         case VARIABLE: {
@@ -939,6 +964,11 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             break;
         } case NAMED_PROPERTY: {
             Property *property = node->target()->AsProperty();
+            if (!value){
+                ILOG("Waring - missing value");
+                abort();
+            }
+            
             EmitNamedPropertyAssignment(property, value);
             break;
         }
@@ -961,7 +991,8 @@ void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *valu
     Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
     auto BB = _builder->GetInsertBlock();
-
+    assert(BB);
+    
     Visit(key);
     llvm::Value *keyValue = PopContext();
     assert(keyValue);
