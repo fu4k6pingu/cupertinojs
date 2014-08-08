@@ -669,16 +669,6 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     }
 }
 
-__attribute__((unused))
-static void AppendImplicitReturn(llvm::Function *function, llvm::Value *value){
-    for (llvm::Function::iterator block = function->begin(), e = function->end(); block != e; ++block){
-        if (!block->getTerminator()) {
-            //TODO : return undefined
-            llvm::ReturnInst::Create(function->getContext(), value, block);
-        }
-    }
-}
-
 //Define the body of the function
 void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     EnterContext();
@@ -969,21 +959,6 @@ void CGObjCJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key
     PushValueToContext(_runtime->messageSend(target, "objcjs_replaceObjectAtIndex:withObject:", args));
 }
 
-
-static char *nameByAddingColon(const char *name){
-    size_t nameLen = strlen(name);
-    char *methodName = (char *)malloc((sizeof(char) * nameLen) + 2);
-    memcpy(methodName, name, nameLen);
-    methodName[nameLen] = ':';
-    methodName[nameLen+1] = '\0';
-    return methodName;
-}
-
-static bool nameHasColonAtEnd(const char *name){
-    size_t nameLen = strlen(name);
-    return name[nameLen -1] == ':';
-}
-
 void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
     Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
@@ -1168,7 +1143,6 @@ void CGObjCJS::VisitCall(Call* node) {
         
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
-            //TODO : this should likely retain the values
             Visit(args->at(i));
         }
         
@@ -1233,7 +1207,6 @@ std::vector <llvm::Value *>CGObjCJS::makeArgs(ZoneList<Expression*>* args) {
     }
     
     for (int i = 0; i <args->length(); i++) {
-        //TODO : this should likely retain the values
         Visit(args->at(i));
     }
     
@@ -1260,7 +1233,6 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
         
         ZoneList<Expression*>* args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
-            //TODO : this should likely retain the values
             Visit(args->at(i));
         }
         
