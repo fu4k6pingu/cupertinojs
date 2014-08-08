@@ -1218,7 +1218,6 @@ void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args)
     //send to property
     ObjCMethod *method = ((ObjCMethod *)_objCMethodBySelector[keyName.c_str()]);
     if (method) {
-        printf("found method %s", method->name.c_str());
         keyName = method->name;
     }
     
