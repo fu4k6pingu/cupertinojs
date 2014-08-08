@@ -738,7 +738,10 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     if (_context) {
         ILOG("Context size: %lu", _context->size());
     }
-    
+   
+    // This code will not be executed and llvm will throw
+    // errors if it exists, in the best case it wouldn't be added
+    // in the first place
     CleanupInstructionsAfterBreaks(function);
 
     llvm::BasicBlock *front = &function->front();
