@@ -132,6 +132,7 @@ namespace objcjs{
         void EmitVariableAssignment(Variable* var,
                                     Token::Value op) ;
         
+        void EmitFunctionPrototype(v8::internal::FunctionLiteral* node);
         void EmitNamedPropertyAssignment(Property *property, llvm::Value *value);
         void EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value);
         void EmitPropertyCall(Expression *expr, ZoneList<Expression*>* args);

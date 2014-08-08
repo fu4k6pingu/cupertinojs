@@ -300,7 +300,12 @@ void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node)
 }
 
 void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
-    std::string name = stringFromV8AstRawString(node->fun()->raw_name());
+    EmitFunctionPrototype(node->fun());
+    Visit(node->fun());
+}
+
+void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
+     std::string name = stringFromV8AstRawString(node->raw_name());
     if (!name.length()){
         ILOG("TODO: support unnamed functions");
     }
@@ -310,7 +315,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
         assert(!_module->getFunction(name) && "function is already declared");
     }
     
-    int numParams = node->fun()->scope()->num_parameters();
+    int numParams = node->scope()->num_parameters();
     if (isJSFunction){
         //Add define JSFunction to front of the module constructor
         llvm::Function *moduleCtor = _module->getFunction(*_name);
@@ -336,8 +341,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
     auto functionAlloca = _builder->CreateAlloca(ObjcPointerTy());
     _builder->CreateStore(_runtime->classNamed(name.c_str()), functionAlloca);
     _context->setValue(name, functionAlloca);
-    //VisitFunctionLiteral
-    Visit(node->fun());
+    //VisitFunctionLiteral   
 }
 
 #pragma mark - Modules
