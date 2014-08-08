@@ -341,7 +341,6 @@ void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
     auto functionAlloca = _builder->CreateAlloca(ObjcPointerTy());
     _builder->CreateStore(_runtime->classNamed(name.c_str()), functionAlloca);
     _context->setValue(name, functionAlloca);
-    //VisitFunctionLiteral   
 }
 
 #pragma mark - Modules
@@ -673,16 +672,19 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     }
 }
 
+static bool isInModuleInit = true;
+
 //Define the body of the function
 void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     EnterContext();
-    _builder->saveIP();
+    auto ip = _builder->saveIP();
     
     auto name = stringFromV8AstRawString(node->raw_name());
-   
-    //TODO: support unnamed functions
-    bool isModuleContainerFunction = !name.length();
-    if (isModuleContainerFunction){
+  
+    _builder->restoreIP(ip);
+    
+    if (isInModuleInit){
+        isInModuleInit = false;
        //start module inserting at beginning of init function
         auto moduleFunction = _module->getFunction(*_name);
         _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
