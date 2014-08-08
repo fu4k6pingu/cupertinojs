@@ -902,7 +902,7 @@ void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
 }
 
 void CGObjCJS::VisitAssignment(Assignment* node) {
-    ASSERT(node->target()->IsValidReferenceExpression());
+    assert(node->target()->IsValidReferenceExpression());
     LhsKind assignType = GetLhsKind(node->target());
 
     Visit(node->value());
@@ -1451,12 +1451,12 @@ static bool IsClassOfTest(CompareOperation* expr) {
     if (!call->name()->IsOneByteEqualTo(STATIC_ASCII_VECTOR("_ClassOf"))) {
         return false;
     }
-    ASSERT(call->arguments()->length() == 1);
+    assert(call->arguments()->length() == 1);
     return true;
 }
  
 void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
-    ASSERT(!HasStackOverflow());
+    assert(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
     
     // Check for a few fast cases. The AST visiting behavior must be in sync
