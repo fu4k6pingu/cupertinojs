@@ -1,6 +1,6 @@
 //
 //  codegen.cpp
-//  objcjs
+//  cujs
 //
 //  Created by Jerry Marino on 7/6/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
@@ -17,19 +17,19 @@
 #include <llvm/Support/Casting.h>
 #include <llvm/Support/CFG.h>
 
-#include "cgobjcjs.h"
-#include "cgobjcjsruntime.h"
-#include "cgobjcjsclang.h"
-#include "cgobjcsmacrovisitor.h"
-#include "objcjsutils.h"
+#include "cgjs.h"
+#include "cgjsruntime.h"
+#include "cgclang.h"
+#include "cgjsmacrovisitor.h"
+#include "cujsutils.h"
 
-#define CGObjCJSDEBUG 0
-#define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
+#define CGJSDEBUG 0
+#define ILOG(A, ...) if (CGJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;
-using namespace objcjs;
+using namespace cujs;
 
-class objcjs::CGContext {
+class cujs::CGContext {
 public:
     Scope *_scope;
     std::vector<llvm::Value *> _context;
@@ -103,7 +103,7 @@ public:
 #define CALL_LOG(STR)\
     _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString(STR))
 
-std::string objcjs::stringFromV8AstRawString(const AstRawString *raw) {
+std::string cujs::stringFromV8AstRawString(const AstRawString *raw) {
     std::string str;
     size_t size = raw->length();
     const unsigned char *data = raw->raw_data();
@@ -134,9 +134,9 @@ static std::string FUNCTION_THIS_ARG_NAME("this");
 static std::string DEFAULT_RET_ALLOCA_NAME("DEFAULT_RET_ALLOCA");
 static std::string SET_RET_ALLOCA_NAME("SET_RET_ALLOCA");
 
-#pragma mark - CGObjCJS
+#pragma mark - CGJS
 
-CGObjCJS::CGObjCJS(std::string name,
+CGJS::CGJS(std::string name,
                    CompilationInfoWithZone *info)
 {
 
@@ -148,62 +148,62 @@ CGObjCJS::CGObjCJS(std::string name,
     _builder = new llvm::IRBuilder<> (Context);
     _module = new llvm::Module(name, Context);
     _context = NULL;
-    _runtime = new CGObjCJSRuntime(_builder, _module);
+    _runtime = new CGJSRuntime(_builder, _module);
     
-    assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("objcjs_add:");
-    assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("objcjs_subtract:");
-    assignOpSelectorByToken[Token::ASSIGN_MUL] = std::string("objcjs_multiply:");
-    assignOpSelectorByToken[Token::ASSIGN_DIV] = std::string("objcjs_divide:");
-    assignOpSelectorByToken[Token::ASSIGN_MOD] = std::string("objcjs_mod:");
+    assignOpSelectorByToken[Token::ASSIGN_ADD] = std::string("cujs_add:");
+    assignOpSelectorByToken[Token::ASSIGN_SUB] = std::string("cujs_subtract:");
+    assignOpSelectorByToken[Token::ASSIGN_MUL] = std::string("cujs_multiply:");
+    assignOpSelectorByToken[Token::ASSIGN_DIV] = std::string("cujs_divide:");
+    assignOpSelectorByToken[Token::ASSIGN_MOD] = std::string("cujs_mod:");
     
-    assignOpSelectorByToken[Token::ASSIGN_BIT_OR] = std::string("objcjs_bitor:");
-    assignOpSelectorByToken[Token::ASSIGN_BIT_XOR] = std::string("objcjs_bitxor:");
-    assignOpSelectorByToken[Token::ASSIGN_BIT_AND] = std::string("objcjs_bitand:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_OR] = std::string("cujs_bitor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_XOR] = std::string("cujs_bitxor:");
+    assignOpSelectorByToken[Token::ASSIGN_BIT_AND] = std::string("cujs_bitand:");
     
-    assignOpSelectorByToken[Token::ASSIGN_SHL] = std::string("objcjs_shiftleft:");
-    assignOpSelectorByToken[Token::ASSIGN_SAR] = std::string("objcjs_shiftright:");
-    assignOpSelectorByToken[Token::ASSIGN_SHR] = std::string("objcjs_shiftrightright:");
+    assignOpSelectorByToken[Token::ASSIGN_SHL] = std::string("cujs_shiftleft:");
+    assignOpSelectorByToken[Token::ASSIGN_SAR] = std::string("cujs_shiftright:");
+    assignOpSelectorByToken[Token::ASSIGN_SHR] = std::string("cujs_shiftrightright:");
     
-    opSelectorByToken[Token::ADD] = std::string("objcjs_add:");
-    opSelectorByToken[Token::SUB] = std::string("objcjs_subtract:");
-    opSelectorByToken[Token::MUL] = std::string("objcjs_multiply:");
-    opSelectorByToken[Token::DIV] = std::string("objcjs_divide:");
-    opSelectorByToken[Token::MOD] = std::string("objcjs_mod:");
+    opSelectorByToken[Token::ADD] = std::string("cujs_add:");
+    opSelectorByToken[Token::SUB] = std::string("cujs_subtract:");
+    opSelectorByToken[Token::MUL] = std::string("cujs_multiply:");
+    opSelectorByToken[Token::DIV] = std::string("cujs_divide:");
+    opSelectorByToken[Token::MOD] = std::string("cujs_mod:");
     
-    opSelectorByToken[Token::BIT_OR] = std::string("objcjs_bitor:");
-    opSelectorByToken[Token::BIT_XOR] = std::string("objcjs_bitxor:");
-    opSelectorByToken[Token::BIT_AND] = std::string("objcjs_bitand:");
+    opSelectorByToken[Token::BIT_OR] = std::string("cujs_bitor:");
+    opSelectorByToken[Token::BIT_XOR] = std::string("cujs_bitxor:");
+    opSelectorByToken[Token::BIT_AND] = std::string("cujs_bitand:");
     
-    opSelectorByToken[Token::SHL] = std::string("objcjs_shiftleft:");
-    opSelectorByToken[Token::SAR] = std::string("objcjs_shiftright:");
-    opSelectorByToken[Token::SHR] = std::string("objcjs_shiftrightright:");
+    opSelectorByToken[Token::SHL] = std::string("cujs_shiftleft:");
+    opSelectorByToken[Token::SAR] = std::string("cujs_shiftright:");
+    opSelectorByToken[Token::SHR] = std::string("cujs_shiftrightright:");
 }
 
-CGObjCJS::~CGObjCJS() {
+CGJS::~CGJS() {
     delete _builder;
     delete _module;
     delete _runtime;
 };
 
-void CGObjCJS::Codegen() {
+void CGJS::Codegen() {
     auto moduleFunction = ObjcCodeGenModuleInit(_builder, _module, *_name);
     SetModuleCtor(_module, moduleFunction);
 
     //start module inserting at beginning of init function
     _builder->SetInsertPoint(&moduleFunction->getBasicBlockList().front());
     
-    auto macroVisitor = objcjs::CGObjCJSMacroVisitor(this, zone());
+    auto macroVisitor = cujs::CGJSMacroVisitor(this, zone());
     macroVisitor.Visit(_info->function());
     _macros = macroVisitor._macros;   
 
     Visit(_info->function());
 }
 
-void CGObjCJS::Dump(){
+void CGJS::Dump(){
     _module->dump();
 }
 
-void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     int numParams = scope->num_parameters();
     for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
@@ -218,7 +218,7 @@ void CGObjCJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* sco
     }
 }
 
-void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     llvm::Value *argSelf = AI++;
     int numParams = scope->num_parameters();
@@ -246,7 +246,7 @@ void CGObjCJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* s
     }
 }
 
-void CGObjCJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
+void CGJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
     if (declarations->length() > 0) {
         auto preBB = _builder->GetInsertBlock();
         for (int i = 0; i < declarations->length(); i++) {
@@ -262,7 +262,7 @@ void CGObjCJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
     }
 }
 
-void CGObjCJS::VisitStatements(ZoneList<Statement*>* statements){
+void CGJS::VisitStatements(ZoneList<Statement*>* statements){
     auto preBB = _builder->GetInsertBlock();
     for (int i = 0; i < statements->length(); i++) {
         auto BB = _builder->GetInsertBlock();
@@ -276,11 +276,11 @@ void CGObjCJS::VisitStatements(ZoneList<Statement*>* statements){
     }
 }
 
-void CGObjCJS::VisitBlock(Block *block){
+void CGJS::VisitBlock(Block *block){
     VisitStatements(block->statements());
 }
 
-void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
+void CGJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
     if(IsInGlobalScope()){
         VariableProxy *var = node->proxy();
         auto insertPt = _builder->GetInsertBlock();
@@ -299,11 +299,11 @@ void CGObjCJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node)
     Visit(var);
 }
 
-void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
+void CGJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
     Visit(node->fun());
 }
 
-void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
+void CGJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
     auto anonName = _nameByFunctionID[node->id().ToInt()];
     std::string name = anonName.length() ? anonName : stringFromV8AstRawString(node->raw_name());
     assert(name.length() && "missing function name");
@@ -330,7 +330,7 @@ void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
             auto jsThisAlloca = _context->valueForKey(FUNCTION_THIS_ARG_NAME);
             if (jsThisAlloca) {
                 auto jsThis = _builder->CreateLoad(jsThisAlloca, "load-this");
-                _runtime->messageSend(functionClass, "_objcjs_setParent:", jsThis);
+                _runtime->messageSend(functionClass, "_cujs_setParent:", jsThis);
             } else {
                 ILOG("warning missing this.. something is broken!");
             }
@@ -344,53 +344,53 @@ void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
 
 #pragma mark - Modules
 
-void CGObjCJS::VisitModuleDeclaration(ModuleDeclaration* node) {
+void CGJS::VisitModuleDeclaration(ModuleDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitImportDeclaration(ImportDeclaration* node) {
+void CGJS::VisitImportDeclaration(ImportDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitExportDeclaration(ExportDeclaration* node) {
+void CGJS::VisitExportDeclaration(ExportDeclaration* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitModuleLiteral(ModuleLiteral* node) {
+void CGJS::VisitModuleLiteral(ModuleLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitModuleVariable(ModuleVariable* node) {
+void CGJS::VisitModuleVariable(ModuleVariable* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitModulePath(ModulePath* node) {
+void CGJS::VisitModulePath(ModulePath* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitModuleUrl(ModuleUrl* node) {
+void CGJS::VisitModuleUrl(ModuleUrl* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitModuleStatement(ModuleStatement* node) {
+void CGJS::VisitModuleStatement(ModuleStatement* node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Statements
 
-void CGObjCJS::VisitExpressionStatement(ExpressionStatement* node) {
+void CGJS::VisitExpressionStatement(ExpressionStatement* node) {
     Visit(node->expression());
 }
 
-void CGObjCJS::VisitEmptyStatement(EmptyStatement* node) {
+void CGJS::VisitEmptyStatement(EmptyStatement* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitIfStatement(IfStatement* node) {
+void CGJS::VisitIfStatement(IfStatement* node) {
     CGIfStatement(node, true);
 }
 
-void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
+void CGJS::CGIfStatement(IfStatement *node, bool flag){
     Visit(node->condition());
     
     llvm::Value *condV = PopContext();
@@ -449,7 +449,7 @@ void CGObjCJS::CGIfStatement(IfStatement *node, bool flag){
 }
 
 //Continues & breaks must be nested inside of for loops
-void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
+void CGJS::VisitContinueStatement(ContinueStatement* node) {
     auto currentBlock = _builder->GetInsertBlock();
     auto function = _builder->GetInsertBlock()->getParent();
     bool start = false;
@@ -472,7 +472,7 @@ void CGObjCJS::VisitContinueStatement(ContinueStatement* node) {
     _builder->CreateBr(jumpTarget);
 }
 
-void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
+void CGJS::VisitBreakStatement(BreakStatement* node) {
     auto currentBlock = _builder->GetInsertBlock();
     auto function = _builder->GetInsertBlock()->getParent();
     
@@ -497,7 +497,7 @@ void CGObjCJS::VisitBreakStatement(BreakStatement* node) {
 }
 
 //Insert the expressions into a returning block
-void CGObjCJS::VisitReturnStatement(ReturnStatement* node) {
+void CGJS::VisitReturnStatement(ReturnStatement* node) {
     llvm::BasicBlock *block = _builder->GetInsertBlock();
     llvm::Function *function = block->getParent();
     auto name = function->getName();
@@ -531,23 +531,23 @@ void CGObjCJS::VisitReturnStatement(ReturnStatement* node) {
     _builder->SetInsertPoint(block);
 }
 
-void CGObjCJS::VisitWithStatement(WithStatement* node) {
+void CGJS::VisitWithStatement(WithStatement* node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
 #pragma mark - Switch
 
-void CGObjCJS::VisitSwitchStatement(SwitchStatement* node) {
+void CGJS::VisitSwitchStatement(SwitchStatement* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitCaseClause(CaseClause* clause) {
+void CGJS::VisitCaseClause(CaseClause* clause) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Loops
 
-void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
+void CGJS::VisitWhileStatement(WhileStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
@@ -572,7 +572,7 @@ void CGObjCJS::VisitWhileStatement(WhileStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
+void CGJS::VisitDoWhileStatement(DoWhileStatement* node) {
     auto function = _builder->GetInsertBlock()->getParent();
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
@@ -593,7 +593,7 @@ void CGObjCJS::VisitDoWhileStatement(DoWhileStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGObjCJS::VisitForStatement(ForStatement* node) {
+void CGJS::VisitForStatement(ForStatement* node) {
     _context->EmptyStack();
 
     if (node->init()){
@@ -630,24 +630,24 @@ void CGObjCJS::VisitForStatement(ForStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGObjCJS::VisitForInStatement(ForInStatement* node) {
+void CGJS::VisitForInStatement(ForInStatement* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitForOfStatement(ForOfStatement* node) {
+void CGJS::VisitForOfStatement(ForOfStatement* node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Try
-void CGObjCJS::VisitTryCatchStatement(TryCatchStatement* node) {
+void CGJS::VisitTryCatchStatement(TryCatchStatement* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitTryFinallyStatement(TryFinallyStatement* node) {
+void CGJS::VisitTryFinallyStatement(TryFinallyStatement* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitDebuggerStatement(DebuggerStatement* node) {
+void CGJS::VisitDebuggerStatement(DebuggerStatement* node) {
     UNIMPLEMENTED();
 }
 
@@ -672,7 +672,7 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
 }
 
 //Define the body of the function
-void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     auto startIB = _builder->GetInsertBlock();
     auto name = stringFromV8AstRawString(node->raw_name());
     if (!_context){
@@ -777,15 +777,15 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     PushValueToContext(_runtime->classNamed(name.c_str()));
 }
 
-void CGObjCJS::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
+void CGJS::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitConditional(Conditional* node) {
+void CGJS::VisitConditional(Conditional* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitLiteral(class Literal* node) {
+void CGJS::VisitLiteral(class Literal* node) {
     CGLiteral(node->value(), true);
 }
 
@@ -809,7 +809,7 @@ std::string StringWithV8String(v8::internal::String *string) {
     return std::string(ascii);
 }
 
-llvm::Value *CGObjCJS::CGLiteral(Handle<Object> value, bool push) {
+llvm::Value *CGJS::CGLiteral(Handle<Object> value, bool push) {
     Object* object = *value;
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
@@ -861,7 +861,7 @@ llvm::Value *CGObjCJS::CGLiteral(Handle<Object> value, bool push) {
     return NULL;
 }
 
-void CGObjCJS::VisitRegExpLiteral(RegExpLiteral* node) {
+void CGJS::VisitRegExpLiteral(RegExpLiteral* node) {
     UNIMPLEMENTED();
 }
 
@@ -869,7 +869,7 @@ __attribute__((unused))
 llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
     std::string keyStringValue;
     if (key->IsPropertyName()) {
-        keyStringValue = objcjs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+        keyStringValue = cujs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
     }
     
     if(key->IsLiteral()){
@@ -887,7 +887,7 @@ llvm::Value *makeKeyNameValue(Expression *key, llvm::Module *module){
 
 std::string makeKeyName(Expression *key, llvm::Module *module){
     if (key->IsPropertyName()) {
-        return objcjs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
+        return cujs::stringFromV8AstRawString(((Literal *)key)->AsRawPropertyName());
     }
     
     if(key->IsLiteral()){
@@ -901,7 +901,7 @@ std::string makeKeyName(Expression *key, llvm::Module *module){
     return NULL;
 }
 
-void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
+void CGJS::VisitObjectLiteral(ObjectLiteral* node) {
     auto newObject = _runtime->newObject();
     
     for (int i = 0; i < node->properties()->length(); i++) {
@@ -921,7 +921,7 @@ void CGObjCJS::VisitObjectLiteral(ObjectLiteral* node) {
     PushValueToContext(newObject);
 }
 
-void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
+void CGJS::VisitArrayLiteral(ArrayLiteral* node) {
     auto newObject = _runtime->newObject();
 
     for (int i = 0; i < node->values()->length(); i++) {
@@ -935,11 +935,11 @@ void CGObjCJS::VisitArrayLiteral(ArrayLiteral* node) {
     PushValueToContext(newObject);
 }
 
-void CGObjCJS::VisitVariableProxy(VariableProxy* node) {
+void CGJS::VisitVariableProxy(VariableProxy* node) {
     EmitVariableLoad(node);
 }
 
-void CGObjCJS::VisitAssignment(Assignment* node) {
+void CGJS::VisitAssignment(Assignment* node) {
     assert(node->target()->IsValidReferenceExpression());
     LhsKind assignType = GetLhsKind(node->target());
 
@@ -989,14 +989,14 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
     }
 }
 
-void CGObjCJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value){
+void CGJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value){
     std::vector<llvm::Value *>args;
     args.push_back(value);
     args.push_back(key);
-    PushValueToContext(_runtime->messageSend(target, "objcjs_ss_setValue:forKey:", args));
+    PushValueToContext(_runtime->messageSend(target, "cujs_ss_setValue:forKey:", args));
 }
 
-void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
+void CGJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
     Expression *object = property->obj();
     v8::internal::Literal *key = property->key()->AsLiteral();
     auto BB = _builder->GetInsertBlock();
@@ -1023,7 +1023,7 @@ void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *valu
     _runtime->assignProperty(objValue, keyName, value);
 }
 
-void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
+void CGJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
     assert(targetProxy && "target for assignment required");
     assert(value && "missing value - not implemented");
     std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
@@ -1047,7 +1047,7 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
             std::vector<llvm::Value *>Args;
             Args.push_back(value);
             Args.push_back(keypathStringValue);
-            _runtime->messageSend(jsThis, "_objcjs_env_setValue:declareKey:", Args);
+            _runtime->messageSend(jsThis, "_cujs_env_setValue:declareKey:", Args);
         }
         
     } else if (_context->lookup(_contexts, targetName)){
@@ -1062,7 +1062,7 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
         std::vector<llvm::Value *>Args;
         Args.push_back(value);
         Args.push_back(keypathStringValue);
-        _runtime->messageSend(jsThis, "_objcjs_env_setValue:forKey:", Args);
+        _runtime->messageSend(jsThis, "_cujs_env_setValue:forKey:", Args);
     } else if (_module->getGlobalVariable(llvm::StringRef(targetName), false)) {
         llvm::GlobalVariable *global = _module->getGlobalVariable(llvm::StringRef(targetName));
         assert(!global->isConstant());
@@ -1072,7 +1072,7 @@ void CGObjCJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value)
     }
 }
 
-void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
+void CGJS::EmitVariableLoad(VariableProxy* node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
     auto varAlloca = _context->valueForKey(variableName);
     
@@ -1096,8 +1096,8 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
         //load the value from the parents environment
         auto parentFunction = _builder->GetInsertBlock()->getParent();
         auto parentName = parentFunction ->getName().str();
-        auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_objcjs_parent");
-        auto value = _runtime->messageSend(parentThis, "_objcjs_env_valueForKey:", keypathArgument);
+        auto parentThis = _runtime->messageSend(_runtime->classNamed(parentName.c_str()), "_cujs_parent");
+        auto value = _runtime->messageSend(parentThis, "_cujs_env_valueForKey:", keypathArgument);
         
         PushValueToContext(value);
         return;
@@ -1112,15 +1112,15 @@ void CGObjCJS::EmitVariableLoad(VariableProxy* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitYield(Yield* node) {
+void CGJS::VisitYield(Yield* node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
-void CGObjCJS::VisitThrow(Throw* node) {
+void CGJS::VisitThrow(Throw* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitProperty(Property* node) {
+void CGJS::VisitProperty(Property* node) {
     Property *property = node;
     
     Expression *object = property->obj();
@@ -1140,7 +1140,7 @@ void CGObjCJS::VisitProperty(Property* node) {
         std::string keyName = makeKeyName(property->key(), _module);
         PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
     } else if (type == KEYED_PROPERTY) {
-        PushValueToContext(_runtime->messageSend(objValue, "objcjs_ss_valueForKey:", keyValue));
+        PushValueToContext(_runtime->messageSend(objValue, "cujs_ss_valueForKey:", keyValue));
     } else {
         UNIMPLEMENTED();
     }
@@ -1161,7 +1161,7 @@ static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
     return property != NULL ? Call::PROPERTY_CALL : Call::OTHER_CALL;
 }
 
-void CGObjCJS::VisitCall(Call* node) {
+void CGJS::VisitCall(Call* node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(callee, isolate());
     
@@ -1219,7 +1219,7 @@ void CGObjCJS::VisitCall(Call* node) {
     }
 }
 
-void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
+void CGJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
     Property *property = callee->AsProperty();
     
     Expression *object = property->obj();
@@ -1245,7 +1245,7 @@ void CGObjCJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args)
     PushValueToContext(result);
 }
 
-std::vector <llvm::Value *>CGObjCJS::makeArgs(ZoneList<Expression*>* args) {
+std::vector <llvm::Value *>CGJS::makeArgs(ZoneList<Expression*>* args) {
     std::vector<llvm::Value *> finalArgs;
     
     if (args->length() == 0) {
@@ -1264,7 +1264,7 @@ std::vector <llvm::Value *>CGObjCJS::makeArgs(ZoneList<Expression*>* args) {
     return finalArgs;
 }
 
-void CGObjCJS::VisitCallNew(CallNew* node) {
+void CGJS::VisitCallNew(CallNew* node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(callee, isolate());
     
@@ -1288,7 +1288,7 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
             finalArgs.push_back(arg);
         }
         std::reverse(finalArgs.begin(), finalArgs.end());
-        llvm::Value *target = _runtime->messageSend(newClass, "objcjs_new");
+        llvm::Value *target = _runtime->messageSend(newClass, "cujs_new");
         auto value = _runtime->invokeJSValue(target, finalArgs);
         PushValueToContext(value);
     } else if (callType == Call::PROPERTY_CALL){
@@ -1299,8 +1299,8 @@ void CGObjCJS::VisitCallNew(CallNew* node) {
 }
 
 // Runtime are only used to support the v8 nature of the AST
-// objcjs should not extend javascript or rely on v8 specific features
-void CGObjCJS::VisitCallRuntime(CallRuntime* node) {
+// cujs should not extend javascript or rely on v8 specific features
+void CGJS::VisitCallRuntime(CallRuntime* node) {
     std::string name = stringFromV8AstRawString(node->raw_name());
     ZoneList<Expression*>* args = node->arguments();
 
@@ -1333,11 +1333,11 @@ void CGObjCJS::VisitCallRuntime(CallRuntime* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitUnaryOperation(UnaryOperation* node) {
+void CGJS::VisitUnaryOperation(UnaryOperation* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitCountOperation(CountOperation* node) {
+void CGJS::VisitCountOperation(CountOperation* node) {
     LhsKind assignType = VARIABLE;
 
     Property* prop = node->expression()->AsProperty();
@@ -1349,7 +1349,7 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
     }
  
     const char *assignOpSelector = node->op() == Token::INC ?
-                "objcjs_increment" : "objcjs_decrement";
+                "cujs_increment" : "cujs_decrement";
 
   
     llvm::AllocaInst *alloca;
@@ -1383,7 +1383,7 @@ void CGObjCJS::VisitCountOperation(CountOperation* node) {
     }
 }
 
-void CGObjCJS::VisitBinaryOperation(BinaryOperation* expr) {
+void CGJS::VisitBinaryOperation(BinaryOperation* expr) {
   switch (expr->op()) {
       case Token::COMMA:
           return VisitComma(expr);
@@ -1396,11 +1396,11 @@ void CGObjCJS::VisitBinaryOperation(BinaryOperation* expr) {
   }
 }
 
-void CGObjCJS::VisitComma(BinaryOperation* expr) {
+void CGJS::VisitComma(BinaryOperation* expr) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::EmitLogicalAnd(BinaryOperation *expr) {
+void CGJS::EmitLogicalAnd(BinaryOperation *expr) {
     auto function = _builder->GetInsertBlock()->getParent();
     llvm::BasicBlock *trueBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "and.true", function);
     llvm::BasicBlock *falseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "and.false");
@@ -1436,7 +1436,7 @@ void CGObjCJS::EmitLogicalAnd(BinaryOperation *expr) {
     PushValueToContext(ph);
 }
 
-void CGObjCJS::EmitLogicalOr(BinaryOperation *expr) {
+void CGJS::EmitLogicalOr(BinaryOperation *expr) {
     auto function = _builder->GetInsertBlock()->getParent();
     llvm::BasicBlock *trueBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "or.true", function);
     llvm::BasicBlock *falseBB = llvm::BasicBlock::Create(llvm::getGlobalContext(), "or.false");
@@ -1471,7 +1471,7 @@ void CGObjCJS::EmitLogicalOr(BinaryOperation *expr) {
     PushValueToContext(ph);
 }
 
-void CGObjCJS::VisitArithmeticExpression(BinaryOperation* expr) {
+void CGJS::VisitArithmeticExpression(BinaryOperation* expr) {
     Expression *left = expr->left();
     Expression *right = expr->right();
   
@@ -1509,7 +1509,7 @@ static bool IsClassOfTest(CompareOperation* expr) {
     return true;
 }
  
-void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
+void CGJS::VisitCompareOperation(CompareOperation* expr) {
     assert(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
     
@@ -1584,11 +1584,11 @@ void CGObjCJS::VisitCompareOperation(CompareOperation* expr) {
     PushValueToContext(resultValue);
 }
 
-void CGObjCJS::VisitThisFunction(ThisFunction* node) {
+void CGJS::VisitThisFunction(ThisFunction* node) {
     UNIMPLEMENTED();
 }
 
-void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
+void CGJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     if (extendContext){
         EnterContext();
     }
@@ -1596,7 +1596,7 @@ void CGObjCJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     Visit(expr);
 }
 
-void CGObjCJS::EnterContext(){
+void CGJS::EnterContext(){
     ILOG("enter context");
     CGContext *context;
     if (_context) {
@@ -1609,36 +1609,36 @@ void CGObjCJS::EnterContext(){
     _context = context;   
 }
 
-void CGObjCJS::VisitStartAccumulation(AstNode *expr) {
+void CGJS::VisitStartAccumulation(AstNode *expr) {
     VisitStartAccumulation(expr, false);
 }
 
-void CGObjCJS::EndAccumulation() {
+void CGJS::EndAccumulation() {
     _contexts.pop_back();
     delete _context;
     auto context = _contexts.back();
     _context = context;
 }
 
-void CGObjCJS::PushValueToContext(llvm::Value *value) {
+void CGJS::PushValueToContext(llvm::Value *value) {
     _context->Push(value);
 }
 
-llvm::Value *CGObjCJS::PopContext() {
+llvm::Value *CGJS::PopContext() {
     return _context->Pop();
 }
 
 //SymbolIsClass - this symbol is currently known as a class
-bool CGObjCJS::SymbolIsClass(std::string symbol) {
+bool CGJS::SymbolIsClass(std::string symbol) {
     return _classes.count(symbol) || _module->getFunction(symbol);
 }
 
 //SymbolIsJSFunction - this symbol is known jsfunction
-bool CGObjCJS::SymbolIsJSFunction(std::string symbol) {
+bool CGJS::SymbolIsJSFunction(std::string symbol) {
     return !_runtime->isBuiltin(symbol);
 }
 
-bool CGObjCJS::IsInGlobalScope() {
+bool CGJS::IsInGlobalScope() {
     auto currName = _builder->GetInsertBlock()->getParent()->getName();
     return *_name == currName;
 }

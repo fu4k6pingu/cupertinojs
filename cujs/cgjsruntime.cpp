@@ -1,6 +1,6 @@
 //
-//  cgobjcjsruntime.cpp
-//  objcjs
+//  cgjsruntime.cpp
+//  cujs
 //
 //  Created by Jerry Marino on 7/19/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
@@ -9,11 +9,11 @@
 #include <malloc/malloc.h>
 #include <string>
 
-#include "cgobjcjsruntime.h"
+#include "cgjsruntime.h"
 
-using namespace objcjs;
+using namespace cujs;
 
-std::string objcjs::ObjCSelectorToJS(std::string objCSelector){
+std::string cujs::ObjCSelectorToJS(std::string objCSelector){
     std::string jsSelector;
     size_t length = objCSelector.length();
     int remove = 0;
@@ -39,18 +39,18 @@ std::string objcjs::ObjCSelectorToJS(std::string objCSelector){
 
 const auto _ObjcPointerTy = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
 
-llvm::Type *objcjs::ObjcPointerTy(){
+llvm::Type *cujs::ObjcPointerTy(){
     return _ObjcPointerTy;
 }
 
-llvm::Value *objcjs::ObjcNullPointer() {
+llvm::Value *cujs::ObjcNullPointer() {
     auto ty = llvm::PointerType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), 4);
     return llvm::ConstantPointerNull::get(ty);
 }
 
 /// CreateEntryBlockAlloca - Create an alloca instruction in the entry block of
 /// the function.  This is used for mutable variables etc.
-llvm::AllocaInst *objcjs::CreateEntryBlockAlloca(llvm::Function *Function,
+llvm::AllocaInst *cujs::CreateEntryBlockAlloca(llvm::Function *Function,
                                           const std::string &VarName) {
     llvm::IRBuilder<> Builder(&Function->getEntryBlock(),
                      Function->getEntryBlock().begin());
@@ -75,7 +75,7 @@ llvm::Function *ObjcCodeGenFunction(size_t numParams,
 }
 
 
-llvm::Function *objcjs::CGObjCJSFunction(size_t numParams,
+llvm::Function *cujs::CGJSFunction(size_t numParams,
                                  std::string name,
                                  llvm::Module *mod) {
     std::vector<llvm::Type*> Params;
@@ -91,7 +91,7 @@ llvm::Function *objcjs::CGObjCJSFunction(size_t numParams,
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
-llvm::Function *objcjs::ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
+llvm::Function *cujs::ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
                                       llvm::Module *module,
                                       std::string name) {
     std::vector<llvm::Type*> argumentTypes;
@@ -117,8 +117,8 @@ llvm::Function *objcjs::ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
 }
 
 
-void objcjs::SetModuleCtor(llvm::Module *module, llvm::Function *cTor){
-    llvm::Function* func_init = module->getFunction("objcjs_module_init");
+void cujs::SetModuleCtor(llvm::Module *module, llvm::Function *cTor){
+    llvm::Function* func_init = module->getFunction("cujs_module_init");
     assert(!func_init && "module already has a ctor");
     
     std::vector<llvm::Type*>FuncTy_args;
@@ -129,7 +129,7 @@ void objcjs::SetModuleCtor(llvm::Module *module, llvm::Function *cTor){
     func_init = llvm::Function::Create(
                                        FuncTy,
                                        llvm::GlobalValue::ExternalLinkage,
-                                       "objcjs_module_init", module);
+                                       "cujs_module_init", module);
     func_init->setCallingConv(llvm::CallingConv::C);
     
     llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", func_init);
@@ -231,7 +231,7 @@ static llvm::Function *ObjcMallocPrototype(llvm::Module *module) {
 }
 
 
-llvm::Value *objcjs::NewLocalStringVar(const char* data,
+llvm::Value *cujs::NewLocalStringVar(const char* data,
                             size_t len,
                             llvm::Module *module) {
     llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
@@ -253,14 +253,14 @@ llvm::Value *objcjs::NewLocalStringVar(const char* data,
     return castedConst;
 }
 
-llvm::Value *objcjs::NewLocalStringVar(std::string value,
+llvm::Value *cujs::NewLocalStringVar(std::string value,
                             llvm::Module *module) {
-    return objcjs::NewLocalStringVar(value.c_str(), value.size(), module);
+    return cujs::NewLocalStringVar(value.c_str(), value.size(), module);
 }
 
 #pragma mark - Runtime calls
 
-CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
+CGJSRuntime::CGJSRuntime(llvm::IRBuilder<> *builder,
                                  llvm::Module *module){
     _builder = builder;
     _module = module;
@@ -271,11 +271,11 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     DefExternFucntion("objc_getClass");
 
     //JSRuntime
-    DefExternFucntion("objcjs_invoke");
-    DefExternFucntion("objcjs_defineJSFunction");
+    DefExternFucntion("cujs_invoke");
+    DefExternFucntion("cujs_defineJSFunction");
    
-    ObjcCodeGenFunction(0, "objcjs_newJSObjectClass", _module);
-    ObjcCodeGenFunction(3, "objcjs_assignProperty", _module);
+    ObjcCodeGenFunction(0, "cujs_newJSObjectClass", _module);
+    ObjcCodeGenFunction(3, "cujs_assignProperty", _module);
 
     //Objc runtim
     ObjcCodeGenFunction(0, "objc_msgSend", _module, true);
@@ -285,41 +285,41 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     ObjcNSLogPrototye(_module);
 }
 
-llvm::Value *CGObjCJSRuntime::newString(std::string string){
+llvm::Value *CGJSRuntime::newString(std::string string){
     const char *name = string.c_str();
     llvm::Value *strGlobal = NewLocalStringVar(name, string.length(), _module);
     return messageSend(classNamed("NSString"), "stringWithUTF8String:", strGlobal);
 }
 
-llvm::Value *CGObjCJSRuntime::classNamed(const char *name){
+llvm::Value *CGJSRuntime::classNamed(const char *name){
     return _builder->CreateCall(_module->getFunction("objc_getClass"),  NewLocalStringVar(std::string(name), _module), "calltmp-getclass");
 }
 
-llvm::Value *CGObjCJSRuntime::newNumber(double doubleValue){
+llvm::Value *CGJSRuntime::newNumber(double doubleValue){
     auto constValue = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(doubleValue));
     return messageSend(classNamed("NSNumber"), "numberWithDouble:", constValue);
 }
 
-llvm::Value *CGObjCJSRuntime::newObject() {
-    auto newClass = _builder->CreateCall(_module->getFunction("objcjs_newJSObjectClass"));
-    return messageSend(newClass, "objcjs_new");
+llvm::Value *CGJSRuntime::newObject() {
+    auto newClass = _builder->CreateCall(_module->getFunction("cujs_newJSObjectClass"));
+    return messageSend(newClass, "cujs_new");
 }
 
-llvm::Value *CGObjCJSRuntime::newObject(std::vector<llvm::Value *>values) {
+llvm::Value *CGJSRuntime::newObject(std::vector<llvm::Value *>values) {
     UNIMPLEMENTED();
-    auto newClass = _builder->CreateCall(_module->getFunction("objcjs_newJSObjectClass"));
-    return messageSend(newClass, "objcjs_withObjectsAndKeys:", values);
+    auto newClass = _builder->CreateCall(_module->getFunction("cujs_newJSObjectClass"));
+    return messageSend(newClass, "cujs_withObjectsAndKeys:", values);
 }
 
-llvm::Value *CGObjCJSRuntime::newArray(std::vector<llvm::Value *>values) {
-    return messageSend(classNamed("OBJCJSMutableArray"), "arrayWithObjects:", values);
+llvm::Value *CGJSRuntime::newArray(std::vector<llvm::Value *>values) {
+    return messageSend(classNamed("CUJSMutableArray"), "arrayWithObjects:", values);
 }
 
-llvm::Value *CGObjCJSRuntime::newNumberWithLLVMValue(llvm::Value *doubleValue){
+llvm::Value *CGJSRuntime::newNumberWithLLVMValue(llvm::Value *doubleValue){
     return messageSend(classNamed("NSNumber"), "numberWithDouble:", doubleValue);
 }
 
-llvm::Value *CGObjCJSRuntime::doubleValue(llvm::Value *llvmValue){
+llvm::Value *CGJSRuntime::doubleValue(llvm::Value *llvmValue){
     llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string("doubleValue"), _module), "calltmp");
 
     std::vector<llvm::Value*> Args;
@@ -329,7 +329,7 @@ llvm::Value *CGObjCJSRuntime::doubleValue(llvm::Value *llvmValue){
     return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), Args, "calltmp-objc_msgSend_fpret");
 }
 
-llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
+llvm::Value *CGJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *selectorName,
                                           llvm::Value *Arg) {
     llvm::Value *selector = _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string(selectorName), _module), "calltmp");
@@ -344,7 +344,7 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "calltmp-objc_msgSend");
 }
 
-llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
+llvm::Value *CGJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *selectorName,
                                           std::vector<llvm::Value *>ArgsV) {
     std::vector<llvm::Value*> Args;
@@ -358,7 +358,7 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
 
 }
 
-llvm::Value *CGObjCJSRuntime::messageSendFP(llvm::Value *receiver,
+llvm::Value *CGJSRuntime::messageSendFP(llvm::Value *receiver,
                                           const char *selectorName,
                                           std::vector<llvm::Value *>ArgsV) {
     std::vector<llvm::Value*> Args;
@@ -371,7 +371,7 @@ llvm::Value *CGObjCJSRuntime::messageSendFP(llvm::Value *receiver,
     return _builder->CreateCall(_module->getFunction("objc_msgSend_fpret"), Args, "calltmp-objc_msgSend");
 }
 
-llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
+llvm::Value *CGJSRuntime::messageSend(llvm::Value *receiver,
                                           const char *name) {
     std::vector<llvm::Value*> Args;
     Args.push_back(receiver);
@@ -380,18 +380,18 @@ llvm::Value *CGObjCJSRuntime::messageSend(llvm::Value *receiver,
     return _builder->CreateCall(function, Args, "calltmp-objc_msgSend");
 }
 
-llvm::Value *CGObjCJSRuntime::selectorWithName(const char *name){
+llvm::Value *CGJSRuntime::selectorWithName(const char *name){
     return _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string(name), _module), "calltmp");
 }
 
-llvm::Value *CGObjCJSRuntime::messageSendProperty(llvm::Value *receiver,
+llvm::Value *CGJSRuntime::messageSendProperty(llvm::Value *receiver,
                                  const char *name,
                                  std::vector<llvm::Value *>ArgsV) {
     return messageSend(receiver, name, ArgsV);
 }
 
 //Sends a message to a JSFunction instance
-llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
+llvm::Value *CGJSRuntime::invokeJSValue(llvm::Value *instance,
                                                     std::vector<llvm::Value *>ArgsV) {
     std::vector<llvm::Value*> Args;
     Args.push_back(instance);
@@ -401,13 +401,13 @@ llvm::Value *CGObjCJSRuntime::invokeJSValue(llvm::Value *instance,
     }
 
     Args.push_back(ObjcNullPointer());
-    return _builder->CreateCall(_module->getFunction("objcjs_invoke"), Args, "objcjs_invoke");
+    return _builder->CreateCall(_module->getFunction("cujs_invoke"), Args, "cujs_invoke");
 }
 
 //Convert a llvm value to an bool
 //which is represented as an int in JS land
-llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
-    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string("objcjs_boolValue"), _module), "calltmp");
+llvm::Value *CGJSRuntime::boolValue(llvm::Value *llvmValue){
+    llvm::Value *sel = _builder->CreateCall(_module->getFunction("sel_getUid"), NewLocalStringVar(std::string("cujs_boolValue"), _module), "calltmp");
 
     std::vector<llvm::Value*> Args;
     Args.push_back(llvmValue);
@@ -416,10 +416,10 @@ llvm::Value *CGObjCJSRuntime::boolValue(llvm::Value *llvmValue){
     return _builder->CreateCall(_module->getFunction("objc_msgSend"), Args, "objc_msgSend");
 }
 
-llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
+llvm::Value *CGJSRuntime::defineJSFuction(const char *name,
                                               unsigned nArgs
                                                  ) {
-    auto function = CGObjCJSFunction(nArgs, name, _module);
+    auto function = CGJSFunction(nArgs, name, _module);
     
     auto nameAlloca = NewLocalStringVar(name, strlen(name), _module);
     
@@ -427,17 +427,17 @@ llvm::Value *CGObjCJSRuntime::defineJSFuction(const char *name,
     Args.push_back(nameAlloca);
     Args.push_back(function);
 
-    return llvm::CallInst::Create(_module->getFunction("objcjs_defineJSFunction"), Args, "calltmp");
+    return llvm::CallInst::Create(_module->getFunction("cujs_defineJSFunction"), Args, "calltmp");
 }
 
-llvm::Value *CGObjCJSRuntime::declareProperty(llvm::Value *instance,
+llvm::Value *CGJSRuntime::declareProperty(llvm::Value *instance,
                                               std::string name) {
     
     auto nameAlloca = NewLocalStringVar(name.c_str(), name.length(), _module);
-    return messageSend(instance, "objcjs_defineProperty:", nameAlloca);
+    return messageSend(instance, "cujs_defineProperty:", nameAlloca);
 }
 
-llvm::Value *CGObjCJSRuntime::assignProperty(llvm::Value *instance,
+llvm::Value *CGJSRuntime::assignProperty(llvm::Value *instance,
                                              std::string name,
                                              llvm::Value *value) {
     auto nameAlloca = NewLocalStringVar(name.c_str(), name.length(), _module);
@@ -446,10 +446,10 @@ llvm::Value *CGObjCJSRuntime::assignProperty(llvm::Value *instance,
     Args.push_back(nameAlloca);
     Args.push_back(value);
     
-    return _builder->CreateCall(_module->getFunction("objcjs_assignProperty"), Args, "calltmp");
+    return _builder->CreateCall(_module->getFunction("cujs_assignProperty"), Args, "calltmp");
 }
 
-llvm::Value *CGObjCJSRuntime::declareGlobal(std::string name) {
+llvm::Value *CGJSRuntime::declareGlobal(std::string name) {
     llvm::GlobalVariable* var = new llvm::GlobalVariable(*_module,
                                                          ObjcPointerTy(),
                                                          false,
@@ -461,6 +461,6 @@ llvm::Value *CGObjCJSRuntime::declareGlobal(std::string name) {
     return var;
 }
 
-bool CGObjCJSRuntime::isBuiltin(std::string name) {
+bool CGJSRuntime::isBuiltin(std::string name) {
     return _builtins.count(name) > 0;
 }

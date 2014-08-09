@@ -1,6 +1,6 @@
 //
-//  objcjscompiler.cpp
-//  objcjs
+//  cujscompiler.cpp
+//  cujs
 //
 //  Created by Jerry Marino on 7/26/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
@@ -25,22 +25,22 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Bitcode/ReaderWriter.h>
 
-#include "objcjsutils.h"
-#include "cgobjcjs.h"
+#include "cujsutils.h"
+#include "cgjs.h"
 
-#include "objcjscompiler.h"
+#include "cujscompiler.h"
 
 using namespace v8::internal;
-using namespace objcjs;
+using namespace cujs;
 
 
 const char *LLVM_LLC_PATH = "/usr/local/Cellar/llvm/3.4/bin/llc";
 
-const char *COMPILE_ENV_BUILD_DIR = "OBJCJS_ENV_BUILD_DIR";
-const char *COMPILE_ENV_OBJCJS_RUNTIME_PATH = "OBJCJS_ENV_RUNTIME";
-const char *COMPILE_ENV_DEBUG = "OBJCJS_ENV_DEBUG_COMPILER";
-const char *COMPILE_ENV_CREATE_EXECUTABLE = "OBJCJS_ENV_CREATE_EXECUTABLE";
-const char *COMPILE_ENV_MTRIPEL = "OBJCJS_ENV_MTRIPEL";
+const char *COMPILE_ENV_BUILD_DIR = "CUJS_ENV_BUILD_DIR";
+const char *COMPILE_ENV_CUJS_RUNTIME_PATH = "CUJS_ENV_RUNTIME";
+const char *COMPILE_ENV_DEBUG = "CUJS_ENV_DEBUG_COMPILER";
+const char *COMPILE_ENV_CREATE_EXECUTABLE = "CUJS_ENV_CREATE_EXECUTABLE";
+const char *COMPILE_ENV_MTRIPEL = "CUJS_ENV_MTRIPEL";
 
 #pragma mark - CompilerOptions
 
@@ -68,16 +68,16 @@ std::vector<std::string> ParseNames(int argc, const char * argv[]){
     return fnames;
 }
 
-objcjs::CompilerOptions::CompilerOptions(int argc, const char * argv[]){
+cujs::CompilerOptions::CompilerOptions(int argc, const char * argv[]){
     _names = ParseNames(argc, argv);
-    _runtimePath = get_env_var(COMPILE_ENV_OBJCJS_RUNTIME_PATH);
+    _runtimePath = get_env_var(COMPILE_ENV_CUJS_RUNTIME_PATH);
     _buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
     _debug = get_env_var(COMPILE_ENV_DEBUG) == "true";
     _createExecutable = get_env_var(COMPILE_ENV_CREATE_EXECUTABLE) == "true";
     _mTripel = get_env_var(COMPILE_ENV_MTRIPEL);
 }
 
-int objcjs::CompilerOptions::validate(){
+int cujs::CompilerOptions::validate(){
     if(!_names.size()){
         std::cout << "no input files \n";
         return 0;
@@ -93,7 +93,7 @@ int objcjs::CompilerOptions::validate(){
 
 #pragma mark - Compiler
 
-objcjs::Compiler::Compiler(CompilerOptions options, v8::Isolate *isolate){
+cujs::Compiler::Compiler(CompilerOptions options, v8::Isolate *isolate){
     _options = &options;
     _isolate = isolate;
 }
@@ -142,7 +142,8 @@ v8::Handle<v8::String>SourceHandleWithName(const char *sourceName, v8::Isolate *
     return source_handle;
 }
 
-CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_handle, objcjs::CompilerOptions options){
+CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_handle, cujs::CompilerOptions options){
+    
     v8::base::TimeDelta parse_time1, parse_time2;
     Handle<String> handle = v8::Utils::OpenHandle(*source_handle);
     Handle<Script> script = Isolate::Current()->factory()->NewScript(handle);
@@ -171,7 +172,7 @@ CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_h
     return info;
 }
 
-std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string filePath){
+std::string cujs::Compiler::compileModule(v8::Isolate *isolate, std::string filePath){
     std::string buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
     std::string fileName = split(filePath, '/').back();
     std::string moduleName = split(fileName, '.').front();
@@ -180,7 +181,7 @@ std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string fi
     
     auto module = ProgramWithSourceHandle(SourceHandleWithName(filePath.c_str(), isolate), *_options);
     
-    CGObjCJS codegen = CGObjCJS(moduleName, module);
+    CGJS codegen = CGJS(moduleName, module);
     codegen.Codegen();
     if (_options->_debug) {
         codegen.Dump();
@@ -211,7 +212,7 @@ std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string fi
     return llcOutput;
 }
 
-void objcjs::Compiler::run(){
+void cujs::Compiler::run(){
     std::string sFiles;
     CompilerOptions options = *_options;
     for (unsigned i = 0; i < options._names.size(); i++){
@@ -222,7 +223,7 @@ void objcjs::Compiler::run(){
     }
 
     if (options._createExecutable){
-        std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/objcjsapp",
+        std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/cujsapp",
                                              options._runtimePath.c_str(),
                                              sFiles.c_str(),
                                              options._buildDir.c_str());

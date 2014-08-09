@@ -20,7 +20,7 @@
 		C521AAA41991E4B300948556 /* TodoieTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AAA31991E4B300948556 /* TodoieTests.m */; };
 		C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */; };
 		C56206BF1991F6B600646947 /* todoie.s in Sources */ = {isa = PBXBuildFile; fileRef = C56206BE1991F6B600646947 /* todoie.s */; };
-		C5C6B8731995FCB600490AB5 /* UIKit+ObjCJS.m in Sources */ = {isa = PBXBuildFile; fileRef = C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */; };
+		C5C6B8731995FCB600490AB5 /* UIKit+CUJS.m in Sources */ = {isa = PBXBuildFile; fileRef = C5C6B8721995FCB600490AB5 /* UIKit+CUJS.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,8 +53,8 @@
 		C56206B81991EE9A00646947 /* todoie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = todoie.js; sourceTree = "<group>"; };
 		C56206BD1991F64500646947 /* imports.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imports.h; sourceTree = "<group>"; };
 		C56206BE1991F6B600646947 /* todoie.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; name = todoie.s; path = "build/Debug-iphonesimulator/todoie.s"; sourceTree = SOURCE_ROOT; };
-		C5C6B8711995FCB600490AB5 /* UIKit+ObjCJS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIKit+ObjCJS.h"; sourceTree = "<group>"; };
-		C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIKit+ObjCJS.m"; sourceTree = "<group>"; };
+		C5C6B8711995FCB600490AB5 /* UIKit+CUJS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIKit+CUJS.h"; sourceTree = "<group>"; };
+		C5C6B8721995FCB600490AB5 /* UIKit+CUJS.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIKit+CUJS.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -122,8 +122,8 @@
 				C56206BD1991F64500646947 /* imports.h */,
 				C56206B81991EE9A00646947 /* todoie.js */,
 				C521AA901991E4B300948556 /* Images.xcassets */,
-				C5C6B8711995FCB600490AB5 /* UIKit+ObjCJS.h */,
-				C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */,
+				C5C6B8711995FCB600490AB5 /* UIKit+CUJS.h */,
+				C5C6B8721995FCB600490AB5 /* UIKit+CUJS.m */,
 				C521AA851991E4B300948556 /* Supporting Files */,
 			);
 			path = Todoie;
@@ -288,7 +288,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C519D3DF1995E7CE0076D56A /* Makefile in Sources */,
-				C5C6B8731995FCB600490AB5 /* UIKit+ObjCJS.m in Sources */,
+				C5C6B8731995FCB600490AB5 /* UIKit+CUJS.m in Sources */,
 				C56206BF1991F6B600646947 /* todoie.s in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -413,7 +413,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"../../objcjs-runtime",
+					"../../cujs-runtime",
 				);
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
@@ -439,7 +439,7 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"../../objcjs-runtime",
+					"../../cujs-runtime",
 				);
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (

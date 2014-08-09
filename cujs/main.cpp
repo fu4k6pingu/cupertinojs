@@ -1,6 +1,6 @@
 //
 //  main.cpp
-//  objcjs
+//  cujs
 //
 //  Created by Jerry Marino on 7/5/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
@@ -8,9 +8,9 @@
 
 #include <include/libplatform/libplatform.h>
 #include <src/isolate.h>
-#include "objcjscompiler.h"
+#include "cujscompiler.h"
 
-using namespace objcjs;
+using namespace cujs;
 using namespace v8::internal;
 
 int main(int argc, const char * argv[])
@@ -29,12 +29,12 @@ int main(int argc, const char * argv[])
     ASSERT(!context.IsEmpty());
     v8::Context::Scope scope(context);
 
-    objcjs::CompilerOptions options(argc, argv);
+    cujs::CompilerOptions options(argc, argv);
     if (!options.validate()) {
         return 1;
     }
   
-    objcjs::Compiler(options, isolate).run();
+    cujs::Compiler(options, isolate).run();
     
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();

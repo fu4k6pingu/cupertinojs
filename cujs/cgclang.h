@@ -1,20 +1,20 @@
 //
-//  cgobjcjsclang.h
-//  objcjs
+//  cgclang.h
+//  cujs
 //
 //  Created by Jerry Marino on 8/2/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef __objcjs__cgobjcjsclang__
-#define __objcjs__cgobjcjsclang__
+#ifndef __cujs__cgjsclang__
+#define __cujs__cgjsclang__
 
 #include <iostream>
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
 #include <set>
 
-namespace objcjs {
+namespace cujs {
     typedef enum ObjCType {
         /**
          * \brief Reprents an invalid type (e.g., where no type is available).
@@ -113,4 +113,4 @@ namespace objcjs {
 }
 
 
-#endif /* defined(__objcjs__cgobjcjsclang__) */
+#endif /* defined(__cujs__cgjsclang__) */

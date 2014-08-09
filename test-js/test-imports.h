@@ -1,6 +1,6 @@
 #import <Foundation/Foundation.h>
 
-@interface NSObject (ObjCJS)
+@interface NSObject (CUJS)
 
 + (id)extend:(id)arg;
 

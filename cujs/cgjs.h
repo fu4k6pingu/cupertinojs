@@ -1,13 +1,13 @@
 //
 //  codegen.h
-//  objcjs
+//  cujs
 //
 //  Created by Jerry Marino on 7/6/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef __objcjs__codegen__
-#define __objcjs__codegen__
+#ifndef __cujs__codegen__
+#define __cujs__codegen__
 
 #include <iostream>
 #include <cctype>
@@ -31,16 +31,16 @@
 
 using namespace v8::internal;
 
-namespace objcjs{
+namespace cujs{
     std::string stringFromV8AstRawString(const AstRawString *raw);
    
     class CGContext;
-    class CGObjCJSRuntime;
-    class CGObjCJSMacroVisitor;
+    class CGJSRuntime;
+    class CGJSMacroVisitor;
    
     struct ObjCMethod;
     
-    class CGObjCJS: public  v8::internal::AstVisitor {
+    class CGJS: public  v8::internal::AstVisitor {
         CompilationInfoWithZone *_info;
 
     public:
@@ -50,7 +50,7 @@ namespace objcjs{
         llvm::IRBuilder<> *_builder;
         llvm::Module *_module;
         
-        typedef void(*CallMacroFnPtr)(CGObjCJS *CG, Call *node);
+        typedef void(*CallMacroFnPtr)(CGJS *CG, Call *node);
         std::map <std::string, CallMacroFnPtr> _macros;
         
         llvm::BasicBlock *_currentSetRetBlock;
@@ -63,13 +63,13 @@ namespace objcjs{
         
         std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
         
-        CGObjCJSRuntime *_runtime;
+        CGJSRuntime *_runtime;
         void *_macroVisitor;
         
-        CGObjCJS(std::string name,
+        CGJS(std::string name,
                  CompilationInfoWithZone *info);
         
-        ~CGObjCJS();
+        ~CGJS();
         
         void Codegen();
         void Dump();
@@ -168,10 +168,10 @@ namespace objcjs{
         
         std::vector <llvm::Value *>makeArgs(ZoneList<Expression*>* args);
         
-        friend CGObjCJSMacroVisitor;
+        friend CGJSMacroVisitor;
         
         DEFINE_AST_VISITOR_SUBCLASS_MEMBERS ();
     };
 };
 
-#endif /* defined(__objcjs__codegen__) */
+#endif /* defined(__cujs__codegen__) */

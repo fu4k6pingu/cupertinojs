@@ -9,7 +9,7 @@ function Counter(init){
     return this
 }
 
-function objcjs_main(a, b){
+function cujs_main(a, b){
     var c = new Counter(1)
     c.increment()
     c.increment()

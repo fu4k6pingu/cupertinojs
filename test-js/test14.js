@@ -1,6 +1,6 @@
 function Platform(){
     this.userInfo = {
-        "identifier" : "OBJCJS",
+        "identifier" : "CUJS",
         "userInfo" : {
             "APIKey" : 42
         },
@@ -11,7 +11,7 @@ function Platform(){
     this.name = "turtle neck"
 }
 
-function objcjs_main(a, b){
+function cujs_main(a, b){
     var P = Platform
     var platform = new P()
 

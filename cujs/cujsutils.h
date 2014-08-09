@@ -1,13 +1,13 @@
 //
-//  objcjsutils.h
-//  objcjs
+//  cujsutils.h
+//  cujs
 //
 //  Created by Jerry Marino on 8/4/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef __objcjs__objcjsutils__
-#define __objcjs__objcjsutils__
+#ifndef __cujs__cujsutils__
+#define __cujs__cujsutils__
 
 #include <iostream>
 #include <stdarg.h>  // for va_start, etc
@@ -15,7 +15,7 @@
 #include <sstream>
 #include <vector>
 
-namespace objcjs {
+namespace cujs {
     std::string string_format(const std::string fmt_str, ...);
     std::vector<std::string> &split(const std::string &s, char delim, std::vector<std::string> &elems);
     std::vector<std::string> split(const std::string &s, char delim);
@@ -23,4 +23,4 @@ namespace objcjs {
 }
 
 
-#endif /* defined(__objcjs__objcjsutils__) */
+#endif /* defined(__cujs__cujsutils__) */

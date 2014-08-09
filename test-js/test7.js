@@ -7,7 +7,7 @@ function larryf(argument){
 }
 
 
-function objcjs_main(a, b){
+function cujs_main(a, b){
     //seg faults when called with an arg
     NSLog("MAINBEFORE %@", 0);
     NSLog("zero: %@", larryf(42));

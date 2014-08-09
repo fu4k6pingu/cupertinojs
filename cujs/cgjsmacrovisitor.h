@@ -1,26 +1,26 @@
 //
 //  cgobjcsmacrovisitor.h
-//  objcjs
+//  cujs
 //
 //  Created by Jerry Marino on 8/5/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef __objcjs__cgobjcsmacrovisitor__
-#define __objcjs__cgobjcsmacrovisitor__
+#ifndef __cujs__cgobjcsmacrovisitor__
+#define __cujs__cgobjcsmacrovisitor__
 
-namespace objcjs {
-    class CGObjCJSMacroVisitor: public  v8::internal::AstVisitor {
-        CGObjCJS *_cg;
+namespace cujs {
+    class CGJSMacroVisitor: public  v8::internal::AstVisitor {
+        CGJS *_cg;
     public:
         
         // Macros are references to native functions
         // which override javascript calls
-        typedef void(*CallMacroFnPtr)(CGObjCJS *CG, Call *node);
+        typedef void(*CallMacroFnPtr)(CGJS *CG, Call *node);
         std::map <std::string, CallMacroFnPtr> _macros;
         
-        CGObjCJSMacroVisitor(CGObjCJS *CG, v8::internal::Zone *zone);
-        virtual~CGObjCJSMacroVisitor(){};
+        CGJSMacroVisitor(CGJS *CG, v8::internal::Zone *zone);
+        virtual~CGJSMacroVisitor(){};
         
         void dump();
         
@@ -84,4 +84,4 @@ namespace objcjs {
     };
 }
 
-#endif /* defined(__objcjs__cgobjcsmacrovisitor__) */
+#endif /* defined(__cujs__cgobjcsmacrovisitor__) */

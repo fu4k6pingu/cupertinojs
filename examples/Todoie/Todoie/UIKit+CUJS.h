@@ -1,19 +1,19 @@
 //
-//  UIKit+ObjCJS.h
+//  UIKit+CUJS.h
 //  Todoie
 //
 //  Created by Jerry Marino on 8/8/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
-//  FIXME : abstract UIKit+ObjCJS into seperate framework
+//  FIXME : abstract UIKit+CUJS into seperate framework
 
-@interface UIApplication (ObjCJS)
+@interface UIApplication (CUJS)
 
 + (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName;
 
 @end
 
-@interface UIView (ObjCJS)
+@interface UIView (CUJS)
 
 - (instancetype)initWithFrameValue:(id)frameValue;
 - (id)frameValue;

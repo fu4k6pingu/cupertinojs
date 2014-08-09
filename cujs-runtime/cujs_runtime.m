@@ -1,75 +1,75 @@
 //
-//  objcjs_runtime.m
-//  objcjs-runtime
+//  cujs_runtime.m
+//  cujs-runtime
 //
 //  Created by Jerry Marino on 7/15/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#import "objcjs_runtime.h"
+#import "cujs_runtime.h"
 #import <objc/message.h>
 #import <malloc/malloc.h>
 
 #define RuntimeException(_FMT, ...) \
-    [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
+    [NSException raise:@"CUJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
 //FIXME : assert VA_ARGS if not enabled
-#define ObjCJSRuntimeDEBUG 1
-#define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
+#define CUJSRuntimeDEBUG 1
+#define ILOG(A, ...){if(CUJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 
-@implementation NSObject (ObjCJSFunction)
+@implementation NSObject (CUJSFunction)
 
-static char * ObjCJSEnvironmentKey;
+static char * CUJSEnvironmentKey;
 
-+ (id)objcjs_new {
++ (id)cujs_new {
     return [[self new] autorelease];
 }
 
-- (NSMutableDictionary *)_objcjs_environment {
-    NSMutableDictionary *environment = objc_getAssociatedObject(self, ObjCJSEnvironmentKey);
+- (NSMutableDictionary *)_cujs_environment {
+    NSMutableDictionary *environment = objc_getAssociatedObject(self, CUJSEnvironmentKey);
     if (!environment) {
         environment = [NSMutableDictionary dictionary];
-        objc_setAssociatedObject(self, ObjCJSEnvironmentKey, environment, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+        objc_setAssociatedObject(self, CUJSEnvironmentKey, environment, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     }
     return environment;
 }
 
-static NSMutableDictionary *ObjCJSParents = NULL;
+static NSMutableDictionary *CUJSParents = NULL;
 
-+ (void)_objcjs_setParent:(id)parent {
-    if (!ObjCJSParents){
-        ObjCJSParents = [[NSMutableDictionary alloc] init];
++ (void)_cujs_setParent:(id)parent {
+    if (!CUJSParents){
+        CUJSParents = [[NSMutableDictionary alloc] init];
     }
 
-    ObjCJSParents[NSStringFromClass(self.class)] = parent;
+    CUJSParents[NSStringFromClass(self.class)] = parent;
 }
 
-+ (id)_objcjs_parent {
-    return ObjCJSParents[NSStringFromClass(self.class)];
++ (id)_cujs_parent {
+    return CUJSParents[NSStringFromClass(self.class)];
 }
 
-+ (BOOL)objcjs_defineProperty:(const char *)propertyName {
-    return objcjs_defineProperty(object_getClass(self) , propertyName);
++ (BOOL)cujs_defineProperty:(const char *)propertyName {
+    return cujs_defineProperty(object_getClass(self) , propertyName);
 }
 
-- (id)_objcjs_parent {
-    return ObjCJSParents[NSStringFromClass(self.class)];
+- (id)_cujs_parent {
+    return CUJSParents[NSStringFromClass(self.class)];
 }
 
-- (id)_objcjs_body:(id)args, ... {
-    return objcjs_Undefined;
+- (id)_cujs_body:(id)args, ... {
+    return cujs_Undefined;
 }
 
-BOOL objcjs_isRestrictedProperty(const char *propertyName){
+BOOL cujs_isRestrictedProperty(const char *propertyName){
     if (strcmp("version", propertyName)) {
         return NO;
     }
     return YES;
 }
 
-BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
-    if (objcjs_isRestrictedProperty(propertyName)) {
+BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
+    if (cujs_isRestrictedProperty(propertyName)) {
         RuntimeException(@"unsupported - cannot define property '%s'", propertyName);
     }
     
@@ -88,8 +88,8 @@ BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
     IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
         id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
         id value;
-        if ([[[_self _objcjs_keyed_properties] allKeys] containsObject:propertyNameString]) {
-            value = [_self _objcjs_keyed_properties][propertyNameString];
+        if ([[[_self _cujs_keyed_properties] allKeys] containsObject:propertyNameString]) {
+            value = [_self _cujs_keyed_properties][propertyNameString];
         } else {
             value = objc_getAssociatedObject(_self, propertyName);
         }
@@ -101,8 +101,8 @@ BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
     IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
         ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, __PRETTY_FUNCTION__, value);
         id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
-        if ([[[_self _objcjs_keyed_properties] allKeys] containsObject:propertyNameString]) {
-            [_self _objcjs_keyed_properties][propertyNameString] = value;
+        if ([[[_self _cujs_keyed_properties] allKeys] containsObject:propertyNameString]) {
+            [_self _cujs_keyed_properties][propertyNameString] = value;
         } else {
             id _value = objc_getAssociatedObject(_self, propertyName);
             if (value != _value) {
@@ -120,8 +120,8 @@ BOOL objcjs_defineProperty(Class selfClass, const char *propertyName){
     return YES;
 }
 
-- (BOOL)objcjs_defineProperty:(const char *)propertyName {
-    return objcjs_defineProperty([self class], propertyName);
+- (BOOL)cujs_defineProperty:(const char *)propertyName {
+    return cujs_defineProperty([self class], propertyName);
 }
 
 char *setterNameFromPropertyName(const char *propertyName){
@@ -140,25 +140,25 @@ char *setterNameFromPropertyName(const char *propertyName){
     return setterName;
 }
 
-- (void)_objcjs_env_setValue:(id)value forKey:(NSString *)key {
-    NSMutableDictionary *environment = [self _objcjs_environment];
+- (void)_cujs_env_setValue:(id)value forKey:(NSString *)key {
+    NSMutableDictionary *environment = [self _cujs_environment];
     if (!value) {
         if (![[environment allKeys] containsObject:key]) {
-            [[self _objcjs_parent] _objcjs_env_setValue:[NSNull null] forKey:key];
+            [[self _cujs_parent] _cujs_env_setValue:[NSNull null] forKey:key];
         } else {
             environment[[key copy]] = [NSNull null];
         }
     } else {
         if (![[environment allKeys] containsObject:key]) {
-            [[self _objcjs_parent] _objcjs_env_setValue:value forKey:key];
+            [[self _cujs_parent] _cujs_env_setValue:value forKey:key];
         } else {
             environment[[key copy]] = value;
         }   
     }
 }
 
-- (void)_objcjs_env_setValue:(id)value declareKey:(NSString *)key {
-    NSMutableDictionary *environment = [self _objcjs_environment];
+- (void)_cujs_env_setValue:(id)value declareKey:(NSString *)key {
+    NSMutableDictionary *environment = [self _cujs_environment];
     if (!value) {
         environment[[key copy]] = [NSNull null];
     } else {
@@ -166,18 +166,18 @@ char *setterNameFromPropertyName(const char *propertyName){
     }
 }
 
-- (id)_objcjs_env_valueForKey:(NSString *)key {
-    NSMutableDictionary *environment = [self _objcjs_environment];
+- (id)_cujs_env_valueForKey:(NSString *)key {
+    NSMutableDictionary *environment = [self _cujs_environment];
     id value = environment[key];
-    return value && ![value isKindOfClass:[NSNull class]] ? value : [[self _objcjs_parent] _objcjs_env_valueForKey:key];
+    return value && ![value isKindOfClass:[NSNull class]] ? value : [[self _cujs_parent] _cujs_env_valueForKey:key];
 }
 
 static const char *NSObjectPrototypeKey;
 
 + (id)prototype {
-    ObjCJSPrototype *prototype = objc_getAssociatedObject(self, NSObjectPrototypeKey);
+    CUJSPrototype *prototype = objc_getAssociatedObject(self, NSObjectPrototypeKey);
     if (!prototype) {
-        prototype = [[ObjCJSPrototype new] retain];
+        prototype = [[CUJSPrototype new] retain];
         prototype.targetClass = NSClassFromString(NSStringFromClass(self.class));
         [self setPrototype:prototype];
     }
@@ -190,10 +190,10 @@ static const char *NSObjectPrototypeKey;
 
 @end
 
-@implementation NSObject (ObjCJSExtend)
+@implementation NSObject (CUJSExtend)
 
 + (id)extend:(NSString *)name {
-    return objcjs_newSubclass(self.class, name);
+    return cujs_newSubclass(self.class, name);
 }
 
 @end
@@ -201,13 +201,13 @@ static const char *NSObjectPrototypeKey;
 const char *JSFunctionTag = "JSFunctionTag";
 
 //an imp signature is id name(_strong id, SEL, ...);
-void *objcjs_defineJSFunction(const char *name,
+void *cujs_defineJSFunction(const char *name,
                        JSFunctionBodyIMP body){
     ILOG(@"-%s %s %p",__PRETTY_FUNCTION__, name, body);
     Class superClass = [NSObject class];
     Class jsClass = objc_allocateClassPair(superClass, name, 16);
 
-    SEL bodySelector = @selector(_objcjs_body:);
+    SEL bodySelector = @selector(_cujs_body:);
     Method superBody = class_getInstanceMethod(superClass, bodySelector);
     assert(superBody);
     const char *enc = method_getTypeEncoding(superBody);
@@ -235,13 +235,13 @@ void *objcjs_defineJSFunction(const char *name,
     return jsClass;
 }
 
-void *objcjs_newJSObjectClass(void){
+void *cujs_newJSObjectClass(void){
     NSString *name = [NSString stringWithFormat:@"JSOBJ_%ld", random()];
     Class superClass = [NSObject class];
-    return objcjs_newSubclass(superClass, name);
+    return cujs_newSubclass(superClass, name);
 }
 
-void *objcjs_newSubclass(Class superClass, NSString *name){
+void *cujs_newSubclass(Class superClass, NSString *name){
     ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
     const char *className = name.cString;
     if (objc_getClass(className)) {
@@ -250,15 +250,15 @@ void *objcjs_newSubclass(Class superClass, NSString *name){
     
     Class jsClass = objc_allocateClassPair(superClass, className, 16);
     
-    Method superBody = class_getInstanceMethod(superClass, @selector(_objcjs_body:));
+    Method superBody = class_getInstanceMethod(superClass, @selector(_cujs_body:));
     IMP body = imp_implementationWithBlock(^(id _self, SEL cmd, ...){
         RuntimeException(@"object is not a function");
         return nil;
     });
-    class_addMethod(jsClass, @selector(_objcjs_body:), body, method_getTypeEncoding(superBody));
+    class_addMethod(jsClass, @selector(_cujs_body:), body, method_getTypeEncoding(superBody));
     
     const char *enc = method_getTypeEncoding(superBody);
-    class_addMethod(jsClass, @selector(_objcjs_body:), (IMP)body, enc);
+    class_addMethod(jsClass, @selector(_cujs_body:), (IMP)body, enc);
     objc_registerClassPair(jsClass);
     
     //Override dealloc and retain for debugging
@@ -287,7 +287,7 @@ BOOL ptrIsJSFunctionClass(void *ptr){
     return [objc_getAssociatedObject(ptr, JSFunctionTag) boolValue];
 }
 
-void *objcjs_assignProperty(id target,
+void *cujs_assignProperty(id target,
                             const char *name,
                             id value) {
     ILOG(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, [value class]);
@@ -314,7 +314,7 @@ void *objcjs_assignProperty(id target,
        
         Class valueClass = value;
         
-        Method valueMethod = class_getInstanceMethod(valueClass, @selector(_objcjs_body:));
+        Method valueMethod = class_getInstanceMethod(valueClass, @selector(_cujs_body:));
 
         SEL newSelector = sel_getUid(name);
         class_replaceMethod(targetClass, newSelector,
@@ -323,7 +323,7 @@ void *objcjs_assignProperty(id target,
         ILOG(@"added method with selector %s", sel_getName(newSelector));
     } else  {
         ILOG(@"add property");
-        BOOL status = [target objcjs_defineProperty:name];
+        BOOL status = [target cujs_defineProperty:name];
         ILOG(@"defined property: %d", status);
         char *setterName = setterNameFromPropertyName(name);
         [target performSelector:sel_getUid(setterName) withObject:value];
@@ -336,8 +336,8 @@ void *objcjs_assignProperty(id target,
 }
 
 
-void *objcjs_invoke(void *target, ...){
-    ILOG(@"objcjs_invoke(%p, ...)\n", target);
+void *cujs_invoke(void *target, ...){
+    ILOG(@"cujs_invoke(%p, ...)\n", target);
 
     if (!target) {
         RuntimeException(@"nil is not a function");
@@ -355,18 +355,18 @@ void *objcjs_invoke(void *target, ...){
     Class targetClass = nil;
     if (targetIsClass) {
         targetClass = target;
-        target = objcjs_GlobalScope;
+        target = cujs_GlobalScope;
         ILOG(@"global invocation %s \n", class_getName(targetClass));
-    } else if ([(id)target respondsToSelector:@selector(_objcjs_body:)]) {
+    } else if ([(id)target respondsToSelector:@selector(_cujs_body:)]) {
         targetClass = object_getClass(target);
         ILOG(@"instance of %s\n", class_getName(targetClass));
     } else {
-        RuntimeException(@"objcjs_invoke requires _objcjs_body:");
+        RuntimeException(@"cujs_invoke requires _cujs_body:");
     }
   
-    assert(targetClass && "objcjs_invoke on missing class:" && target);
+    assert(targetClass && "cujs_invoke on missing class:" && target);
     
-    SEL bodySel = @selector(_objcjs_body:);
+    SEL bodySel = @selector(_cujs_body:);
     va_list args;
     va_start(args, target);
     
@@ -410,110 +410,110 @@ void *objcjs_invoke(void *target, ...){
     return result;
 }
 
-@interface ObjCJSNaN : NSObject @end
-@implementation ObjCJSNaN @end
+@interface CUJSNaN : NSObject @end
+@implementation CUJSNaN @end
 
-@interface ObjCJSUndefined : NSObject @end
-@implementation ObjCJSUndefined @end
+@interface CUJSUndefined : NSObject @end
+@implementation CUJSUndefined @end
 
-id objcjs_NaN;
-id objcjs_Undefined;
-id objcjs_GlobalScope;
+id cujs_NaN;
+id cujs_Undefined;
+id cujs_GlobalScope;
 
 __attribute__((constructor))
-static void ObjCJSRuntimeInit(){
-    objcjs_NaN = [ObjCJSNaN class];
-    objcjs_Undefined = [ObjCJSUndefined class];
-    objcjs_GlobalScope = [NSObject new];
+static void CUJSRuntimeInit(){
+    cujs_NaN = [CUJSNaN class];
+    cujs_Undefined = [CUJSUndefined class];
+    cujs_GlobalScope = [NSObject new];
 }
 
-@implementation NSObject (ObjCJSOperators)
+@implementation NSObject (CUJSOperators)
 
-#define DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(SEL)\
+#define DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(SEL)\
 - SEL (id) value { \
     BOOL sameClass = [self isKindOfClass:[value class]] ||  [value isKindOfClass:[self class]]; \
     return sameClass ? [self SEL value] : @0; \
 }
 
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_add:)
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_subtract:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_multiply:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_divide:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_mod:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitor:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitxor:);
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_bitand:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_add:)
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_subtract:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_multiply:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_divide:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_mod:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_bitor:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_bitxor:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_bitand:);
 // "<<"
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftleft:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftleft:);
 // ">>"
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftright:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftright:);
 // ">>>"
-DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
+DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftrightright:);
 
-- objcjs_increment {
-    return objcjs_NaN;
+- cujs_increment {
+    return cujs_NaN;
 }
 
-- objcjs_decrement {
-    return objcjs_NaN;
+- cujs_decrement {
+    return cujs_NaN;
 }
 
-- (bool)objcjs_boolValue {
+- (bool)cujs_boolValue {
     return true;
 }
 
 @end
 
-@implementation NSNumber (ObjCJSOperators)
+@implementation NSNumber (CUJSOperators)
 
-- objcjs_add:(id)value {
+- cujs_add:(id)value {
     return @([self doubleValue] + [value doubleValue]);
 }
 
-- objcjs_subtract:(id)value {
+- cujs_subtract:(id)value {
     return @([self doubleValue] - [value doubleValue]);
 }
 
-- objcjs_multiply:(id)value {
+- cujs_multiply:(id)value {
     return @([self doubleValue] * [value doubleValue]);
 }
 
-- objcjs_divide:(id)value {
+- cujs_divide:(id)value {
     return @([self doubleValue] / [value doubleValue]);
 }
 
-- objcjs_mod:(id)value {
+- cujs_mod:(id)value {
     return @([self intValue] % [value intValue]);
 }
 
-- objcjs_bitor:(id)value {
+- cujs_bitor:(id)value {
     return @([self intValue] | [value intValue]);
 }
 
-- objcjs_bitxor:(id)value {
+- cujs_bitxor:(id)value {
     return @([self intValue] ^ [value intValue]);
 }
 
-- objcjs_bitand:(id)value {
+- cujs_bitand:(id)value {
     return @([self intValue] & [value intValue]);
 }
 
 // "<<"
-- objcjs_shiftleft:(id)value {
+- cujs_shiftleft:(id)value {
     return @([self intValue] << [value intValue]);
 }
 
 // ">>"
-- objcjs_shiftright:(id)value {
+- cujs_shiftright:(id)value {
     return @([self intValue] >> [value intValue]);
 }
 
 // ">>>"
-- objcjs_shiftrightright:(id)value {
+- cujs_shiftrightright:(id)value {
     return @(([self intValue] >> [value intValue]) | 0);
 }
 
-- objcjs_increment {
+- cujs_increment {
     if ([self objCType] == (const char *)'d') {
         return [NSNumber numberWithDouble:[self doubleValue] + 1.0];
     }
@@ -521,7 +521,7 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
     return [NSNumber numberWithInt:[self doubleValue] + 1];
 }
 
-- objcjs_decrement {
+- cujs_decrement {
     if ([self objCType] == (const char *)'d') {
         return [NSNumber numberWithDouble:[self doubleValue] - 1.0];
     }
@@ -529,39 +529,39 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
     return [NSNumber numberWithInt:[self doubleValue] - 1];
 }
 
-- (bool)objcjs_boolValue {
+- (bool)cujs_boolValue {
     return !![self intValue];
 }
 
 @end
 
-@implementation NSString (ObjCJSOperators)
+@implementation NSString (CUJSOperators)
 
-- (bool)objcjs_boolValue {
+- (bool)cujs_boolValue {
     return !![self length];
 }
 
 @end
 
-@implementation NSObject (ObjCJSSubscripting)
+@implementation NSObject (CUJSSubscripting)
 
-- (void)objcjs_addObject:(id)anObject {
+- (void)cujs_addObject:(id)anObject {
     ILOG(@"%s", __PRETTY_FUNCTION__);
 }
 
-- (void)objcjs_insertObject:(id)anObject atIndex:(id)index {
+- (void)cujs_insertObject:(id)anObject atIndex:(id)index {
     ILOG(@"%s", __PRETTY_FUNCTION__);
 }
 
-- (void)objcjs_removeLastObject {
+- (void)cujs_removeLastObject {
     ILOG(@"%s", __PRETTY_FUNCTION__);
 }
 
-- (void)objcjs_removeObjectAtIndex:(id)index {
+- (void)cujs_removeObjectAtIndex:(id)index {
     ILOG(@"%s", __PRETTY_FUNCTION__);
 }
 
-- (NSMutableDictionary *)_objcjs_keyed_properties {
+- (NSMutableDictionary *)_cujs_keyed_properties {
     static const char *KeyedPropertiesKey;
     NSMutableDictionary *keyedProperties = objc_getAssociatedObject(self, KeyedPropertiesKey);
     if (!keyedProperties) {
@@ -571,7 +571,7 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
     return keyedProperties;
 }
 
-- (void)objcjs_ss_setValue:(id)value forKey:(id)key {
+- (void)cujs_ss_setValue:(id)value forKey:(id)key {
     ILOG(@"%s %@[%@] = %@", __PRETTY_FUNCTION__, self, key, value);
     if ([key isKindOfClass:[NSString class]]) {
         char *setterName = setterNameFromPropertyName([key cString]);
@@ -581,15 +581,15 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
         if ([self respondsToSelector:setter]) {
             [self performSelector:setter withObject:value];
         } else {
-            [self _objcjs_keyed_properties][key] = value;
+            [self _cujs_keyed_properties][key] = value;
         }
         
     } else {
-        [self objcjs_ss_setValue:value forKey:[key stringValue]];
+        [self cujs_ss_setValue:value forKey:[key stringValue]];
     }
 }
 
-- (id)objcjs_ss_valueForKey:(id)index {
+- (id)cujs_ss_valueForKey:(id)index {
     ILOG(@"%s %@[%@]", __PRETTY_FUNCTION__, self, index);
     if ([index isKindOfClass:[NSString class]]) {
         char *getterName = [index cString];
@@ -599,22 +599,22 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
             return [self performSelector:getter];
         }
         
-        return [self _objcjs_keyed_properties][index];
+        return [self _cujs_keyed_properties][index];
     }
 
-    return [self objcjs_ss_valueForKey:[index stringValue]];
+    return [self cujs_ss_valueForKey:[index stringValue]];
 }
 
 @end
 
-@implementation NSObject (ObjCJSDebug)
+@implementation NSObject (CUJSDebug)
 
-- (void)objcjs_printMethods
+- (void)cujs_printMethods
 {
-    [self.class objcjs_printMethods];
+    [self.class cujs_printMethods];
 }
 
-+ (void)objcjs_printMethods
++ (void)cujs_printMethods
 {
      // Iterate over the class and all superclasses
     Class currentClass = [self class];
@@ -634,6 +634,6 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
 
 @end
 
-@implementation ObjCJSPrototype
+@implementation CUJSPrototype
 
 @end

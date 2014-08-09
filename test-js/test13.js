@@ -16,7 +16,7 @@ function foo(){
     NSLog("final %@", c.value)
 }
 
-function objcjs_main(a, b){
+function cujs_main(a, b){
     foo()
     //c will be deallocated
     foo()

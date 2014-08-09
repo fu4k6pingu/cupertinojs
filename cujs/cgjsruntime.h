@@ -1,13 +1,13 @@
 //
-//  objcjsruntime.h
-//  objcjs
+//  cujsruntime.h
+//  cujs
 //
 //  Created by Jerry Marino on 7/19/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef objcjs_objcjsruntime_h
-#define objcjs_objcjsruntime_h
+#ifndef cujs_cujsruntime_h
+#define cujs_cujsruntime_h
 
 #include <llvm/IR/DerivedTypes.h>
 #include <llvm/IR/IRBuilder.h>
@@ -18,12 +18,12 @@
 
 #include <set>
 
-namespace objcjs {
+namespace cujs {
     std::string ObjCSelectorToJS(std::string objCSelector);
     llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                              const std::string &VarName);
     llvm::Value *NewLocalStringVar(std::string value, llvm::Module *module);
-    llvm::Function *CGObjCJSFunction(size_t numParams,
+    llvm::Function *CGJSFunction(size_t numParams,
                                      std::string name,
                                      llvm::Module *mod);
     
@@ -36,10 +36,10 @@ namespace objcjs {
     
     void SetModuleCtor(llvm::Module *mod, llvm::Function *cTor);
     
-    class CGObjCJSRuntime {
+    class CGJSRuntime {
         std::set <std::string>  _builtins;
     public:
-        CGObjCJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
+        CGJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
         
         llvm::IRBuilder<> *_builder;
         llvm::Module *_module;

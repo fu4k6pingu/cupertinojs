@@ -1,19 +1,19 @@
 //
-//  objcjscompiler.h
-//  objcjs
+//  cujscompiler.h
+//  cujs
 //
 //  Created by Jerry Marino on 7/26/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#ifndef objcjs_compiler_h
-#define objcjs_compiler_h
+#ifndef cujs_compiler_h
+#define cujs_compiler_h
 
 #include <string>
 #include <vector>
 #include <iostream>
 
-namespace objcjs {
+namespace cujs {
     class CompilerOptions{
     public:
         std::string _runtimePath;

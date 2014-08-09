@@ -1,14 +1,14 @@
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUILD_DIR := $(ROOT_DIR)/build/Debug-iphonesimulator
 
-OBJCJS=/usr/local/bin/objcjs
+CUJS=/usr/local/bin/cujs
 SOURCES = todoie.js
 
 all: post-build
 
-BUILD_SCRIPT = $(BUILD_DIR)/objcjs-build.sh
+BUILD_SCRIPT = $(BUILD_DIR)/cujs-build.sh
 
-# objcjs compiles javascript to .s
+# cujs compiles javascript to .s
 js-build:
 		if [ -a $(BUILD_SCRIPT) ] ;\
 			then \
@@ -17,17 +17,17 @@ js-build:
 
 		mkdir -p $(BUILD_DIR)\ ; 
 
-		@echo export OBJCJS_ENV_BUILD_DIR="$(ROOT_DIR)/build/Debug-iphonesimulator/" >> $(BUILD_SCRIPT)
+		@echo export CUJS_ENV_BUILD_DIR="$(ROOT_DIR)/build/Debug-iphonesimulator/" >> $(BUILD_SCRIPT)
 
 # Don't dump bitcode
-#		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
+#		@echo export CUJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
 
         # compile for simulator
-		@echo export OBJCJS_ENV_MTRIPEL="-mtriple=i386-unknown-ios" >> $(BUILD_SCRIPT)
+		@echo export CUJS_ENV_MTRIPEL="-mtriple=i386-unknown-ios" >> $(BUILD_SCRIPT)
 
-		@echo export OBJCJS_ENV_PROJECT_ROOT_DIR=$(ROOT_DIR) >> $(BUILD_SCRIPT)
+		@echo export CUJS_ENV_PROJECT_ROOT_DIR=$(ROOT_DIR) >> $(BUILD_SCRIPT)
 
-		@echo $(OBJCJS) $(SOURCES) >> $(BUILD_SCRIPT)
+		@echo $(CUJS) $(SOURCES) >> $(BUILD_SCRIPT)
 		chmod +x $(BUILD_SCRIPT)
 		$(BUILD_SCRIPT)
 

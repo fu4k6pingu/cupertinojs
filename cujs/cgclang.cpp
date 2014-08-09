@@ -1,19 +1,19 @@
 //
-//  cgobjcjsclang.cpp
-//  objcjs
+//  cgjsclang.cpp
+//  cujs
 //
 //  Created by Jerry Marino on 8/2/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#include "objcjsutils.h"
-#include "cgobjcjsclang.h"
+#include "cujsutils.h"
+#include "cgclang.h"
 #include <clang-c/Index.h>
 
-#define CGObjCJSDEBUG 0
-#define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
+#define CGJSDEBUG 0
+#define ILOG(A, ...) if (CGJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
-using namespace objcjs;
+using namespace cujs;
 
 ObjCClass::ObjCClass(std::string name) {
     _name = name;
@@ -26,7 +26,7 @@ void printCursorTokens(CXTranslationUnit translationUnit,CXCursor currentCursor)
 CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 CXChildVisitResult functionDeclVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 
-static std::string ENV_PROJECT_ROOT_DIR("OBJCJS_ENV_PROJECT_ROOT_DIR");
+static std::string ENV_PROJECT_ROOT_DIR("CUJS_ENV_PROJECT_ROOT_DIR");
 
 ClangFile::ClangFile(std::string name) {
     _name = name;

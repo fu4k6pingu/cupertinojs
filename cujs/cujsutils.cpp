@@ -1,16 +1,16 @@
 //
-//  objcjsutils.cpp
-//  objcjs
+//  cujsutils.cpp
+//  cujs
 //
 //  Created by Jerry Marino on 8/4/14.
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#include "objcjsutils.h"
+#include "cujsutils.h"
 
-using namespace objcjs;
+using namespace cujs;
 
-std::string objcjs::string_format(const std::string fmt_str, ...) {
+std::string cujs::string_format(const std::string fmt_str, ...) {
     int final_n, n = ((int)fmt_str.size()) * 2; /* reserve 2 times as much as the length of the fmt_str */
     std::string str;
     std::unique_ptr<char[]> formatted;
@@ -29,7 +29,7 @@ std::string objcjs::string_format(const std::string fmt_str, ...) {
     return std::string(formatted.get());
 }
 
-std::vector<std::string> &objcjs::split(const std::string &s, char delim, std::vector<std::string> &elems) {
+std::vector<std::string> &cujs::split(const std::string &s, char delim, std::vector<std::string> &elems) {
     std::stringstream ss(s);
     std::string item;
     while (std::getline(ss, item, delim)) {
@@ -38,13 +38,13 @@ std::vector<std::string> &objcjs::split(const std::string &s, char delim, std::v
     return elems;
 }
 
-std::vector<std::string> objcjs::split(const std::string &s, char delim) {
+std::vector<std::string> cujs::split(const std::string &s, char delim) {
     std::vector<std::string> elems;
-    objcjs::split(s, delim, elems);
+    cujs::split(s, delim, elems);
     return elems;
 }
 
-std::string objcjs::get_env_var(std::string const & key ) {
+std::string cujs::get_env_var(std::string const & key ) {
     char * val;
     val = getenv( key.c_str() );
     std::string retval = "";

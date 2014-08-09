@@ -62,7 +62,7 @@ function runtests(){
     NSLog("assignBitShiftRightRight  %@", testAssignBitShiftRightRight(10, 1))
 }
 
-function objcjs_main(a, b){
+function cujs_main(a, b){
     runtests()
     return 0
 }
