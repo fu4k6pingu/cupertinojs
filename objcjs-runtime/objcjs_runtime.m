@@ -13,7 +13,8 @@
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
-#define ObjCJSRuntimeDEBUG 0
+//FIXME : assert VA_ARGS if not enabled 
+#define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
 
@@ -56,17 +57,10 @@ static NSMutableDictionary *ObjCJSParents = NULL;
     return ObjCJSParents[NSStringFromClass(self.class)];
 }
 
-//TODO : undefined!
 - (id)_objcjs_body:(id)args, ... {
-    return @"JSFUNCTION-DEFAULT-BODY-RETURN";
+    return objcjs_Undefined;
 }
 
-//TODO : safely swizzle this on
-- (NSNumber *)length {
-    return @0;
-}
-
-//FIXME :
 BOOL objcjs_isRestrictedProperty(const char *propertyName){
     if (strcmp("version", propertyName)) {
         return NO;
@@ -181,7 +175,6 @@ char *setterNameFromPropertyName(const char *propertyName){
 static const char *NSObjectPrototypeKey;
 
 + (id)prototype {
-    NSLog(@"%s", __PRETTY_FUNCTION__);
     ObjCJSPrototype *prototype = objc_getAssociatedObject(self, NSObjectPrototypeKey);
     if (!prototype) {
         prototype = [[ObjCJSPrototype new] retain];
