@@ -49,7 +49,7 @@ ClangFile::ClangFile(std::string name) {
     };
    
     std::string rootDir = get_env_var(ENV_PROJECT_ROOT_DIR);
-    std::string file = string_format("%s%s", rootDir.c_str(), name.c_str());
+    std::string file = string_format("%s/%s", rootDir.c_str(), name.c_str());
    
     int numArgs = sizeof(args) / sizeof(*args);
     CXTranslationUnit translationUnit = clang_parseTranslationUnit(index, file.c_str(), args, numArgs, NULL, 0, CXTranslationUnit_None);

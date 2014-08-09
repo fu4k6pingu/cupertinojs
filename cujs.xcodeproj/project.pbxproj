@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C50C700319969ECB00FC00C8 /* cujs.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = C5D6F7F419969601007E3ED3 /* cujs.1 */; };
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
 		C521AB301991E89300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
 		C53C8BFD197664AD00335186 /* cujs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* cujs-runtime.dylib */; };
@@ -209,7 +208,6 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				C50C700319969ECB00FC00C8 /* cujs.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
@@ -1190,7 +1188,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
-				DSTROOT = /usr/local/bin;
+				DSTROOT = /;
 				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;

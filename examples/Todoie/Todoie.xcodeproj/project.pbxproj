@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		C519D3DF1995E7CE0076D56A /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C519D3DE1995E7CE0076D56A /* Makefile */; };
 		C521AA7F1991E4B300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA7E1991E4B300948556 /* Foundation.framework */; };
 		C521AA811991E4B300948556 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA801991E4B300948556 /* CoreGraphics.framework */; };
 		C521AA831991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
@@ -18,7 +17,7 @@
 		C521AA9A1991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
 		C521AAA21991E4B300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AAA01991E4B300948556 /* InfoPlist.strings */; };
 		C521AAA41991E4B300948556 /* TodoieTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AAA31991E4B300948556 /* TodoieTests.m */; };
-		C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */; };
+		C52DC1D51996AEEC004E0BE8 /* libcujs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C52DC1D41996AEEC004E0BE8 /* libcujs-runtime-ios.a */; };
 		C56206BF1991F6B600646947 /* todoie.s in Sources */ = {isa = PBXBuildFile; fileRef = C56206BE1991F6B600646947 /* todoie.s */; };
 		C5C6B8731995FCB600490AB5 /* UIKit+CUJS.m in Sources */ = {isa = PBXBuildFile; fileRef = C5C6B8721995FCB600490AB5 /* UIKit+CUJS.m */; };
 /* End PBXBuildFile section */
@@ -30,6 +29,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = C521AA7A1991E4B300948556;
 			remoteInfo = Todoie;
+		};
+		C52DC1C21996A8B9004E0BE8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C521AA731991E4B300948556 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C578A6E5199347CA0071F353;
+			remoteInfo = CompileJS;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -49,6 +55,8 @@
 		C521AAA11991E4B300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C521AAA31991E4B300948556 /* TodoieTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TodoieTests.m; sourceTree = "<group>"; };
 		C521AB671991E93200948556 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphoneos/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
+		C52DC1D21996AED6004E0BE8 /* libcujs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = file; name = "libcujs-runtime-ios.a"; path = "../../build/Debug-iphoneos/libcujs-runtime-ios.a"; sourceTree = "<group>"; };
+		C52DC1D41996AEEC004E0BE8 /* libcujs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libcujs-runtime-ios.a"; path = "../../build/Debug-iphonesimulator/libcujs-runtime-ios.a"; sourceTree = "<group>"; };
 		C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphonesimulator/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
 		C56206B81991EE9A00646947 /* todoie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = todoie.js; sourceTree = "<group>"; };
 		C56206BD1991F64500646947 /* imports.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imports.h; sourceTree = "<group>"; };
@@ -62,7 +70,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */,
+				C52DC1D51996AEEC004E0BE8 /* libcujs-runtime-ios.a in Frameworks */,
 				C521AA811991E4B300948556 /* CoreGraphics.framework in Frameworks */,
 				C521AA831991E4B300948556 /* UIKit.framework in Frameworks */,
 				C521AA7F1991E4B300948556 /* Foundation.framework in Frameworks */,
@@ -105,6 +113,8 @@
 		C521AA7D1991E4B300948556 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C52DC1D41996AEEC004E0BE8 /* libcujs-runtime-ios.a */,
+				C52DC1D21996AED6004E0BE8 /* libcujs-runtime-ios.a */,
 				C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */,
 				C521AB671991E93200948556 /* libobjcjs-runtime-ios.a */,
 				C521AA7E1991E4B300948556 /* Foundation.framework */,
@@ -189,6 +199,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				C52DC1C31996A8B9004E0BE8 /* PBXTargetDependency */,
 			);
 			name = Todoie;
 			productName = Todoie;
@@ -278,7 +289,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Xcode reads the output of this which isn't a good idea to use\n#cd ${SRCROOT}/Todoie && make\n\n";
+			shellScript = "# Xcode reads the output of this which isn't a good idea to use\n# (use external build system 'CompileJS' for now\n# cd ${SRCROOT}/Todoie && make\n\n\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -287,7 +298,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C519D3DF1995E7CE0076D56A /* Makefile in Sources */,
 				C5C6B8731995FCB600490AB5 /* UIKit+CUJS.m in Sources */,
 				C56206BF1991F6B600646947 /* todoie.s in Sources */,
 			);
@@ -308,6 +318,11 @@
 			isa = PBXTargetDependency;
 			target = C521AA7A1991E4B300948556 /* Todoie */;
 			targetProxy = C521AA9B1991E4B300948556 /* PBXContainerItemProxy */;
+		};
+		C52DC1C31996A8B9004E0BE8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C578A6E5199347CA0071F353 /* CompileJS */;
+			targetProxy = C52DC1C21996A8B9004E0BE8 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -418,7 +433,7 @@
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"../../build/Debug-iphonesimulator/**",
+					"../../build/Debug-iphonesimulator",
 				);
 				OTHER_LDFLAGS = (
 					"-all_load",
@@ -444,7 +459,7 @@
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"../../build/Debug-iphonesimulator/**",
+					"../../build/Debug-iphonesimulator",
 				);
 				OTHER_LDFLAGS = (
 					"-all_load",
