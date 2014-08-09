@@ -12,7 +12,6 @@
 		C521AA811991E4B300948556 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA801991E4B300948556 /* CoreGraphics.framework */; };
 		C521AA831991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
 		C521AA891991E4B300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AA871991E4B300948556 /* InfoPlist.strings */; };
-		C521AA8B1991E4B300948556 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AA8A1991E4B300948556 /* main.m */; };
 		C521AA911991E4B300948556 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C521AA901991E4B300948556 /* Images.xcassets */; };
 		C521AA981991E4B300948556 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA971991E4B300948556 /* XCTest.framework */; };
 		C521AA991991E4B300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA7E1991E4B300948556 /* Foundation.framework */; };
@@ -21,6 +20,7 @@
 		C521AAA41991E4B300948556 /* TodoieTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AAA31991E4B300948556 /* TodoieTests.m */; };
 		C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */; };
 		C56206BF1991F6B600646947 /* todoie.s in Sources */ = {isa = PBXBuildFile; fileRef = C56206BE1991F6B600646947 /* todoie.s */; };
+		C5C6B8731995FCB600490AB5 /* UIKit+ObjCJS.m in Sources */ = {isa = PBXBuildFile; fileRef = C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,7 +41,6 @@
 		C521AA821991E4B300948556 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		C521AA861991E4B300948556 /* Todoie-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Todoie-Info.plist"; sourceTree = "<group>"; };
 		C521AA881991E4B300948556 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		C521AA8A1991E4B300948556 /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		C521AA8C1991E4B300948556 /* Todoie-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Todoie-Prefix.pch"; sourceTree = "<group>"; };
 		C521AA901991E4B300948556 /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Images.xcassets; sourceTree = "<group>"; };
 		C521AA961991E4B300948556 /* TodoieTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TodoieTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -54,6 +53,8 @@
 		C56206B81991EE9A00646947 /* todoie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = todoie.js; sourceTree = "<group>"; };
 		C56206BD1991F64500646947 /* imports.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imports.h; sourceTree = "<group>"; };
 		C56206BE1991F6B600646947 /* todoie.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; name = todoie.s; path = "build/Debug-iphonesimulator/todoie.s"; sourceTree = SOURCE_ROOT; };
+		C5C6B8711995FCB600490AB5 /* UIKit+ObjCJS.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIKit+ObjCJS.h"; sourceTree = "<group>"; };
+		C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIKit+ObjCJS.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -121,6 +122,8 @@
 				C56206BD1991F64500646947 /* imports.h */,
 				C56206B81991EE9A00646947 /* todoie.js */,
 				C521AA901991E4B300948556 /* Images.xcassets */,
+				C5C6B8711995FCB600490AB5 /* UIKit+ObjCJS.h */,
+				C5C6B8721995FCB600490AB5 /* UIKit+ObjCJS.m */,
 				C521AA851991E4B300948556 /* Supporting Files */,
 			);
 			path = Todoie;
@@ -131,7 +134,6 @@
 			children = (
 				C521AA861991E4B300948556 /* Todoie-Info.plist */,
 				C521AA871991E4B300948556 /* InfoPlist.strings */,
-				C521AA8A1991E4B300948556 /* main.m */,
 				C521AA8C1991E4B300948556 /* Todoie-Prefix.pch */,
 			);
 			name = "Supporting Files";
@@ -286,7 +288,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C519D3DF1995E7CE0076D56A /* Makefile in Sources */,
-				C521AA8B1991E4B300948556 /* main.m in Sources */,
+				C5C6B8731995FCB600490AB5 /* UIKit+ObjCJS.m in Sources */,
 				C56206BF1991F6B600646947 /* todoie.s in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

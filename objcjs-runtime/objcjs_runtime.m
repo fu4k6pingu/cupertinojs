@@ -13,7 +13,7 @@
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"OBJCJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
-//FIXME : assert VA_ARGS if not enabled 
+//FIXME : assert VA_ARGS if not enabled
 #define ObjCJSRuntimeDEBUG 1
 #define ILOG(A, ...){if(ObjCJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
