@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C519D3DF1995E7CE0076D56A /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C519D3DE1995E7CE0076D56A /* Makefile */; };
 		C521AA7F1991E4B300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA7E1991E4B300948556 /* Foundation.framework */; };
 		C521AA811991E4B300948556 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA801991E4B300948556 /* CoreGraphics.framework */; };
 		C521AA831991E4B300948556 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AA821991E4B300948556 /* UIKit.framework */; };
@@ -19,7 +20,6 @@
 		C521AAA21991E4B300948556 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C521AAA01991E4B300948556 /* InfoPlist.strings */; };
 		C521AAA41991E4B300948556 /* TodoieTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C521AAA31991E4B300948556 /* TodoieTests.m */; };
 		C56206B61991EA3E00646947 /* libobjcjs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */; };
-		C56206BC1991F43700646947 /* Makefile in Sources */ = {isa = PBXBuildFile; fileRef = C56206BB1991F43700646947 /* Makefile */; };
 		C56206BF1991F6B600646947 /* todoie.s in Sources */ = {isa = PBXBuildFile; fileRef = C56206BE1991F6B600646947 /* todoie.s */; };
 /* End PBXBuildFile section */
 
@@ -34,6 +34,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		C519D3DE1995E7CE0076D56A /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C521AA7B1991E4B300948556 /* Todoie.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Todoie.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AA7E1991E4B300948556 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C521AA801991E4B300948556 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -51,7 +52,6 @@
 		C521AB671991E93200948556 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphoneos/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
 		C56206B51991EA3E00646947 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = "libobjcjs-runtime-ios.a"; path = "../../build/Debug-iphonesimulator/libobjcjs-runtime-ios.a"; sourceTree = "<group>"; };
 		C56206B81991EE9A00646947 /* todoie.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = todoie.js; sourceTree = "<group>"; };
-		C56206BB1991F43700646947 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C56206BD1991F64500646947 /* imports.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = imports.h; sourceTree = "<group>"; };
 		C56206BE1991F6B600646947 /* todoie.s */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.asm; name = todoie.s; path = "build/Debug-iphonesimulator/todoie.s"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -84,6 +84,7 @@
 		C521AA721991E4B300948556 = {
 			isa = PBXGroup;
 			children = (
+				C519D3DE1995E7CE0076D56A /* Makefile */,
 				C521AA841991E4B300948556 /* Todoie */,
 				C521AA9D1991E4B300948556 /* TodoieTests */,
 				C521AA7D1991E4B300948556 /* Frameworks */,
@@ -117,7 +118,6 @@
 			isa = PBXGroup;
 			children = (
 				C56206BE1991F6B600646947 /* todoie.s */,
-				C56206BB1991F43700646947 /* Makefile */,
 				C56206BD1991F64500646947 /* imports.h */,
 				C56206B81991EE9A00646947 /* todoie.js */,
 				C521AA901991E4B300948556 /* Images.xcassets */,
@@ -165,7 +165,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = "${SRCROOT}/Todoie";
+			buildWorkingDirectory = "${PROJECT_DIR}";
 			dependencies = (
 			);
 			name = CompileJS;
@@ -276,7 +276,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Xcode reads the output of this which isn't a good idea to use\ncd ${SRCROOT}/Todoie && make\n\n";
+			shellScript = "# Xcode reads the output of this which isn't a good idea to use\n#cd ${SRCROOT}/Todoie && make\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -285,7 +285,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C56206BC1991F43700646947 /* Makefile in Sources */,
+				C519D3DF1995E7CE0076D56A /* Makefile in Sources */,
 				C521AA8B1991E4B300948556 /* main.m in Sources */,
 				C56206BF1991F6B600646947 /* todoie.s in Sources */,
 			);

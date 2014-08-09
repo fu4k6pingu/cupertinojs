@@ -1,11 +1,11 @@
 ROOT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUILDDIR := /tmp/objcjs-test
+BUILD_DIR := /tmp/objcjs-test
 
 SOURCES = test.js
 
 all: post-build
 
-BUILD_SCRIPT = $(BUILDDIR)/build.sh
+BUILD_SCRIPT = $(BUILD_DIR)/build.sh
 
 # objcjs compiles javascript to .s
 js-build:
@@ -13,9 +13,10 @@ js-build:
 			then \
 			rm -rf $(BUILD_SCRIPT); \
 		fi
-		mkdir -p $(BUILDDIR) ; \
 
-		@echo export OBJCJS_ENV_BUILD_DIR=$(BUILDDIR) >> $(BUILD_SCRIPT)
+		mkdir -p $(BUILD_DIR) ; 
+
+		@echo export OBJCJS_ENV_BUILD_DIR=$(BUILD_DIR) >> $(BUILD_SCRIPT)
 
 # Don't enable compiler debug (bitcode dump)
 #		@echo export OBJCJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
@@ -34,7 +35,7 @@ post-build:	main-build
 	@echo BUILD_SUCCEEDED!
 
 clean:
-	rm -rf $(BUILDDIR)
+	rm -rf $(BUILD_DIR)
 
 run: js-build
-	$(BUILDDIR)/objcjsapp
+	$(BUILD_DIR)/objcjsapp
