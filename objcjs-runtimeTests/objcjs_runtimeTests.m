@@ -84,8 +84,6 @@ id impl3(id instance,
     
     XCTAssertTrue(f, @"It creates a subclass");
     XCTAssertTrue(calledBody, @"It creates a subclass");
-   
-    //TODO : test the impl of body
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
 }
 

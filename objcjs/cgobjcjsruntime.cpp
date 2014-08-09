@@ -91,46 +91,6 @@ llvm::Function *objcjs::CGObjCJSFunction(size_t numParams,
     return llvm::Function::Create(FT, llvm::Function::ExternalLinkage, name, mod);
 }
 
-__attribute__((unused))
-llvm::Function *ObjcCodeGenMainPrototype(llvm::IRBuilder<>*builder,
-                                         llvm::Module *module,
-                                         CGObjCJSRuntime *runtime) {
-    std::vector<llvm::Type*> argumentTypes;
-    
-    llvm::FunctionType *functionType = llvm::FunctionType::get(
-                                                        llvm::Type::getInt32Ty(module->getContext()),
-                                                        argumentTypes,
-                                                        false);
-    
-    llvm::Function *function = llvm::Function::Create(
-                                                  functionType,
-                                                  llvm::Function::ExternalLinkage,
-                                                  llvm::Twine("main"),
-                                                  module);
-    
-    function->setCallingConv(llvm::CallingConv::C);
-    
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    builder->SetInsertPoint(BB);
-    
-    ObjcCodeGenFunction(2, std::string("objcjs_main"), module);
-
-    auto pool = runtime->messageSend(runtime->classNamed("NSAutoreleasePool"), "new");
-    //TODO : pass arguments from main
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(ObjcNullPointer());
-    ArgsV.push_back(ObjcNullPointer());
-    
-    builder->CreateCall(module->getFunction("objcjs_main"), ArgsV);
-
-    runtime->messageSend(pool, "drain");
-    
-    auto zeroInt = llvm::ConstantInt::get(llvm::getGlobalContext(), llvm::APInt(32, 0));
-    builder->CreateRet(zeroInt);
-    builder->saveAndClearIP();
-    return function;
-}
-
 llvm::Function *objcjs::ObjcCodeGenModuleInit(llvm::IRBuilder<>*builder,
                                       llvm::Module *module,
                                       std::string name) {
@@ -207,7 +167,6 @@ void objcjs::SetModuleCtor(llvm::Module *module, llvm::Function *cTor){
     gvar_array_llvm_global_ctors->setInitializer(const_array);
 }
 
-//TODO : explicitly specifiy varargs
 #define DefExternFucntion(name){\
 {\
     std::vector<llvm::Type*> ArgumentTypes; \
@@ -275,12 +234,7 @@ static llvm::Function *ObjcMallocPrototype(llvm::Module *module) {
 llvm::Value *objcjs::NewLocalStringVar(const char* data,
                             size_t len,
                             llvm::Module *module) {
-//    auto exisitingString = module->getGlobalVariable(llvm::StringRef(data), true);
-//    if (exisitingString){
-//        return exisitingString;
-//    }
     llvm::Constant *constTy = llvm::ConstantDataArray::getString(llvm::getGlobalContext(), data);
-    //We are adding an extra space for the null terminator!
     auto type = llvm::ArrayType::get(llvm::IntegerType::get(llvm::getGlobalContext(), 8), len + 1);
     llvm::GlobalVariable *var = new llvm::GlobalVariable(*module,
                                                          type,
@@ -304,37 +258,6 @@ llvm::Value *objcjs::NewLocalStringVar(std::string value,
     return objcjs::NewLocalStringVar(value.c_str(), value.size(), module);
 }
 
-//TODO : move to native JS
-static llvm::Function *ObjcCOutPrototype(llvm::IRBuilder<>*builder,
-                                         llvm::Module *module) {
-    std::vector<llvm::Type*> ArgumentTypes(1, ObjcPointerTy());
-    
-    llvm::FunctionType *FT = llvm::FunctionType::get(llvm::Type::getDoubleTy(llvm::getGlobalContext()),
-                                         ArgumentTypes, true);
-   
-    auto function = llvm::Function::Create(FT, llvm::Function::ExternalLinkage, llvm::Twine("objcjs_cout"), module);
-    
-    
-    llvm::BasicBlock *BB = llvm::BasicBlock::Create(module->getContext(), "entry", function);
-    builder->SetInsertPoint(BB);
-    
-    llvm::Function::arg_iterator argIterator = function->arg_begin();
-    
-    auto *alloca  = builder->CreateAlloca(ObjcPointerTy(), 0, std::string("varr"));
-    builder->CreateStore(argIterator, alloca);
-
-    llvm::Value *localVarValue = builder->CreateLoad(alloca, false, std::string("varr"));
-
-    std::vector<llvm::Value*> ArgsV;
-    ArgsV.push_back(localVarValue);
-    builder->CreateCall(module->getFunction("NSLog"), ArgsV);
-    
-    auto zero = llvm::ConstantFP::get(llvm::getGlobalContext(), llvm::APFloat(0.0));
-    builder->CreateRet(zero);
-    builder->saveAndClearIP();
-    return function;
-}
-
 #pragma mark - Runtime calls
 
 CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
@@ -351,16 +274,15 @@ CGObjCJSRuntime::CGObjCJSRuntime(llvm::IRBuilder<> *builder,
     DefExternFucntion("objcjs_invoke");
     DefExternFucntion("objcjs_defineJSFunction");
    
-    ObjcCodeGenFunction(0, "objc_msgSend", _module, true);
     ObjcCodeGenFunction(0, "objcjs_newJSObjectClass", _module);
-    ObjcCodeGenFunction(1, std::string("objcjs_increment"), _module);
-    ObjcCodeGenFunction(1, std::string("objcjs_decrement"), _module);
-    ObjcCodeGenFunction(3, std::string("objcjs_assignProperty"), _module);
+    ObjcCodeGenFunction(3, "objcjs_assignProperty", _module);
+
+    //Objc runtim
+    ObjcCodeGenFunction(0, "objc_msgSend", _module, true);
     
     ObjcMsgSendFPret(_module);
     ObjcMallocPrototype(_module);
     ObjcNSLogPrototye(_module);
-    ObjcCOutPrototype(_builder, _module);
 }
 
 llvm::Value *CGObjCJSRuntime::newString(std::string string){

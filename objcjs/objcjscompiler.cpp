@@ -34,7 +34,6 @@ using namespace v8::internal;
 using namespace objcjs;
 
 
-//TODO : determine distro for llvm
 const char *LLVM_LLC_PATH = "/usr/local/Cellar/llvm/3.4/bin/llc";
 
 const char *COMPILE_ENV_BUILD_DIR = "OBJCJS_ENV_BUILD_DIR";
@@ -83,12 +82,6 @@ int objcjs::CompilerOptions::validate(){
         std::cout << "no input files \n";
         return 0;
     }
-    
-//FIXME: this is only necessary when performing complete build with clang
-//    if(!_runtimePath.length()){
-//        std::cout << "missing runtime path \n";
-//        return 0;
-//    }
     
     if(!_buildDir.length()){
         std::cout << "missing build dir \n";
@@ -178,11 +171,6 @@ CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_h
     return info;
 }
 
-void runModule(llvm::Module module){
-//    llvm::ExecutionEngine *engine = llvm::EngineBuilder(module).create();
-//    engine->runFunction(main_func, std::vector<llvm::GenericValue>());
-}
-
 std::string objcjs::Compiler::compileModule(v8::Isolate *isolate, std::string filePath){
     std::string buildDir = get_env_var(COMPILE_ENV_BUILD_DIR);
     std::string fileName = split(filePath, '/').back();
@@ -234,7 +222,6 @@ void objcjs::Compiler::run(){
     }
 
     if (options._createExecutable){
-//        
         std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/objcjsapp",
                                              options._runtimePath.c_str(),
                                              sFiles.c_str(),

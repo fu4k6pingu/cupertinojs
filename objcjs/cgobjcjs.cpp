@@ -306,11 +306,7 @@ void CGObjCJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node)
 void CGObjCJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
     auto anonName = _nameByFunctionID[node->id().ToInt()];
     std::string name = anonName.length() ? anonName : stringFromV8AstRawString(node->raw_name());
-
-    if (!name.length()){
-        ILOG("TODO: support unnamed functions");
-        abort();
-    }
+    assert(name.length() && "missing function name");
 
     bool isJSFunction = SymbolIsJSFunction(name);
     if (isJSFunction) {
@@ -987,7 +983,6 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
             break;
         }
         case KEYED_PROPERTY: {
-            //TODO :
             UNIMPLEMENTED();
             break;
         }
