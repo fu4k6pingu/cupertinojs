@@ -1235,7 +1235,7 @@
 				CLANG_CXX_LIBRARY = "compiler-default";
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
-				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
+				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -1259,10 +1259,6 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"$(SRCROOT)/deps/v8-trunk",
-					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
-					"$(SRCROOT)/deps/v8-trunk/include",
-					/usr/local/Cellar/llvm/3.4/include,
 				);
 				INSTALL_PATH = /usr/local/bin;
 				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
@@ -1270,13 +1266,22 @@
 					"$(inherited)",
 					/usr/local/Cellar/llvm/3.4/include,
 					/usr/local/Cellar/llvm/3.4/lib,
-					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
 				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
+					"-isystem-prefix",
+					llvm/,
+					"-isystem",
+					/usr/local/Cellar/llvm/3.4/include,
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk",
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk/include",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -1285,7 +1290,7 @@
 				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = x86_64;
 			};
 			name = Debug;
@@ -1299,7 +1304,7 @@
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /usr/local/bin;
-				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
+				FRAMEWORK_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -1322,10 +1327,6 @@
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
-					"$(SRCROOT)/deps/v8-trunk",
-					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
-					"$(SRCROOT)/deps/v8-trunk/include",
-					/usr/local/Cellar/llvm/3.4/include,
 				);
 				INSTALL_PATH = /usr/local/bin;
 				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
@@ -1333,7 +1334,6 @@
 					"$(inherited)",
 					/usr/local/Cellar/llvm/3.4/include,
 					/usr/local/Cellar/llvm/3.4/lib,
-					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
 				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
@@ -1341,6 +1341,16 @@
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
+					"-isystem-prefix",
+					llvm/,
+					"-isystem",
+					/usr/local/Cellar/llvm/3.4/include,
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk",
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk/third_party/icu/source/common",
+					"-isystem",
+					"$(SRCROOT)/deps/v8-trunk/include",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -1349,7 +1359,7 @@
 				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
-				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
+				USER_HEADER_SEARCH_PATHS = "";
 				VALID_ARCHS = x86_64;
 			};
 			name = Release;
