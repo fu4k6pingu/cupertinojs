@@ -30,34 +30,59 @@ function Rect(x, y, width, height){
 }
 
 function OnLoad(){
-    function DidFinishLaunching(application, options){
-        //Initialize the app delegate
-        var appFrame = Rect(0, 0, 320, 480)
-
-        var window = UIWindow.alloc.initWithFrameValue(appFrame)
-        window.makeKeyAndVisible()
-        
-        // assigning a property with a value
-        // will invoke the setter on the receiver
-        this.window = window
-       
+    var TodoListViewController = UIViewController.extend("TodoListViewController")
+   
+    TodoListViewController.prototype.viewDidLoad = function(){
+        this.setValueForKey(0, "automaticallyAdjustsScrollViewInsets")
+    }
+    
+    TodoListViewController.prototype.loadView = function(){
         this.fruits = ["apples", "banannas", "oranges"]
         
-        var tableView = UITableView.alloc.initWithFrameValue(appFrame)
+        var tableView = UITableView.alloc.initWithFrameValue(Rect(0, 0, 320, 480))
+       
         tableView.registerClassForCellReuseIdentifier(UITableViewCell.class, "FruitCell")
         tableView.delegate = this
         tableView.dataSource = this
         tableView.separatorColor = UIColor.clearColor
         
-        var header = UILabel.alloc.initWithFrameValue(Rect(0, 0, 320, 50))
-        header.text = "Shopping list"
-        header.setTextAlignment(ObjCInt(1))
-        tableView.tableHeaderView = header
-        
-        this.tableView = tableView
-
-        window.addSubview(tableView)
+        this.view = tableView
     }
+    
+    TodoListViewController.prototype.dealloc = function(){
+        this.view.dataSource = null;
+        this.view.delegate = null;
+    }
+    
+    // UITableViewDataSource
+    TodoListViewController.prototype.tableViewNumberOfRowsInSection = function(tableView, section){
+        return ObjCInt(3)
+    }
+    
+    TodoListViewController.prototype.numberOfSectionsInTableView = function(tableView){
+        return ObjCInt(1)
+    }
+    
+    TodoListViewController.prototype.tableViewCellForRowAtIndexPath = function(tableView, indexPath){
+        var cell = tableView.dequeueReusableCellWithIdentifier("FruitCell")
+        //A JS array is indexed by objects
+        var fruit = this.fruits[Number(indexPath.row)]
+        var textLabel = cell.textLabel
+        cell.textLabel.text = fruit
+        return cell
+    }
+    
+    function DidFinishLaunching(application, options){
+        //Initialize the app delegate
+
+        // assigning a property with a value
+        // will invoke the setter on the receiver
+        var window = UIWindow.alloc.initWithFrameValue(Rect(0, 0, 320, 480))
+        this.window = window.retain
+
+        window.rootViewController = UINavigationController.alloc.initWithRootViewController(TodoListViewController.alloc.init)
+        window.makeKeyAndVisible()
+   }
 
     function AppDelegate(){}
 
@@ -70,29 +95,6 @@ function OnLoad(){
     // to be implemented
     
     AppDelegate.prototype.applicationDidFinishLaunchingWithOptions = DidFinishLaunching
-
-    AppDelegate.prototype.dealloc = function(){
-        this.tableView.dataSource = null;
-        this.tableView.delegate = null;
-    }
-   
-    // UITableViewDataSource
-    AppDelegate.prototype.tableViewNumberOfRowsInSection = function(tableView, section){
-        return ObjCInt(3)
-    }
-    
-    AppDelegate.prototype.numberOfSectionsInTableView = function(tableView){
-        return ObjCInt(1)
-    }
-    
-    AppDelegate.prototype.tableViewCellForRowAtIndexPath = function(tableView, indexPath){
-        var cell = tableView.dequeueReusableCellWithIdentifier("FruitCell")
-        //A JS array is indexed by objects
-        var fruit = this.fruits[Number(indexPath.row)]
-        var textLabel = cell.textLabel
-        cell.textLabel.text = fruit
-        return cell
-    }
 }
 
 //The main function (invoked by the os)

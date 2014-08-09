@@ -9,6 +9,7 @@
 #import "UIKit+CUJS.h"
 #import <Foundation/Foundation.h>
 #import "cujs_runtime.h"
+#import <UIKit/UIKit.h>
 
 @implementation UIApplication (CUJS)
 
@@ -45,3 +46,4 @@
 }
 
 @end
+

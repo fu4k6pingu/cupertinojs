@@ -7,6 +7,13 @@
 //
 //  FIXME : abstract UIKit+CUJS into seperate framework
 
+
+@interface NSObject (CUJSExtend)
+
++ (id)extend:(NSString *)name;
+
+@end
+
 @interface UIApplication (CUJS)
 
 + (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName;
