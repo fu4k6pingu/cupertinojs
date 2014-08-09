@@ -244,12 +244,11 @@
 		C504ECBC1980CD4B00B2FE6C /* test11.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test11.js; sourceTree = "<group>"; };
 		C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cgobjcjsruntime.h; sourceTree = "<group>"; };
 		C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjsruntime.cpp; sourceTree = "<group>"; };
+		C519D3DD1995E4210076D56A /* test-imports.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "test-imports.h"; sourceTree = "<group>"; };
 		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "../../../../usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<group>"; };
 		C51CE3161971BC4000996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		C51CE3171971BC4000996E03 /* test1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test1.js; sourceTree = "<group>"; };
 		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
-		C51CE3281971F2ED00996E03 /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
-		C51CE3291971F2ED00996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		C521AB2E1991E89300948556 /* libobjcjs-runtime-ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libobjcjs-runtime-ios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AB2F1991E89300948556 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C521AB331991E89300948556 /* objcjs-runtime-ios-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "objcjs-runtime-ios-Prefix.pch"; sourceTree = "<group>"; };
@@ -258,7 +257,6 @@
 		C521AB5E1991E90400948556 /* Todoie.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Todoie.xcodeproj; path = Todoie/Todoie.xcodeproj; sourceTree = "<group>"; };
 		C53A0A7D1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcsmacrovisitor.cpp; sourceTree = "<group>"; };
 		C53A0A7E1991B91B00B62C49 /* cgobjcsmacrovisitor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = cgobjcsmacrovisitor.h; sourceTree = "<group>"; };
-		C53E1D35199080E1000918D9 /* objc-exampleheader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "objc-exampleheader.h"; sourceTree = "<group>"; };
 		C53E1D4419908449000918D9 /* objcjsutils.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = objcjsutils.cpp; sourceTree = "<group>"; };
 		C53E1D4519908449000918D9 /* objcjsutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = objcjsutils.h; sourceTree = "<group>"; };
 		C568622519763041001C8B45 /* test3.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test3.js; sourceTree = "<group>"; };
@@ -358,6 +356,7 @@
 		C51CE3151971BC4000996E03 /* test-js */ = {
 			isa = PBXGroup;
 			children = (
+				C519D3DD1995E4210076D56A /* test-imports.h */,
 				C5F471EC198337D200F72FAA /* Makefile */,
 				C51CE3161971BC4000996E03 /* test.js */,
 				C51CE3171971BC4000996E03 /* test1.js */,
@@ -380,10 +379,7 @@
 		C51CE3271971F2ED00996E03 /* examples */ = {
 			isa = PBXGroup;
 			children = (
-				C53E1D35199080E1000918D9 /* objc-exampleheader.h */,
 				C521AB5E1991E90400948556 /* Todoie.xcodeproj */,
-				C51CE3281971F2ED00996E03 /* Makefile */,
-				C51CE3291971F2ED00996E03 /* test.js */,
 			);
 			path = examples;
 			sourceTree = "<group>";
@@ -1056,6 +1052,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				DSTROOT = /;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
@@ -1065,6 +1064,7 @@
 					"$(inherited)",
 				);
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INSTALL_OWNER = "$(USER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
@@ -1074,11 +1074,15 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				DSTROOT = /;
 				DYLIB_COMPATIBILITY_VERSION = 1;
 				DYLIB_CURRENT_VERSION = 1;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "objcjs-runtime/objcjs-runtime-Prefix.pch";
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INSTALL_OWNER = "$(USER)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				USER_HEADER_SEARCH_PATHS = "";
 			};
@@ -1229,6 +1233,8 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
 				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
@@ -1258,6 +1264,7 @@
 					"$(SRCROOT)/deps/v8-trunk/include",
 					/usr/local/Cellar/llvm/3.4/include,
 				);
+				INSTALL_PATH = /usr/local/bin;
 				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1288,6 +1295,10 @@
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "compiler-default";
 				CLANG_CXX_LIBRARY = "compiler-default";
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEPLOYMENT_LOCATION = YES;
+				DEPLOYMENT_POSTPROCESSING = YES;
+				DSTROOT = /usr/local/bin;
 				FRAMEWORK_SEARCH_PATHS = "/usr/local/Cellar/llvm/3.4/lib/**";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
@@ -1316,6 +1327,7 @@
 					"$(SRCROOT)/deps/v8-trunk/include",
 					/usr/local/Cellar/llvm/3.4/include,
 				);
+				INSTALL_PATH = /usr/local/bin;
 				LD_RUNPATH_SEARCH_PATHS = /usr/local/opt/llvm/lib/;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",

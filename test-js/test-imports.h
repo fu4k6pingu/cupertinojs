@@ -1,5 +1,4 @@
 #import <Foundation/Foundation.h>
-//#import <UIKit/UIKit.h>
 
 @interface NSObject (ObjCJS)
 
@@ -7,7 +6,7 @@
 
 @end
 
-struct SalamanderState {int color:0};
+struct SalamanderState { int color:0 };
 
 @interface Salamander : NSObject
 
