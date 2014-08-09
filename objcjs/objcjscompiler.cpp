@@ -11,10 +11,10 @@
 #include <iostream>
 #include <fstream>
 
-#include <src/parser.h>
-#include <src/prettyprinter.h>
-#include <tools/shell-utils.h>
-#include <include/libplatform/libplatform.h>
+#include "include/libplatform/libplatform.h"
+#include "src/parser.h"
+#include "src/prettyprinter.h"
+#include "tools/shell-utils.h"
 
 #include "llvm/IR/Module.h"
 #include "llvm/IR/CallingConv.h"
@@ -169,10 +169,11 @@ CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_h
         fprintf(stderr, "Parsing failed\n");
         abort();
     }
-    
+#if DEBUG
     if (options._debug) {
         PrintF(AstPrinter(info->zone()).PrintProgram(info->function()));
     }
+#endif
     
     return info;
 }

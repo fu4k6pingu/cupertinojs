@@ -795,8 +795,21 @@ void CGObjCJS::VisitLiteral(class Literal* node) {
 
 #pragma mark - Literals
 
+// String can be in two-byte encoding, and as a result non-ASCII characters
+// will be ignored in the output.
+char* ToAsciiArray(v8::internal::String *string) {
+  // Static so that subsequent calls frees previously allocated space.
+  // This also means that previous results will be overwritten.
+  static char* buffer = NULL;
+  if (buffer != NULL) free(buffer);
+  buffer = new char[string->length()+1];
+  string->WriteToFlat(string, reinterpret_cast<uint8_t*>(buffer), 0, string->length());
+  buffer[string->length()] = 0;
+  return buffer;
+}
+
 std::string StringWithV8String(v8::internal::String *string) {
-    char *ascii = string->ToAsciiArray();
+    char *ascii = ToAsciiArray(string);
     return std::string(ascii);
 }
 
@@ -832,7 +845,8 @@ llvm::Value *CGObjCJS::CGLiteral(Handle<Object> value, bool push) {
         if (object->IsJSFunction()) {
             ILOG("JS-Function");
         } else if (object->IsJSArray()) {
-            ILOG("JS-array[%u]", JSArray::cast(object)->length());
+            unsigned long len = (unsigned long)JSArray::cast(object)->length();
+            ILOG("JS-array[%lul]", len);
         } else if (object->IsJSObject()) {
             ILOG("JS-Object");
         } else {

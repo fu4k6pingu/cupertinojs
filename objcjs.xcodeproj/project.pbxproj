@@ -29,11 +29,8 @@
 		C579D80D198D6D9600544D8A /* cgobjcjsclang.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C579D80B198D6D9600544D8A /* cgobjcjsclang.cpp */; };
 		C579D81F198D8A2100544D8A /* libclang.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D81D198D895900544D8A /* libclang.dylib */; };
 		C579D821198D908500544D8A /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D820198D908500544D8A /* libLLVM-3.4.dylib */; };
-		C579D83F198DE88700544D8A /* test12.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83C198DE88700544D8A /* test12.js */; };
-		C579D840198DE88700544D8A /* test13.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83D198DE88700544D8A /* test13.js */; };
-		C579D841198DE88700544D8A /* test14.js in Sources */ = {isa = PBXBuildFile; fileRef = C579D83E198DE88700544D8A /* test14.js */; };
+		C5A47E3F1995D4C0008EA36B /* libv8_snapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B831969186400A381F3 /* libv8_snapshot.a */; };
 		C5D3CB001984355400D5F823 /* objcjscompiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D3CAFF1984355400D5F823 /* objcjscompiler.cpp */; };
-		C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F09D196A406F00BB9050 /* cgobjcjs.cpp */; };
 		C5F83B0F1969155100A381F3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5F83B0E1969155100A381F3 /* main.cpp */; };
@@ -73,6 +70,20 @@
 			proxyType = 1;
 			remoteGlobalIDString = C5686236197637B0001C8B45;
 			remoteInfo = "objcjs-runtime";
+		};
+		C5A47E3B1995D49E008EA36B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = B343B0B4A8EF8E9514F7C791;
+			remoteInfo = v8_snapshot;
+		};
+		C5A47E3D1995D4B7008EA36B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = E88763350DD547194EAE3E2A;
+			remoteInfo = "v8_snapshot Support";
 		};
 		C5D6F08919692EF900BB9050 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -178,13 +189,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 9ECCDE91D9EA1FE332B22C55;
 			remoteInfo = v8_libbase;
-		};
-		C5F83BD119691F3400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = F3BBBE4BC63971772D137A52;
-			remoteInfo = v8_nosnapshot;
 		};
 		C5F83BD519691F9900A381F3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -335,11 +339,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5A47E3F1995D4C0008EA36B /* libv8_snapshot.a in Frameworks */,
 				C579D81F198D8A2100544D8A /* libclang.dylib in Frameworks */,
 				C579D821198D908500544D8A /* libLLVM-3.4.dylib in Frameworks */,
 				C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */,
 				C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */,
-				C5D6F08D196931D300BB9050 /* libv8_nosnapshot.a in Frameworks */,
 				C5F83BDB196923BF00A381F3 /* libv8_libplatform.a in Frameworks */,
 				C5F83BC619691E1900A381F3 /* libv8_libbase.a in Frameworks */,
 				C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */,
@@ -665,14 +669,15 @@
 			buildRules = (
 			);
 			dependencies = (
+				C5A47E3E1995D4B7008EA36B /* PBXTargetDependency */,
 				C5D6F08A19692EF900BB9050 /* PBXTargetDependency */,
 				C5F83BD619691F9900A381F3 /* PBXTargetDependency */,
 				C5F83BD819691F9900A381F3 /* PBXTargetDependency */,
 				C5F83BDA19691F9900A381F3 /* PBXTargetDependency */,
-				C5F83BD219691F3400A381F3 /* PBXTargetDependency */,
 				C5F83BCC19691E4800A381F3 /* PBXTargetDependency */,
 				C5F83BCA19691E4100A381F3 /* PBXTargetDependency */,
 				C5F83BC519691DFE00A381F3 /* PBXTargetDependency */,
+				C5A47E3C1995D49E008EA36B /* PBXTargetDependency */,
 			);
 			name = objcjs;
 			productName = objcjs;
@@ -867,14 +872,11 @@
 			files = (
 				C53E1D4619908449000918D9 /* objcjsutils.cpp in Sources */,
 				C579D80D198D6D9600544D8A /* cgobjcjsclang.cpp in Sources */,
-				C579D841198DE88700544D8A /* test14.js in Sources */,
 				C53A0A7F1991B91B00B62C49 /* cgobjcsmacrovisitor.cpp in Sources */,
 				C5F83B0F1969155100A381F3 /* main.cpp in Sources */,
 				C5D3CB001984355400D5F823 /* objcjscompiler.cpp in Sources */,
 				C5D6F09F196A406F00BB9050 /* cgobjcjs.cpp in Sources */,
-				C579D840198DE88700544D8A /* test13.js in Sources */,
 				C50BC4A0197B2B2700ED063E /* cgobjcjsruntime.cpp in Sources */,
-				C579D83F198DE88700544D8A /* test12.js in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -890,6 +892,16 @@
 			isa = PBXTargetDependency;
 			target = C5686236197637B0001C8B45 /* objcjs-runtime */;
 			targetProxy = C568624D197637B0001C8B45 /* PBXContainerItemProxy */;
+		};
+		C5A47E3C1995D49E008EA36B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = v8_snapshot;
+			targetProxy = C5A47E3B1995D49E008EA36B /* PBXContainerItemProxy */;
+		};
+		C5A47E3E1995D4B7008EA36B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = "v8_snapshot Support";
+			targetProxy = C5A47E3D1995D4B7008EA36B /* PBXContainerItemProxy */;
 		};
 		C5D6F08A19692EF900BB9050 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -915,11 +927,6 @@
 			isa = PBXTargetDependency;
 			name = v8_libbase;
 			targetProxy = C5F83BCB19691E4800A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BD219691F3400A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = v8_nosnapshot;
-			targetProxy = C5F83BD119691F3400A381F3 /* PBXContainerItemProxy */;
 		};
 		C5F83BD619691F9900A381F3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1209,6 +1216,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = "";
 				SDKROOT = macosx;
 				USER_HEADER_SEARCH_PATHS = "$(SRCROOT)/deps/v8-trunk/";
@@ -1257,20 +1265,17 @@
 					/usr/local/Cellar/llvm/3.4/lib,
 					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
+				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
-					"-m32",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = (
-					"-Wl,-search_paths_first,",
-					"-m32",
-				);
+				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
@@ -1288,6 +1293,7 @@
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
+					OBJECT_PRINT,
 					V8_TARGET_ARCH_X64,
 					ENABLE_GDB_JIT_INTERFACE,
 					V8_DEPRECATION_WARNINGS,
@@ -1296,9 +1302,7 @@
 					U_STATIC_IMPLEMENTATION,
 					ENABLE_DISASSEMBLER,
 					V8_ENABLE_CHECKS,
-					OBJECT_PRINT,
 					VERIFY_HEAP,
-					DEBUG,
 					ENABLE_EXTRA_CHECKS,
 					ENABLE_HANDLE_ZAPPING,
 					__STDC_CONSTANT_MACROS,
@@ -1319,20 +1323,18 @@
 					/usr/local/Cellar/llvm/3.4/lib,
 					/usr/local/Cellar/llvm/3.4.2/lib,
 				);
+				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-fno-strict-aliasing",
 					"-fno-exceptions",
-					"-m32",
 				);
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
 					"-U__GXX_EXPERIMENTAL_CXX0X__",
 				);
-				OTHER_LDFLAGS = (
-					"-Wl,-search_paths_first,",
-					"-m32",
-				);
+				OTHER_LDFLAGS = "-Wl,-search_paths_first,";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SYMROOT = build;
 				USER_HEADER_SEARCH_PATHS = /usr/local/Cellar/llvm/3.4/lib;
