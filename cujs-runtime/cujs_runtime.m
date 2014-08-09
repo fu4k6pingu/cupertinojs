@@ -280,7 +280,7 @@ void *cujs_newSubclass(Class superClass, NSString *name){
 }
 
 BOOL ptrIsClass(void *ptr){
-    return [(id)ptr class] == ptr;
+    return malloc_size(ptr) && [(id)ptr class] == ptr;
 }
 
 BOOL ptrIsJSFunctionClass(void *ptr){
@@ -290,12 +290,9 @@ BOOL ptrIsJSFunctionClass(void *ptr){
 void *cujs_assignProperty(id target,
                             const char *name,
                             id value) {
-    ILOG(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, [value class]);
-
+    ILOG(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, value);
     assert(target && "target required for property assignment");
     assert(name && "name required for property assignment");
-    assert(value && "value required for property assignment");
-    
 
     //get the method body from the class
     //and add it to our class
