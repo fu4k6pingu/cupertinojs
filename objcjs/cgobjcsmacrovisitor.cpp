@@ -14,7 +14,7 @@
 using namespace v8::internal;
 using namespace objcjs;
 
-#define CGObjCJSDEBUG 1
+#define CGObjCJSDEBUG 0
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 void MacroImport(CGObjCJS *CG, Call *node){

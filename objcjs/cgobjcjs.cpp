@@ -23,7 +23,7 @@
 #include "cgobjcsmacrovisitor.h"
 #include "objcjsutils.h"
 
-#define CGObjCJSDEBUG 1
+#define CGObjCJSDEBUG 0
 #define ILOG(A, ...) if (CGObjCJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
 using namespace v8::internal;

@@ -409,6 +409,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		C5397CCF1995F6C800A1042E /* deps */ = {
+			isa = PBXGroup;
+			children = (
+				C5F83B6E1969185A00A381F3 /* v8 */,
+			);
+			name = deps;
+			sourceTree = "<group>";
+		};
 		C5686238197637B0001C8B45 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -475,7 +483,7 @@
 			children = (
 				C51CE3271971F2ED00996E03 /* examples */,
 				C51CE3151971BC4000996E03 /* test-js */,
-				C5F83B6E1969185A00A381F3 /* v8 */,
+				C5397CCF1995F6C800A1042E /* deps */,
 				C5F83B0D1969155100A381F3 /* objcjs */,
 				C568623F197637B0001C8B45 /* objcjs-runtime */,
 				C5686250197637B0001C8B45 /* objcjs-runtimeTests */,
