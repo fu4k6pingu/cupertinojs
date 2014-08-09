@@ -416,7 +416,7 @@
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/jerrymarino/Projects/objcjs/build/Debug-iphonesimulator/**",
+					"../../build/Debug-iphonesimulator/**",
 				);
 				OTHER_LDFLAGS = (
 					"-all_load",
@@ -442,7 +442,7 @@
 				INFOPLIST_FILE = "Todoie/Todoie-Info.plist";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/jerrymarino/Projects/objcjs/build/Debug-iphonesimulator/**",
+					"../../build/Debug-iphonesimulator/**",
 				);
 				OTHER_LDFLAGS = (
 					"-all_load",
@@ -564,6 +564,7 @@
 				C578A6E8199347CA0071F353 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
