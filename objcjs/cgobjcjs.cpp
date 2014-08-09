@@ -1161,8 +1161,16 @@ void CGObjCJS::VisitCall(Call* node) {
     } else if (callType == Call::LOOKUP_SLOT_CALL) {
         UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
+        std::string name;
         VariableProxy* proxy = callee->AsVariableProxy();
-        std::string name = stringFromV8AstRawString(proxy->raw_name());
+        if (proxy) {
+            name = stringFromV8AstRawString(proxy->raw_name());
+        } else {
+            // handle anon function calls
+            // implements (function(){}())
+            assert(callee->AsFunctionLiteral());
+            name = _nameByFunctionID[node->id().ToInt()];
+        }
        
         auto macro = _macros[name];
         if (macro){

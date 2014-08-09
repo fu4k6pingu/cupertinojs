@@ -11,14 +11,15 @@ function Counter(init){
 }
 
 function main(a,b){
-    var makeRun  = function(){
-        var c = new Counter(9)
-        NSLog("incremented %@", c.increment())
+    (function(){
+         var c = new Counter(9)
+         var log = function(value){
+            NSLog("incremented %@", value)
+         }
+         log(c.increment())
         return this
-    }
-    
-    makeRun()
-    
+    }())
+
     var zero = 0
     return zero.intValue
 }
