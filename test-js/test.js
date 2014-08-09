@@ -1,5 +1,3 @@
-//objc_import("examples/objc-exampleheader.h")
-
 function Counter(init){
     this.value = init
     this.increment = function(){

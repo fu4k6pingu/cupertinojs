@@ -699,7 +699,7 @@ void CGObjCJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     }
 
     if (!name.length()) {
-        name = string_format("JSFUNC_%s", std::to_string(rand()).c_str());
+        name = string_format("JSFUNC_%s", std::to_string(random()).c_str());
         _nameByFunctionID[node->id().ToInt()] = name;
         _runtime->newString(name);
         NewLocalStringVar(name, _module);

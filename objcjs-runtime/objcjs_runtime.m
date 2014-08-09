@@ -243,8 +243,7 @@ void *objcjs_defineJSFunction(const char *name,
 }
 
 void *objcjs_newJSObjectClass(void){
-    NSTimeInterval time = [[NSDate date] timeIntervalSince1970];
-    NSString *name = [NSString stringWithFormat:@"JSOBJ_%f", time];
+    NSString *name = [NSString stringWithFormat:@"JSOBJ_%ld", random()];
     Class superClass = [NSObject class];
     return objcjs_newSubclass(superClass, name);
 }
