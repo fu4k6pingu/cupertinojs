@@ -578,25 +578,25 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
     return keyedProperties;
 }
 
-- (void)objcjs_replaceObjectAtIndex:(id)index withObject:(id)anObject {
-    ILOG(@"%s %@[%@] = %@", __PRETTY_FUNCTION__, self, index, anObject);
-    if ([index isKindOfClass:[NSString class]]) {
-        char *setterName = setterNameFromPropertyName([index cString]);
+- (void)objcjs_ss_setValue:(id)value forKey:(id)key {
+    ILOG(@"%s %@[%@] = %@", __PRETTY_FUNCTION__, self, key, value);
+    if ([key isKindOfClass:[NSString class]]) {
+        char *setterName = setterNameFromPropertyName([key cString]);
         SEL setter = sel_getUid(setterName);
         free(setterName);
         
         if ([self respondsToSelector:setter]) {
-            [self performSelector:setter withObject:anObject];
+            [self performSelector:setter withObject:value];
         } else {
-            [self _objcjs_keyed_properties][index] = anObject;
+            [self _objcjs_keyed_properties][key] = value;
         }
         
     } else {
-        [self objcjs_replaceObjectAtIndex:[index stringValue] withObject:anObject];
+        [self objcjs_ss_setValue:value forKey:[key stringValue]];
     }
 }
 
-- (id)objcjs_objectAtIndex:(id)index {
+- (id)objcjs_ss_valueForKey:(id)index {
     ILOG(@"%s %@[%@]", __PRETTY_FUNCTION__, self, index);
     if ([index isKindOfClass:[NSString class]]) {
         char *getterName = [index cString];
@@ -609,7 +609,7 @@ DEF_OBJCJS_OPERATOR_RETURN_CLASS_OR_ZERO(objcjs_shiftrightright:);
         return [self _objcjs_keyed_properties][index];
     }
 
-    return [self objcjs_objectAtIndex:[index stringValue]];
+    return [self objcjs_ss_valueForKey:[index stringValue]];
 }
 
 @end

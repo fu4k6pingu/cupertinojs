@@ -134,18 +134,18 @@ id impl3(id instance,
     Class aClass = objcjs_newJSObjectClass();
     id instance = [aClass new];
    
-    [instance objcjs_replaceObjectAtIndex:@"1" withObject:@"foo"];
-    XCTAssertEqual([instance objcjs_objectAtIndex:@"1" ], @"foo", @"It can access properties defined by strings as strings");
-    XCTAssertEqual([instance objcjs_objectAtIndex:@1 ], @"foo", @"It can access properties defined by strings as numbers");
+    [instance objcjs_ss_setValue:@"foo" forKey:@"1" ];
+    XCTAssertEqual([instance objcjs_ss_valueForKey:@"1" ], @"foo", @"It can access properties defined by strings as strings");
+    XCTAssertEqual([instance objcjs_ss_valueForKey:@1 ], @"foo", @"It can access properties defined by strings as numbers");
 }
 
 - (void)testSubscriptingNumbersDefinedByNumbers {
     Class aClass = objcjs_newJSObjectClass();
     id instance = [aClass new];
    
-    [instance objcjs_replaceObjectAtIndex:@1 withObject:@"foo"];
-    XCTAssertEqual([instance objcjs_objectAtIndex:@"1" ], @"foo", @"It can access properties defined by numbers as strings");
-    XCTAssertEqual([instance objcjs_objectAtIndex:@1 ], @"foo", @"It can access properties defined by numbers as numbers");
+    [instance objcjs_ss_setValue:@"foo" forKey:@1];
+    XCTAssertEqual([instance objcjs_ss_valueForKey:@"1" ], @"foo", @"It can access properties defined by numbers as strings");
+    XCTAssertEqual([instance objcjs_ss_valueForKey:@1 ], @"foo", @"It can access properties defined by numbers as numbers");
 }
 
 - (void)testItCanDefineAPropety {

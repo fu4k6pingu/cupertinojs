@@ -120,8 +120,8 @@ extern id objcjs_GlobalScope;
 //
 // If a property has been created with subscripting
 // accessors are NOT automatically added
-- (void)objcjs_replaceObjectAtIndex:(id)index withObject:(id)anObject;
-- (id)objcjs_objectAtIndex:(id)index;
+- (void)objcjs_ss_setValue:(id)value forKey:(id)key;
+- (id)objcjs_ss_valueForKey:(id)index;
 
 - _objcjs_keyed_properties;
 

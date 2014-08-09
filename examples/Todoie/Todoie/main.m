@@ -26,10 +26,10 @@
 
 - (instancetype)initWithFrameValue:(id)frameValue {
     CGRect frame = CGRectMake(
-                              [[frameValue objcjs_objectAtIndex:@"x"] floatValue],
-                              [[frameValue objcjs_objectAtIndex:@"y"] floatValue],
-                              [[frameValue objcjs_objectAtIndex:@"width"] floatValue],
-                              [[frameValue objcjs_objectAtIndex:@"height"] floatValue]
+                              [[frameValue objcjs_ss_valueForKey:@"x"] floatValue],
+                              [[frameValue objcjs_ss_valueForKey:@"y"] floatValue],
+                              [[frameValue objcjs_ss_valueForKey:@"width"] floatValue],
+                              [[frameValue objcjs_ss_valueForKey:@"height"] floatValue]
                               );
     return [self initWithFrame:frame];
 }
@@ -37,14 +37,10 @@
 - (id)frameValue {
     CGRect frame = self.frame;
     NSObject *frameValue = [NSObject new];
-    [frameValue objcjs_replaceObjectAtIndex:@"x"
-                                 withObject:@(frame.origin.x)];
-    [frameValue objcjs_replaceObjectAtIndex:@"y"
-                                 withObject:@(frame.origin.y)];
-    [frameValue objcjs_replaceObjectAtIndex:@"width"
-                                 withObject:@(frame.size.width)];
-    [frameValue objcjs_replaceObjectAtIndex:@"height"
-                                 withObject:@(frame.size.height)];
+    [frameValue objcjs_ss_setValue:@(frame.origin.x) forKey:@"x"];
+    [frameValue objcjs_ss_setValue:@(frame.origin.y) forKey:@"y"];
+    [frameValue objcjs_ss_setValue:@(frame.size.width) forKey:@"width"];
+    [frameValue objcjs_ss_setValue:@(frame.size.height) forKey:@"height"];
     return frameValue;
 }
 

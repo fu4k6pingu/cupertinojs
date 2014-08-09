@@ -982,9 +982,9 @@ void CGObjCJS::VisitAssignment(Assignment* node) {
 
 void CGObjCJS::EmitKeyedPropertyAssignment(llvm::Value *target, llvm::Value *key, llvm::Value *value){
     std::vector<llvm::Value *>args;
-    args.push_back(key);
     args.push_back(value);
-    PushValueToContext(_runtime->messageSend(target, "objcjs_replaceObjectAtIndex:withObject:", args));
+    args.push_back(key);
+    PushValueToContext(_runtime->messageSend(target, "objcjs_ss_setValue:forKey:", args));
 }
 
 void CGObjCJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
@@ -1131,7 +1131,7 @@ void CGObjCJS::VisitProperty(Property* node) {
         std::string keyName = makeKeyName(property->key(), _module);
         PushValueToContext(_runtime->messageSend(objValue, keyName.c_str()));
     } else if (type == KEYED_PROPERTY) {
-        PushValueToContext(_runtime->messageSend(objValue, "objcjs_objectAtIndex:", keyValue));
+        PushValueToContext(_runtime->messageSend(objValue, "objcjs_ss_valueForKey:", keyValue));
     } else {
         UNIMPLEMENTED();
     }
