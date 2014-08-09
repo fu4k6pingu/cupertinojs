@@ -245,7 +245,7 @@
 		C50BC49E197B2A8400ED063E /* cgobjcjsruntime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cgobjcjsruntime.h; sourceTree = "<group>"; };
 		C50BC49F197B2B2700ED063E /* cgobjcjsruntime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = cgobjcjsruntime.cpp; sourceTree = "<group>"; };
 		C519D3DD1995E4210076D56A /* test-imports.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "test-imports.h"; sourceTree = "<group>"; };
-		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "../../../../usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<group>"; };
+		C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libstdc++.6.0.9.dylib"; path = "/usr/lib/libstdc++.6.0.9.dylib"; sourceTree = "<absolute>"; };
 		C51CE3161971BC4000996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		C51CE3171971BC4000996E03 /* test1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test1.js; sourceTree = "<group>"; };
 		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
@@ -413,6 +413,7 @@
 			isa = PBXGroup;
 			children = (
 				C579D820198D908500544D8A /* libLLVM-3.4.dylib */,
+				C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */,
 				C579D81D198D895900544D8A /* libclang.dylib */,
 				C5686239197637B0001C8B45 /* Cocoa.framework */,
 				C568624A197637B0001C8B45 /* XCTest.framework */,
@@ -474,7 +475,6 @@
 			children = (
 				C51CE3271971F2ED00996E03 /* examples */,
 				C51CE3151971BC4000996E03 /* test-js */,
-				C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */,
 				C5F83B6E1969185A00A381F3 /* v8 */,
 				C5F83B0D1969155100A381F3 /* objcjs */,
 				C568623F197637B0001C8B45 /* objcjs-runtime */,

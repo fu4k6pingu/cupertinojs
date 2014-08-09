@@ -11,19 +11,19 @@
 #include <iostream>
 #include <fstream>
 
-#include "include/libplatform/libplatform.h"
-#include "src/parser.h"
-#include "src/prettyprinter.h"
-#include "tools/shell-utils.h"
+#include <src/parser.h>
+#include <src/prettyprinter.h>
+#include <tools/shell-utils.h>
+#include <include/libplatform/libplatform.h>
 
-#include "llvm/IR/Module.h"
-#include "llvm/IR/CallingConv.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/PassManager.h"
-#include "llvm/Analysis/Verifier.h"
-#include "llvm/Assembly/PrintModulePass.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Bitcode/ReaderWriter.h"
+#include <llvm/IR/Module.h>
+#include <llvm/IR/CallingConv.h>
+#include <llvm/IR/IRBuilder.h>
+#include <llvm/PassManager.h>
+#include <llvm/Analysis/Verifier.h>
+#include <llvm/Assembly/PrintModulePass.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Bitcode/ReaderWriter.h>
 
 #include "objcjsutils.h"
 #include "cgobjcjs.h"
