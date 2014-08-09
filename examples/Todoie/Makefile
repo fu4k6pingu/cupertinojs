@@ -41,3 +41,6 @@ main-build: js-build
 
 post-build:	main-build
 	@echo BUILD_SUCCEEDED!
+    
+clean:
+	rm -rf $(BUILD_DIR)

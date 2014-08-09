@@ -7,15 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C518DEBB19990D42008989B9 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568623C197637B0001C8B45 /* Foundation.framework */; };
 		C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C51CBC44196A815A0095CD4E /* libstdc++.6.0.9.dylib */; };
-		C521AB301991E89300948556 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
-		C53C8BFD197664AD00335186 /* cujs-runtime.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686237197637B0001C8B45 /* cujs-runtime.dylib */; };
+		C534CD0B199718F2007BE0A5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
+		C534CD18199718F2007BE0A5 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
+		C534CD19199718F2007BE0A5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB2F1991E89300948556 /* Foundation.framework */; };
+		C534CD1A199718F2007BE0A5 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB3F1991E89300948556 /* UIKit.framework */; };
+		C534CD1D199718F2007BE0A5 /* libcujs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */; };
+		C534CD23199718F2007BE0A5 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C534CD21199718F2007BE0A5 /* InfoPlist.strings */; };
 		C549B40A19969CF300169564 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
-		C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
-		C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
-		C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
+		C56554D91997192D0003F873 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */; };
+		C56554DA1997194A0003F873 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */; };
 		C579D81F198D8A2100544D8A /* libclang.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D81D198D895900544D8A /* libclang.dylib */; };
 		C579D821198D908500544D8A /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C579D820198D908500544D8A /* libLLVM-3.4.dylib */; };
+		C5CFC38D1997077C00D1ED51 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */; };
+		C5CFC3931997077C00D1ED51 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C568624A197637B0001C8B45 /* XCTest.framework */; };
+		C5CFC3941997077C00D1ED51 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C5686239197637B0001C8B45 /* Cocoa.framework */; };
+		C5CFC3971997077C00D1ED51 /* libcujs-runtime.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */; };
+		C5CFC39D1997077C00D1ED51 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5CFC39B1997077C00D1ED51 /* InfoPlist.strings */; };
+		C5CFC39F1997077C00D1ED51 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */; };
 		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F7FB19969601007E3ED3 /* cgclang.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7EC19969601007E3ED3 /* cgclang.cpp */; };
 		C5D6F7FC19969601007E3ED3 /* cgjsruntime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7EE19969601007E3ED3 /* cgjsruntime.cpp */; };
@@ -24,10 +34,6 @@
 		C5D6F7FF19969601007E3ED3 /* cujscompiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F519969601007E3ED3 /* cujscompiler.cpp */; };
 		C5D6F80019969601007E3ED3 /* cujsutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F719969601007E3ED3 /* cujsutils.cpp */; };
 		C5D6F80119969601007E3ED3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F919969601007E3ED3 /* main.cpp */; };
-		C5D6F80C199696A7007E3ED3 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F8061996964B007E3ED3 /* cujs_runtimeTests.m */; };
-		C5D6F80D199696B0007E3ED3 /* cujs_runtime.h in Headers */ = {isa = PBXBuildFile; fileRef = C5D6F8021996962F007E3ED3 /* cujs_runtime.h */; };
-		C5D6F80E199696B0007E3ED3 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F8031996962F007E3ED3 /* cujs_runtime.m */; };
-		C5D6F80F199696B7007E3ED3 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F8031996962F007E3ED3 /* cujs_runtime.m */; };
 		C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA619691B2D00A381F3 /* libicudata.a */; };
 		C5F83BBC19691BC800A381F3 /* libicui18n.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA819691B2D00A381F3 /* libicui18n.a */; };
 		C5F83BBD19691BC800A381F3 /* libicuuc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BAA19691B2D00A381F3 /* libicuuc.a */; };
@@ -57,6 +63,13 @@
 			remoteGlobalIDString = C521AA961991E4B300948556;
 			remoteInfo = TodoieTests;
 		};
+		C534CD1B199718F2007BE0A5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C5F83B031969155100A381F3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C534CD09199718F2007BE0A5;
+			remoteInfo = "cujs-runtime-ios";
+		};
 		C549B3F919969CE700169564 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
@@ -64,19 +77,12 @@
 			remoteGlobalIDString = F3BBBE4BC63971772D137A52;
 			remoteInfo = v8_nosnapshot;
 		};
-		C568624D197637B0001C8B45 /* PBXContainerItemProxy */ = {
+		C5CFC3951997077C00D1ED51 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B031969155100A381F3 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = C5686236197637B0001C8B45;
+			remoteGlobalIDString = C5CFC3851997077C00D1ED51;
 			remoteInfo = "cujs-runtime";
-		};
-		C5F471EA1983371700F72FAA /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B031969155100A381F3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = C5F83B0A1969155100A381F3;
-			remoteInfo = cujs;
 		};
 		C5F83B821969186400A381F3 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -193,7 +199,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		C521AB2C1991E89300948556 /* CopyFiles */ = {
+		C534CD08199718F2007BE0A5 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "include/$(PRODUCT_NAME)";
@@ -224,25 +230,35 @@
 		C51CE3161971BC4000996E03 /* test.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test.js; sourceTree = "<group>"; };
 		C51CE3171971BC4000996E03 /* test1.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test1.js; sourceTree = "<group>"; };
 		C51CE3181971BC4000996E03 /* test2.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test2.js; sourceTree = "<group>"; };
-		C521AB2E1991E89300948556 /* libcujs-runtime-ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libcujs-runtime-ios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C521AB2F1991E89300948556 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C521AB3F1991E89300948556 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		C521AB5E1991E90400948556 /* Todoie.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Todoie.xcodeproj; path = Todoie/Todoie.xcodeproj; sourceTree = "<group>"; };
+		C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libcujs-runtime-ios.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C534CD0E199718F2007BE0A5 /* cujs-runtime-ios-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "cujs-runtime-ios-Prefix.pch"; sourceTree = "<group>"; };
+		C534CD17199718F2007BE0A5 /* cujs-runtime-iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "cujs-runtime-iosTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C534CD20199718F2007BE0A5 /* cujs-runtime-iosTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "cujs-runtime-iosTests-Info.plist"; sourceTree = "<group>"; };
+		C534CD22199718F2007BE0A5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C568622519763041001C8B45 /* test3.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test3.js; sourceTree = "<group>"; };
 		C568622619763041001C8B45 /* test4.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test4.js; sourceTree = "<group>"; };
 		C568622719763041001C8B45 /* test6.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test6.js; sourceTree = "<group>"; };
-		C5686237197637B0001C8B45 /* cujs-runtime.dylib */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.dylib"; includeInIndex = 0; path = "cujs-runtime.dylib"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5686239197637B0001C8B45 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = System/Library/Frameworks/Cocoa.framework; sourceTree = SDKROOT; };
 		C568623C197637B0001C8B45 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		C568623D197637B0001C8B45 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = System/Library/Frameworks/CoreData.framework; sourceTree = SDKROOT; };
 		C568623E197637B0001C8B45 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = System/Library/Frameworks/AppKit.framework; sourceTree = SDKROOT; };
-		C5686249197637B0001C8B45 /* cujs-runtimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "cujs-runtimeTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C568624A197637B0001C8B45 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = Library/Frameworks/XCTest.framework; sourceTree = DEVELOPER_DIR; };
 		C579D81D198D895900544D8A /* libclang.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libclang.dylib; path = ../../../../usr/local/Cellar/llvm/3.4/lib/libclang.dylib; sourceTree = "<group>"; };
 		C579D820198D908500544D8A /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "../../../../usr/local/Cellar/llvm/3.4.2/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
 		C579D83C198DE88700544D8A /* test12.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test12.js; sourceTree = "<group>"; };
 		C579D83D198DE88700544D8A /* test13.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test13.js; sourceTree = "<group>"; };
 		C579D83E198DE88700544D8A /* test14.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test14.js; sourceTree = "<group>"; };
+		C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libcujs-runtime.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5CFC38A1997077C00D1ED51 /* cujs-runtime-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "cujs-runtime-Prefix.pch"; sourceTree = "<group>"; };
+		C5CFC38B1997077C00D1ED51 /* cujs_runtime.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = cujs_runtime.h; sourceTree = "<group>"; };
+		C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = cujs_runtime.m; sourceTree = "<group>"; };
+		C5CFC3921997077C00D1ED51 /* cujs-runtimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "cujs-runtimeTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C5CFC39A1997077C00D1ED51 /* cujs-runtimeTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "cujs-runtimeTests-Info.plist"; sourceTree = "<group>"; };
+		C5CFC39C1997077C00D1ED51 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = cujs_runtimeTests.m; sourceTree = "<group>"; };
 		C5D6F7EC19969601007E3ED3 /* cgclang.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cgclang.cpp; path = cujs/cgclang.cpp; sourceTree = SOURCE_ROOT; };
 		C5D6F7ED19969601007E3ED3 /* cgclang.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cgclang.h; path = cujs/cgclang.h; sourceTree = SOURCE_ROOT; };
 		C5D6F7EE19969601007E3ED3 /* cgjsruntime.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = cgjsruntime.cpp; path = cujs/cgjsruntime.cpp; sourceTree = SOURCE_ROOT; };
@@ -258,13 +274,6 @@
 		C5D6F7F819969601007E3ED3 /* cujsutils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cujsutils.h; path = cujs/cujsutils.h; sourceTree = SOURCE_ROOT; };
 		C5D6F7F919969601007E3ED3 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = cujs/main.cpp; sourceTree = SOURCE_ROOT; };
 		C5D6F7FA19969601007E3ED3 /* README.md */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = README.md; path = cujs/README.md; sourceTree = SOURCE_ROOT; };
-		C5D6F8021996962F007E3ED3 /* cujs_runtime.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = cujs_runtime.h; path = "cujs-runtime/cujs_runtime.h"; sourceTree = SOURCE_ROOT; };
-		C5D6F8031996962F007E3ED3 /* cujs_runtime.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = cujs_runtime.m; path = "cujs-runtime/cujs_runtime.m"; sourceTree = SOURCE_ROOT; };
-		C5D6F8041996962F007E3ED3 /* cujs-runtime-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "cujs-runtime-Prefix.pch"; path = "cujs-runtime/cujs-runtime-Prefix.pch"; sourceTree = SOURCE_ROOT; };
-		C5D6F8061996964B007E3ED3 /* cujs_runtimeTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = cujs_runtimeTests.m; path = "cujs-runtimeTests/cujs_runtimeTests.m"; sourceTree = SOURCE_ROOT; };
-		C5D6F8071996964B007E3ED3 /* cujs-runtimeTests-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = "cujs-runtimeTests-Info.plist"; path = "cujs-runtimeTests/cujs-runtimeTests-Info.plist"; sourceTree = SOURCE_ROOT; };
-		C5D6F80A19969657007E3ED3 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = "cujs-runtimeTests/en.lproj/InfoPlist.strings"; sourceTree = SOURCE_ROOT; };
-		C5D6F80B19969690007E3ED3 /* cujs-runtime-ios-Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "cujs-runtime-ios-Prefix.pch"; path = "cujs-runtime-ios/cujs-runtime-ios-Prefix.pch"; sourceTree = SOURCE_ROOT; };
 		C5F471EC198337D200F72FAA /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* cujs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cujs; sourceTree = BUILT_PRODUCTS_DIR; };
 		C5F83B6F1969186400A381F3 /* v8.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = v8.xcodeproj; path = "deps/v8-trunk/tools/gyp/v8.xcodeproj"; sourceTree = "<group>"; };
@@ -272,29 +281,40 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		C521AB2B1991E89300948556 /* Frameworks */ = {
+		C534CD07199718F2007BE0A5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C521AB301991E89300948556 /* Foundation.framework in Frameworks */,
+				C534CD0B199718F2007BE0A5 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C5686234197637B0001C8B45 /* Frameworks */ = {
+		C534CD14199718F2007BE0A5 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C568623A197637B0001C8B45 /* Cocoa.framework in Frameworks */,
+				C534CD18199718F2007BE0A5 /* XCTest.framework in Frameworks */,
+				C534CD1D199718F2007BE0A5 /* libcujs-runtime-ios.a in Frameworks */,
+				C534CD1A199718F2007BE0A5 /* UIKit.framework in Frameworks */,
+				C534CD19199718F2007BE0A5 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C5686246197637B0001C8B45 /* Frameworks */ = {
+		C5CFC3831997077C00D1ED51 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C53C8BFD197664AD00335186 /* cujs-runtime.dylib in Frameworks */,
-				C568624C197637B0001C8B45 /* Cocoa.framework in Frameworks */,
-				C568624B197637B0001C8B45 /* XCTest.framework in Frameworks */,
+				C518DEBB19990D42008989B9 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5CFC38F1997077C00D1ED51 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5CFC3971997077C00D1ED51 /* libcujs-runtime.a in Frameworks */,
+				C5CFC3941997077C00D1ED51 /* Cocoa.framework in Frameworks */,
+				C5CFC3931997077C00D1ED51 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -349,22 +369,6 @@
 			path = examples;
 			sourceTree = "<group>";
 		};
-		C521AB311991E89300948556 /* cujs-runtime-ios */ = {
-			isa = PBXGroup;
-			children = (
-				C521AB321991E89300948556 /* Supporting Files */,
-			);
-			path = "cujs-runtime-ios";
-			sourceTree = "<group>";
-		};
-		C521AB321991E89300948556 /* Supporting Files */ = {
-			isa = PBXGroup;
-			children = (
-				C5D6F80B19969690007E3ED3 /* cujs-runtime-ios-Prefix.pch */,
-			);
-			name = "Supporting Files";
-			sourceTree = "<group>";
-		};
 		C521AB5F1991E90400948556 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -372,6 +376,39 @@
 				C521AB661991E90500948556 /* TodoieTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		C534CD0C199718F2007BE0A5 /* cujs-runtime-ios */ = {
+			isa = PBXGroup;
+			children = (
+				C534CD0D199718F2007BE0A5 /* Supporting Files */,
+			);
+			path = "cujs-runtime-ios";
+			sourceTree = "<group>";
+		};
+		C534CD0D199718F2007BE0A5 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C534CD0E199718F2007BE0A5 /* cujs-runtime-ios-Prefix.pch */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		C534CD1E199718F2007BE0A5 /* cujs-runtime-iosTests */ = {
+			isa = PBXGroup;
+			children = (
+				C534CD1F199718F2007BE0A5 /* Supporting Files */,
+			);
+			path = "cujs-runtime-iosTests";
+			sourceTree = "<group>";
+		};
+		C534CD1F199718F2007BE0A5 /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				C534CD20199718F2007BE0A5 /* cujs-runtime-iosTests-Info.plist */,
+				C534CD21199718F2007BE0A5 /* InfoPlist.strings */,
+			);
+			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
 		C5397CCF1995F6C800A1042E /* deps */ = {
@@ -407,38 +444,38 @@
 			name = "Other Frameworks";
 			sourceTree = "<group>";
 		};
-		C568623F197637B0001C8B45 /* cujs-runtime */ = {
+		C5CFC3881997077C00D1ED51 /* cujs-runtime */ = {
 			isa = PBXGroup;
 			children = (
-				C5D6F8021996962F007E3ED3 /* cujs_runtime.h */,
-				C5D6F8031996962F007E3ED3 /* cujs_runtime.m */,
-				C5686240197637B0001C8B45 /* Supporting Files */,
+				C5CFC38B1997077C00D1ED51 /* cujs_runtime.h */,
+				C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */,
+				C5CFC3891997077C00D1ED51 /* Supporting Files */,
 			);
 			path = "cujs-runtime";
 			sourceTree = "<group>";
 		};
-		C5686240197637B0001C8B45 /* Supporting Files */ = {
+		C5CFC3891997077C00D1ED51 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				C5D6F8041996962F007E3ED3 /* cujs-runtime-Prefix.pch */,
+				C5CFC38A1997077C00D1ED51 /* cujs-runtime-Prefix.pch */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		C5686250197637B0001C8B45 /* cujs-runtimeTests */ = {
+		C5CFC3981997077C00D1ED51 /* cujs-runtimeTests */ = {
 			isa = PBXGroup;
 			children = (
-				C5D6F8061996964B007E3ED3 /* cujs_runtimeTests.m */,
-				C5686251197637B0001C8B45 /* Supporting Files */,
+				C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */,
+				C5CFC3991997077C00D1ED51 /* Supporting Files */,
 			);
 			path = "cujs-runtimeTests";
 			sourceTree = "<group>";
 		};
-		C5686251197637B0001C8B45 /* Supporting Files */ = {
+		C5CFC3991997077C00D1ED51 /* Supporting Files */ = {
 			isa = PBXGroup;
 			children = (
-				C5D6F80919969657007E3ED3 /* InfoPlist.strings */,
-				C5D6F8071996964B007E3ED3 /* cujs-runtimeTests-Info.plist */,
+				C5CFC39A1997077C00D1ED51 /* cujs-runtimeTests-Info.plist */,
+				C5CFC39B1997077C00D1ED51 /* InfoPlist.strings */,
 			);
 			name = "Supporting Files";
 			sourceTree = "<group>";
@@ -450,9 +487,10 @@
 				C51CE3151971BC4000996E03 /* test-js */,
 				C5397CCF1995F6C800A1042E /* deps */,
 				C5F83B0D1969155100A381F3 /* cujs */,
-				C568623F197637B0001C8B45 /* cujs-runtime */,
-				C5686250197637B0001C8B45 /* cujs-runtimeTests */,
-				C521AB311991E89300948556 /* cujs-runtime-ios */,
+				C5CFC3881997077C00D1ED51 /* cujs-runtime */,
+				C5CFC3981997077C00D1ED51 /* cujs-runtimeTests */,
+				C534CD0C199718F2007BE0A5 /* cujs-runtime-ios */,
+				C534CD1E199718F2007BE0A5 /* cujs-runtime-iosTests */,
 				C5686238197637B0001C8B45 /* Frameworks */,
 				C5F83B0C1969155100A381F3 /* Products */,
 			);
@@ -462,9 +500,10 @@
 			isa = PBXGroup;
 			children = (
 				C5F83B0B1969155100A381F3 /* cujs */,
-				C5686237197637B0001C8B45 /* cujs-runtime.dylib */,
-				C5686249197637B0001C8B45 /* cujs-runtimeTests.xctest */,
-				C521AB2E1991E89300948556 /* libcujs-runtime-ios.a */,
+				C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */,
+				C5CFC3921997077C00D1ED51 /* cujs-runtimeTests.xctest */,
+				C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */,
+				C534CD17199718F2007BE0A5 /* cujs-runtime-iosTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -527,42 +566,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
-		C5686235197637B0001C8B45 /* Headers */ = {
+		C5CFC3841997077C00D1ED51 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C5D6F80D199696B0007E3ED3 /* cujs_runtime.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXHeadersBuildPhase section */
 
-/* Begin PBXLegacyTarget section */
-		C5F471DB198336DE00F72FAA /* cujs-js-tests */ = {
-			isa = PBXLegacyTarget;
-			buildArgumentsString = run;
-			buildConfigurationList = C5F471E9198336DE00F72FAA /* Build configuration list for PBXLegacyTarget "cujs-js-tests" */;
-			buildPhases = (
-			);
-			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = "/Users/jerrymarino/Projects/cujs/test-js";
-			dependencies = (
-				C5F471EB1983371700F72FAA /* PBXTargetDependency */,
-			);
-			name = "cujs-js-tests";
-			passBuildSettingsInEnvironment = 1;
-			productName = "cujs-js-tests";
-		};
-/* End PBXLegacyTarget section */
-
 /* Begin PBXNativeTarget section */
-		C521AB2D1991E89300948556 /* cujs-runtime-ios */ = {
+		C534CD09199718F2007BE0A5 /* cujs-runtime-ios */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C521AB5B1991E89300948556 /* Build configuration list for PBXNativeTarget "cujs-runtime-ios" */;
+			buildConfigurationList = C534CD26199718F2007BE0A5 /* Build configuration list for PBXNativeTarget "cujs-runtime-ios" */;
 			buildPhases = (
-				C521AB2A1991E89300948556 /* Sources */,
-				C521AB2B1991E89300948556 /* Frameworks */,
-				C521AB2C1991E89300948556 /* CopyFiles */,
+				C534CD06199718F2007BE0A5 /* Sources */,
+				C534CD07199718F2007BE0A5 /* Frameworks */,
+				C534CD08199718F2007BE0A5 /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -570,16 +590,34 @@
 			);
 			name = "cujs-runtime-ios";
 			productName = "cujs-runtime-ios";
-			productReference = C521AB2E1991E89300948556 /* libcujs-runtime-ios.a */;
+			productReference = C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */;
 			productType = "com.apple.product-type.library.static";
 		};
-		C5686236197637B0001C8B45 /* cujs-runtime */ = {
+		C534CD16199718F2007BE0A5 /* cujs-runtime-iosTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C5686258197637B0001C8B45 /* Build configuration list for PBXNativeTarget "cujs-runtime" */;
+			buildConfigurationList = C534CD29199718F2007BE0A5 /* Build configuration list for PBXNativeTarget "cujs-runtime-iosTests" */;
 			buildPhases = (
-				C5686233197637B0001C8B45 /* Sources */,
-				C5686234197637B0001C8B45 /* Frameworks */,
-				C5686235197637B0001C8B45 /* Headers */,
+				C534CD13199718F2007BE0A5 /* Sources */,
+				C534CD14199718F2007BE0A5 /* Frameworks */,
+				C534CD15199718F2007BE0A5 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				C534CD1C199718F2007BE0A5 /* PBXTargetDependency */,
+			);
+			name = "cujs-runtime-iosTests";
+			productName = "cujs-runtime-iosTests";
+			productReference = C534CD17199718F2007BE0A5 /* cujs-runtime-iosTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		C5CFC3851997077C00D1ED51 /* cujs-runtime */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C5CFC3A01997077C00D1ED51 /* Build configuration list for PBXNativeTarget "cujs-runtime" */;
+			buildPhases = (
+				C5CFC3821997077C00D1ED51 /* Sources */,
+				C5CFC3831997077C00D1ED51 /* Frameworks */,
+				C5CFC3841997077C00D1ED51 /* Headers */,
 			);
 			buildRules = (
 			);
@@ -587,25 +625,25 @@
 			);
 			name = "cujs-runtime";
 			productName = "cujs-runtime";
-			productReference = C5686237197637B0001C8B45 /* cujs-runtime.dylib */;
-			productType = "com.apple.product-type.library.dynamic";
+			productReference = C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */;
+			productType = "com.apple.product-type.library.static";
 		};
-		C5686248197637B0001C8B45 /* cujs-runtimeTests */ = {
+		C5CFC3911997077C00D1ED51 /* cujs-runtimeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = C568625B197637B0001C8B45 /* Build configuration list for PBXNativeTarget "cujs-runtimeTests" */;
+			buildConfigurationList = C5CFC3A31997077C00D1ED51 /* Build configuration list for PBXNativeTarget "cujs-runtimeTests" */;
 			buildPhases = (
-				C5686245197637B0001C8B45 /* Sources */,
-				C5686246197637B0001C8B45 /* Frameworks */,
-				C5686247197637B0001C8B45 /* Resources */,
+				C5CFC38E1997077C00D1ED51 /* Sources */,
+				C5CFC38F1997077C00D1ED51 /* Frameworks */,
+				C5CFC3901997077C00D1ED51 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				C568624E197637B0001C8B45 /* PBXTargetDependency */,
+				C5CFC3961997077C00D1ED51 /* PBXTargetDependency */,
 			);
 			name = "cujs-runtimeTests";
 			productName = "cujs-runtimeTests";
-			productReference = C5686249197637B0001C8B45 /* cujs-runtimeTests.xctest */;
+			productReference = C5CFC3921997077C00D1ED51 /* cujs-runtimeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		C5F83B0A1969155100A381F3 /* cujs */ = {
@@ -641,6 +679,11 @@
 			attributes = {
 				LastUpgradeCheck = 0510;
 				ORGANIZATIONNAME = "Jerry Marino";
+				TargetAttributes = {
+					C534CD16199718F2007BE0A5 = {
+						TestTargetID = C534CD09199718F2007BE0A5;
+					};
+				};
 			};
 			buildConfigurationList = C5F83B061969155100A381F3 /* Build configuration list for PBXProject "cujs" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -669,10 +712,10 @@
 			projectRoot = "";
 			targets = (
 				C5F83B0A1969155100A381F3 /* cujs */,
-				C5686236197637B0001C8B45 /* cujs-runtime */,
-				C5686248197637B0001C8B45 /* cujs-runtimeTests */,
-				C5F471DB198336DE00F72FAA /* cujs-js-tests */,
-				C521AB2D1991E89300948556 /* cujs-runtime-ios */,
+				C5CFC3851997077C00D1ED51 /* cujs-runtime */,
+				C5CFC3911997077C00D1ED51 /* cujs-runtimeTests */,
+				C534CD09199718F2007BE0A5 /* cujs-runtime-ios */,
+				C534CD16199718F2007BE0A5 /* cujs-runtime-iosTests */,
 			);
 		};
 /* End PBXProject section */
@@ -765,37 +808,54 @@
 /* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
-		C5686247197637B0001C8B45 /* Resources */ = {
+		C534CD15199718F2007BE0A5 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C534CD23199718F2007BE0A5 /* InfoPlist.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5CFC3901997077C00D1ED51 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5CFC39D1997077C00D1ED51 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C521AB2A1991E89300948556 /* Sources */ = {
+		C534CD06199718F2007BE0A5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C5D6F80F199696B7007E3ED3 /* cujs_runtime.m in Sources */,
+				C56554D91997192D0003F873 /* cujs_runtime.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C5686233197637B0001C8B45 /* Sources */ = {
+		C534CD13199718F2007BE0A5 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C5D6F80E199696B0007E3ED3 /* cujs_runtime.m in Sources */,
+				C56554DA1997194A0003F873 /* cujs_runtimeTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		C5686245197637B0001C8B45 /* Sources */ = {
+		C5CFC3821997077C00D1ED51 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				C5D6F80C199696A7007E3ED3 /* cujs_runtimeTests.m in Sources */,
+				C5CFC38D1997077C00D1ED51 /* cujs_runtime.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C5CFC38E1997077C00D1ED51 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C5CFC39F1997077C00D1ED51 /* cujs_runtimeTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -821,20 +881,20 @@
 			name = js2c;
 			targetProxy = C50C700119969EA700FC00C8 /* PBXContainerItemProxy */;
 		};
+		C534CD1C199718F2007BE0A5 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C534CD09199718F2007BE0A5 /* cujs-runtime-ios */;
+			targetProxy = C534CD1B199718F2007BE0A5 /* PBXContainerItemProxy */;
+		};
 		C549B3FA19969CE700169564 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = v8_nosnapshot;
 			targetProxy = C549B3F919969CE700169564 /* PBXContainerItemProxy */;
 		};
-		C568624E197637B0001C8B45 /* PBXTargetDependency */ = {
+		C5CFC3961997077C00D1ED51 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = C5686236197637B0001C8B45 /* cujs-runtime */;
-			targetProxy = C568624D197637B0001C8B45 /* PBXContainerItemProxy */;
-		};
-		C5F471EB1983371700F72FAA /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = C5F83B0A1969155100A381F3 /* cujs */;
-			targetProxy = C5F471EA1983371700F72FAA /* PBXContainerItemProxy */;
+			target = C5CFC3851997077C00D1ED51 /* cujs-runtime */;
+			targetProxy = C5CFC3951997077C00D1ED51 /* PBXContainerItemProxy */;
 		};
 		C5F83BC519691DFE00A381F3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -869,10 +929,18 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		C5D6F80919969657007E3ED3 /* InfoPlist.strings */ = {
+		C534CD21199718F2007BE0A5 /* InfoPlist.strings */ = {
 			isa = PBXVariantGroup;
 			children = (
-				C5D6F80A19969657007E3ED3 /* en */,
+				C534CD22199718F2007BE0A5 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+		C5CFC39B1997077C00D1ED51 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				C5CFC39C1997077C00D1ED51 /* en */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -880,13 +948,12 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
-		C521AB4C1991E89300948556 /* Debug */ = {
+		C534CD27199718F2007BE0A5 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = NO;
-				DEAD_CODE_STRIPPING = NO;
 				DSTROOT = /tmp/cujs_runtime_ios.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime-ios/cujs-runtime-ios-Prefix.pch";
@@ -905,13 +972,13 @@
 			};
 			name = Debug;
 		};
-		C521AB4D1991E89300948556 /* Release */ = {
+		C534CD28199718F2007BE0A5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = NO;
-				DEAD_CODE_STRIPPING = NO;
+				COPY_PHASE_STRIP = YES;
 				DSTROOT = /tmp/cujs_runtime_ios.dst;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime-ios/cujs-runtime-ios-Prefix.pch";
@@ -927,7 +994,61 @@
 			};
 			name = Release;
 		};
-		C5686259197637B0001C8B45 /* Debug */ = {
+		C534CD2A199718F2007BE0A5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "cujs-runtime-ios/cujs-runtime-ios-Prefix.pch";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INFOPLIST_FILE = "cujs-runtime-iosTests/cujs-runtime-iosTests-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				VALID_ARCHS = "x86_64 i386";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Debug;
+		};
+		C534CD2B199718F2007BE0A5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_INCLUDING_64_BIT)";
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = NO;
+				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+				);
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = "cujs-runtime-ios/cujs-runtime-ios-Prefix.pch";
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				INFOPLIST_FILE = "cujs-runtime-iosTests/cujs-runtime-iosTests-Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+				VALID_ARCHS = "x86_64 i386";
+				WRAPPER_EXTENSION = xctest;
+			};
+			name = Release;
+		};
+		C5CFC3A11997077C00D1ED51 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
@@ -935,8 +1056,6 @@
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime/cujs-runtime-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -944,37 +1063,42 @@
 					"$(inherited)",
 				);
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				INSTALL_OWNER = "$(USER)";
+				INSTALL_PATH = /usr/local/lib;
+				LD_DYLIB_INSTALL_NAME = "cujs-runtime";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "";
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Debug;
 		};
-		C568625A197637B0001C8B45 /* Release */ = {
+		C5CFC3A21997077C00D1ED51 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_ENABLE_OBJC_ARC = NO;
+				COPY_PHASE_STRIP = YES;
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /;
-				DYLIB_COMPATIBILITY_VERSION = 1;
-				DYLIB_CURRENT_VERSION = 1;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime/cujs-runtime-Prefix.pch";
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				INSTALL_OWNER = "$(USER)";
+				INSTALL_PATH = /usr/local/lib;
+				LD_DYLIB_INSTALL_NAME = "cujs-runtime";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				USER_HEADER_SEARCH_PATHS = "";
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Release;
 		};
-		C568625C197637B0001C8B45 /* Debug */ = {
+		C5CFC3A41997077C00D1ED51 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime/cujs-runtime-Prefix.pch";
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -988,47 +1112,23 @@
 			};
 			name = Debug;
 		};
-		C568625D197637B0001C8B45 /* Release */ = {
+		C5CFC3A51997077C00D1ED51 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_ENABLE_OBJC_ARC = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(DEVELOPER_FRAMEWORKS_DIR)";
+				COPY_PHASE_STRIP = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(DEVELOPER_FRAMEWORKS_DIR)",
+					"$(inherited)",
+				);
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "cujs-runtime/cujs-runtime-Prefix.pch";
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				INFOPLIST_FILE = "cujs-runtimeTests/cujs-runtimeTests-Info.plist";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = xctest;
-			};
-			name = Release;
-		};
-		C5F471DC198336DE00F72FAA /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				DEBUGGING_SYMBOLS = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_PREPROCESSOR_DEFINITIONS = (
-					"DEBUG=1",
-					"$(inherited)",
-				);
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-			};
-			name = Debug;
-		};
-		C5F471DD198336DE00F72FAA /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
-				GCC_WARN_UNINITIALIZED_AUTOS = YES;
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -1254,38 +1354,38 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C521AB5B1991E89300948556 /* Build configuration list for PBXNativeTarget "cujs-runtime-ios" */ = {
+		C534CD26199718F2007BE0A5 /* Build configuration list for PBXNativeTarget "cujs-runtime-ios" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C521AB4C1991E89300948556 /* Debug */,
-				C521AB4D1991E89300948556 /* Release */,
+				C534CD27199718F2007BE0A5 /* Debug */,
+				C534CD28199718F2007BE0A5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C5686258197637B0001C8B45 /* Build configuration list for PBXNativeTarget "cujs-runtime" */ = {
+		C534CD29199718F2007BE0A5 /* Build configuration list for PBXNativeTarget "cujs-runtime-iosTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C5686259197637B0001C8B45 /* Debug */,
-				C568625A197637B0001C8B45 /* Release */,
+				C534CD2A199718F2007BE0A5 /* Debug */,
+				C534CD2B199718F2007BE0A5 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C568625B197637B0001C8B45 /* Build configuration list for PBXNativeTarget "cujs-runtimeTests" */ = {
+		C5CFC3A01997077C00D1ED51 /* Build configuration list for PBXNativeTarget "cujs-runtime" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C568625C197637B0001C8B45 /* Debug */,
-				C568625D197637B0001C8B45 /* Release */,
+				C5CFC3A11997077C00D1ED51 /* Debug */,
+				C5CFC3A21997077C00D1ED51 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C5F471E9198336DE00F72FAA /* Build configuration list for PBXLegacyTarget "cujs-js-tests" */ = {
+		C5CFC3A31997077C00D1ED51 /* Build configuration list for PBXNativeTarget "cujs-runtimeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C5F471DC198336DE00F72FAA /* Debug */,
-				C5F471DD198336DE00F72FAA /* Release */,
+				C5CFC3A41997077C00D1ED51 /* Debug */,
+				C5CFC3A51997077C00D1ED51 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

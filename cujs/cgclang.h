@@ -13,6 +13,7 @@
 #include <llvm/IR/Module.h>
 #include <llvm/IR/IRBuilder.h>
 #include <set>
+#include <map>
 
 namespace cujs {
     typedef enum ObjCType {
@@ -97,14 +98,43 @@ namespace cujs {
         ObjCClass(std::string _name);
     };
     
+    typedef struct ObjCField {
+    public:
+        std::string name;
+        std::string typeName;
+        unsigned long offset;
+        ObjCType type;
+    } ObjCField;
+    
+    typedef struct ObjCStruct {
+    public:
+        std::string name;
+        std::vector <ObjCField>fields;
+        ObjCType type;
+        unsigned long size;
+    } ObjCStruct;
+   
+    typedef struct ObjCTypeDef {
+    public:
+        std::string name;
+        std::string typeDefName;
+        std::string encodingString;
+        ObjCType type;
+    } ObjCTypeDef;
+    
+    
     // ClangFile is is a representation of useful details of
     // a source file (currently supports headers only)
     class ClangFile {
         std::string _name;
     public:
         std::set <ObjCClass *> _classes;
+        std::set <ObjCStruct *> _structs;
+        std::set <ObjCTypeDef *> _typeDefs;
         ObjCClass *_currentClass;
         ObjCMethod *_currentMethod;
+        ObjCStruct *_currentStruct;
+        long long _curentOffset;
         
         //Import a c language file into the module
         ClangFile(std::string name);

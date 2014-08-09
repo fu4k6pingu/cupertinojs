@@ -1,23 +1,18 @@
-function Counter(init){
-    this.value = init
-    this.increment = function(){
-        this.value = this.value + 1
-        return this.value
-    }
+objc_import("test-imports.h")
 
-    return this
+function DidLoad(){
+//    var color = Color.alloc.init
+    var color = objc_Struct("MColor", null);
+    NSLog("Color class %@", color.class);
+
+    NSLog("Color r %@", color.r);
+    NSLog("Color g %@", color.g);
+    NSLog("Color b %@", color.b);
+    NSLog("Color a %@", color.a);
 }
 
 function main(a,b){
-    (function(){
-         var c = new Counter(9)
-         var log = function(value){
-            NSLog("incremented %@", value)
-         }
-         log(c.increment())
-        return this
-    }())
-
+    DidLoad()
     var zero = 0
     return zero.intValue
 }

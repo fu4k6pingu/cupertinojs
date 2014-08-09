@@ -38,8 +38,6 @@ namespace cujs{
     class CGJSRuntime;
     class CGJSMacroVisitor;
    
-    struct ObjCMethod;
-    
     class CGJS: public  v8::internal::AstVisitor {
         CompilationInfoWithZone *_info;
 
@@ -58,9 +56,7 @@ namespace cujs{
         std::map <Token::Value, std::string> opSelectorByToken;
         std::map <int, std::string> _nameByFunctionID;
 
-        std::map <std::string, ObjCMethod *> _objCMethodBySelector;
-        std::set <std::string> _classes;
-        
+
         std::map <llvm::Function *, llvm::BasicBlock *> returnBlockByFunction;
         
         CGJSRuntime *_runtime;
@@ -143,6 +139,9 @@ namespace cujs{
         void EmitBinaryOp(BinaryOperation* expr, Token::Value op);
         void EmitLogicalAnd(BinaryOperation *expr);
         void EmitLogicalOr(BinaryOperation *expr);
+        
+        void EmitStructLoadCall(Call* node);
+        void EmitStructLoadCast(std::string structName, llvm::CallInst *value);
         
         llvm::Value *CGLiteral( Handle<Object> value, bool push);
         void CGIfStatement(IfStatement *node, bool flag);

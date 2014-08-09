@@ -28,6 +28,7 @@
 
 using namespace v8::internal;
 using namespace cujs;
+using namespace llvm;
 
 class cujs::CGContext {
 public:
@@ -117,7 +118,7 @@ enum LhsKind { VARIABLE, NAMED_PROPERTY, KEYED_PROPERTY };
 
 LhsKind GetLhsKind(Expression *node){
     LhsKind assignType = VARIABLE;
-    Property* property = node->AsProperty();
+    Property *property = node->AsProperty();
     
     if (property != NULL) {
         assignType = (property->key()->IsPropertyName())
@@ -203,7 +204,7 @@ void CGJS::Dump(){
     _module->dump();
 }
 
-void CGJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope *scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     int numParams = scope->num_parameters();
     for (unsigned Idx = 0, e = numParams; Idx != e; ++Idx, ++AI) {
@@ -218,7 +219,7 @@ void CGJS::CreateArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) 
     }
 }
 
-void CGJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope) {
+void CGJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope *scope) {
     llvm::Function::arg_iterator AI = F->arg_begin();
     llvm::Value *argSelf = AI++;
     int numParams = scope->num_parameters();
@@ -246,7 +247,7 @@ void CGJS::CreateJSArgumentAllocas(llvm::Function *F, v8::internal::Scope* scope
     }
 }
 
-void CGJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
+void CGJS::VisitDeclarations(ZoneList<Declaration*> *declarations){
     if (declarations->length() > 0) {
         auto preBB = _builder->GetInsertBlock();
         for (int i = 0; i < declarations->length(); i++) {
@@ -262,7 +263,7 @@ void CGJS::VisitDeclarations(ZoneList<Declaration*>* declarations){
     }
 }
 
-void CGJS::VisitStatements(ZoneList<Statement*>* statements){
+void CGJS::VisitStatements(ZoneList<Statement*> *statements){
     auto preBB = _builder->GetInsertBlock();
     for (int i = 0; i < statements->length(); i++) {
         auto BB = _builder->GetInsertBlock();
@@ -280,7 +281,7 @@ void CGJS::VisitBlock(Block *block){
     VisitStatements(block->statements());
 }
 
-void CGJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
+void CGJS::VisitVariableDeclaration(v8::internal::VariableDeclaration *node) {
     if(IsInGlobalScope()){
         VariableProxy *var = node->proxy();
         auto insertPt = _builder->GetInsertBlock();
@@ -299,11 +300,11 @@ void CGJS::VisitVariableDeclaration(v8::internal::VariableDeclaration* node) {
     Visit(var);
 }
 
-void CGJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration* node) {
+void CGJS::VisitFunctionDeclaration(v8::internal::FunctionDeclaration *node) {
     Visit(node->fun());
 }
 
-void CGJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
+void CGJS::EmitFunctionPrototype(v8::internal::FunctionLiteral *node) {
     auto anonName = _nameByFunctionID[node->id().ToInt()];
     std::string name = anonName.length() ? anonName : stringFromV8AstRawString(node->raw_name());
     assert(name.length() && "missing function name");
@@ -344,49 +345,49 @@ void CGJS::EmitFunctionPrototype(v8::internal::FunctionLiteral* node) {
 
 #pragma mark - Modules
 
-void CGJS::VisitModuleDeclaration(ModuleDeclaration* node) {
+void CGJS::VisitModuleDeclaration(ModuleDeclaration *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitImportDeclaration(ImportDeclaration* node) {
+void CGJS::VisitImportDeclaration(ImportDeclaration *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitExportDeclaration(ExportDeclaration* node) {
+void CGJS::VisitExportDeclaration(ExportDeclaration *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitModuleLiteral(ModuleLiteral* node) {
+void CGJS::VisitModuleLiteral(ModuleLiteral *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitModuleVariable(ModuleVariable* node) {
+void CGJS::VisitModuleVariable(ModuleVariable *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitModulePath(ModulePath* node) {
+void CGJS::VisitModulePath(ModulePath *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitModuleUrl(ModuleUrl* node) {
+void CGJS::VisitModuleUrl(ModuleUrl *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitModuleStatement(ModuleStatement* node) {
+void CGJS::VisitModuleStatement(ModuleStatement *node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Statements
 
-void CGJS::VisitExpressionStatement(ExpressionStatement* node) {
+void CGJS::VisitExpressionStatement(ExpressionStatement *node) {
     Visit(node->expression());
 }
 
-void CGJS::VisitEmptyStatement(EmptyStatement* node) {
+void CGJS::VisitEmptyStatement(EmptyStatement *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitIfStatement(IfStatement* node) {
+void CGJS::VisitIfStatement(IfStatement *node) {
     CGIfStatement(node, true);
 }
 
@@ -449,7 +450,7 @@ void CGJS::CGIfStatement(IfStatement *node, bool flag){
 }
 
 //Continues & breaks must be nested inside of for loops
-void CGJS::VisitContinueStatement(ContinueStatement* node) {
+void CGJS::VisitContinueStatement(ContinueStatement *node) {
     auto currentBlock = _builder->GetInsertBlock();
     auto function = _builder->GetInsertBlock()->getParent();
     bool start = false;
@@ -472,7 +473,7 @@ void CGJS::VisitContinueStatement(ContinueStatement* node) {
     _builder->CreateBr(jumpTarget);
 }
 
-void CGJS::VisitBreakStatement(BreakStatement* node) {
+void CGJS::VisitBreakStatement(BreakStatement *node) {
     auto currentBlock = _builder->GetInsertBlock();
     auto function = _builder->GetInsertBlock()->getParent();
     
@@ -497,7 +498,7 @@ void CGJS::VisitBreakStatement(BreakStatement* node) {
 }
 
 //Insert the expressions into a returning block
-void CGJS::VisitReturnStatement(ReturnStatement* node) {
+void CGJS::VisitReturnStatement(ReturnStatement *node) {
     llvm::BasicBlock *block = _builder->GetInsertBlock();
     llvm::Function *function = block->getParent();
     auto name = function->getName();
@@ -531,23 +532,23 @@ void CGJS::VisitReturnStatement(ReturnStatement* node) {
     _builder->SetInsertPoint(block);
 }
 
-void CGJS::VisitWithStatement(WithStatement* node) {
+void CGJS::VisitWithStatement(WithStatement *node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
 #pragma mark - Switch
 
-void CGJS::VisitSwitchStatement(SwitchStatement* node) {
+void CGJS::VisitSwitchStatement(SwitchStatement *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitCaseClause(CaseClause* clause) {
+void CGJS::VisitCaseClause(CaseClause *clause) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Loops
 
-void CGJS::VisitWhileStatement(WhileStatement* node) {
+void CGJS::VisitWhileStatement(WhileStatement *node) {
     auto function = _builder->GetInsertBlock()->getParent();
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
@@ -572,7 +573,7 @@ void CGJS::VisitWhileStatement(WhileStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGJS::VisitDoWhileStatement(DoWhileStatement* node) {
+void CGJS::VisitDoWhileStatement(DoWhileStatement *node) {
     auto function = _builder->GetInsertBlock()->getParent();
     auto afterBB = llvm::BasicBlock::Create(_module->getContext(), "loop.after", function);
     auto loopBB = llvm::BasicBlock::Create(_module->getContext(), "loop.next", function);
@@ -593,7 +594,7 @@ void CGJS::VisitDoWhileStatement(DoWhileStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGJS::VisitForStatement(ForStatement* node) {
+void CGJS::VisitForStatement(ForStatement *node) {
     _context->EmptyStack();
 
     if (node->init()){
@@ -630,24 +631,24 @@ void CGJS::VisitForStatement(ForStatement* node) {
     _builder->SetInsertPoint(afterBB);
 }
 
-void CGJS::VisitForInStatement(ForInStatement* node) {
+void CGJS::VisitForInStatement(ForInStatement *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitForOfStatement(ForOfStatement* node) {
+void CGJS::VisitForOfStatement(ForOfStatement *node) {
     UNIMPLEMENTED();
 }
 
 #pragma mark - Try
-void CGJS::VisitTryCatchStatement(TryCatchStatement* node) {
+void CGJS::VisitTryCatchStatement(TryCatchStatement *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitTryFinallyStatement(TryFinallyStatement* node) {
+void CGJS::VisitTryFinallyStatement(TryFinallyStatement *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitDebuggerStatement(DebuggerStatement* node) {
+void CGJS::VisitDebuggerStatement(DebuggerStatement *node) {
     UNIMPLEMENTED();
 }
 
@@ -672,7 +673,7 @@ static void CleanupInstructionsAfterBreaks(llvm::Function *function){
 }
 
 //Define the body of the function
-void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
+void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral *node) {
     auto startIB = _builder->GetInsertBlock();
     auto name = stringFromV8AstRawString(node->raw_name());
     if (!_context){
@@ -777,15 +778,15 @@ void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral* node) {
     PushValueToContext(_runtime->classNamed(name.c_str()));
 }
 
-void CGJS::VisitNativeFunctionLiteral(NativeFunctionLiteral* node) {
+void CGJS::VisitNativeFunctionLiteral(NativeFunctionLiteral *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitConditional(Conditional* node) {
+void CGJS::VisitConditional(Conditional *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitLiteral(class Literal* node) {
+void CGJS::VisitLiteral(class Literal *node) {
     CGLiteral(node->value(), true);
 }
 
@@ -793,10 +794,10 @@ void CGJS::VisitLiteral(class Literal* node) {
 
 // String can be in two-byte encoding, and as a result non-ASCII characters
 // will be ignored in the output.
-char* ToAsciiArray(v8::internal::String *string) {
+char *ToAsciiArray(v8::internal::String *string) {
   // Static so that subsequent calls frees previously allocated space.
   // This also means that previous results will be overwritten.
-  static char* buffer = NULL;
+  static char *buffer = NULL;
   if (buffer != NULL) free(buffer);
   buffer = new char[string->length()+1];
   string->WriteToFlat(string, reinterpret_cast<uint8_t*>(buffer), 0, string->length());
@@ -810,10 +811,10 @@ std::string StringWithV8String(v8::internal::String *string) {
 }
 
 llvm::Value *CGJS::CGLiteral(Handle<Object> value, bool push) {
-    Object* object = *value;
+    Object *object = *value;
     llvm::Value *lvalue = NULL;
     if (object->IsString()) {
-        String* string = String::cast(object);
+        String *string = String::cast(object);
         auto name = StringWithV8String(string);
         if (name.length()){
             lvalue = _runtime->newString(name);
@@ -861,7 +862,7 @@ llvm::Value *CGJS::CGLiteral(Handle<Object> value, bool push) {
     return NULL;
 }
 
-void CGJS::VisitRegExpLiteral(RegExpLiteral* node) {
+void CGJS::VisitRegExpLiteral(RegExpLiteral *node) {
     UNIMPLEMENTED();
 }
 
@@ -901,11 +902,11 @@ std::string makeKeyName(Expression *key, llvm::Module *module){
     return NULL;
 }
 
-void CGJS::VisitObjectLiteral(ObjectLiteral* node) {
+void CGJS::VisitObjectLiteral(ObjectLiteral *node) {
     auto newObject = _runtime->newObject();
     
     for (int i = 0; i < node->properties()->length(); i++) {
-        ObjectLiteral::Property* property = node->properties()->at(i);
+        ObjectLiteral::Property *property = node->properties()->at(i);
 
         Visit(property->value());
         auto value = PopContext();
@@ -921,7 +922,7 @@ void CGJS::VisitObjectLiteral(ObjectLiteral* node) {
     PushValueToContext(newObject);
 }
 
-void CGJS::VisitArrayLiteral(ArrayLiteral* node) {
+void CGJS::VisitArrayLiteral(ArrayLiteral *node) {
     auto newObject = _runtime->newObject();
 
     for (int i = 0; i < node->values()->length(); i++) {
@@ -935,11 +936,11 @@ void CGJS::VisitArrayLiteral(ArrayLiteral* node) {
     PushValueToContext(newObject);
 }
 
-void CGJS::VisitVariableProxy(VariableProxy* node) {
+void CGJS::VisitVariableProxy(VariableProxy *node) {
     EmitVariableLoad(node);
 }
 
-void CGJS::VisitAssignment(Assignment* node) {
+void CGJS::VisitAssignment(Assignment *node) {
     assert(node->target()->IsValidReferenceExpression());
     LhsKind assignType = GetLhsKind(node->target());
 
@@ -1015,7 +1016,7 @@ void CGJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
     //send to property
-    ObjCMethod *method = ((ObjCMethod *)_objCMethodBySelector[keyName]);
+    ObjCMethod *method = ((ObjCMethod *)_runtime->_objCMethodBySelector[keyName]);
     if (method && method->name.length()) {
         keyName = method->name;
     }
@@ -1023,7 +1024,7 @@ void CGJS::EmitNamedPropertyAssignment(Property *property, llvm::Value *value){
     _runtime->assignProperty(objValue, keyName, value);
 }
 
-void CGJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
+void CGJS::EmitVariableStore(VariableProxy *targetProxy, llvm::Value *value) {
     assert(targetProxy && "target for assignment required");
     assert(value && "missing value - not implemented");
     std::string targetName = stringFromV8AstRawString(targetProxy->raw_name());
@@ -1072,7 +1073,7 @@ void CGJS::EmitVariableStore(VariableProxy* targetProxy, llvm::Value *value) {
     }
 }
 
-void CGJS::EmitVariableLoad(VariableProxy* node) {
+void CGJS::EmitVariableLoad(VariableProxy *node) {
     std::string variableName = stringFromV8AstRawString(node->raw_name());
     auto varAlloca = _context->valueForKey(variableName);
     
@@ -1112,15 +1113,15 @@ void CGJS::EmitVariableLoad(VariableProxy* node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitYield(Yield* node) {
+void CGJS::VisitYield(Yield *node) {
     UNIMPLEMENTED(); //Deprecated
 }
 
-void CGJS::VisitThrow(Throw* node) {
+void CGJS::VisitThrow(Throw *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitProperty(Property* node) {
+void CGJS::VisitProperty(Property *node) {
     Property *property = node;
     
     Expression *object = property->obj();
@@ -1146,8 +1147,8 @@ void CGJS::VisitProperty(Property* node) {
     }
 }
 
-static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
-    VariableProxy* proxy = call->AsVariableProxy();
+static Call::CallType GetCallType(Expression *call, Isolate *isolate) {
+    VariableProxy *proxy = call->AsVariableProxy();
     if (proxy != NULL && proxy->var()) {
         
         if (proxy->var()->IsUnallocated()) {
@@ -1157,11 +1158,100 @@ static Call::CallType GetCallType(Expression *call, Isolate* isolate) {
         }
     }
     
-    Property* property = call->AsProperty();
+    Property *property = call->AsProperty();
     return property != NULL ? Call::PROPERTY_CALL : Call::OTHER_CALL;
 }
 
-void CGJS::VisitCall(Call* node) {
+
+void CGJS::EmitStructLoadCall(Call *node) {
+    ZoneList<Expression*> *args = node->arguments();
+    auto argExpr = args->at(0);
+    auto nameStr = argExpr->AsLiteral()->raw_value()->AsString();
+    if (!nameStr) {
+        return;
+    }
+    _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString("Make struct call"));
+    
+    //Get struct type
+    std::string name = stringFromV8AstRawString(nameStr);
+
+    //The objc_Struct macro only takes 1 argument
+    auto argOneExpr = args->at(1);
+    Visit(argOneExpr);
+
+
+    llvm::CallInst *objcPointerArgValue = (llvm::CallInst *)PopContext();
+    EmitStructLoadCast(name, objcPointerArgValue);
+}
+
+void CGJS::EmitStructLoadCast(std::string name, llvm::CallInst *objcPointerArgValue) {
+    CGJSRuntime *runtime = _runtime;
+
+    //TODO : nicely declare struct names
+    std::string defName = name;
+    ObjCStruct *objCStructTy = runtime->_objCStructByName[name];
+    assert(objCStructTy && "Missing type for struct");
+    
+    // Type Definitions
+    auto IB = _builder->GetInsertBlock();
+    llvm::Type *StructTy = _module->getTypeByName(defName);
+   
+    // The type to cast msgSend to
+    std::vector<llvm::Type*>castedMsgSendArgumentTypes;
+    castedMsgSendArgumentTypes.push_back(ObjcPointerTy());
+    FunctionType *castedMsgSendFunctionTy = FunctionType::get(
+                                                StructTy,
+                                                castedMsgSendArgumentTypes,
+                                                true);
+
+    PointerType *castedMsgSendPointerTy = PointerType::get(castedMsgSendFunctionTy, 0);
+
+    // Depending on the current ABI, structs will be returned on
+    // different addresses and require a specifc msg send
+    std::string msgSendFuncName = objCStructTy->size <= 8 ? "objc_msgSend" : "objc_msgSend_stret";
+  
+    Constant *msgSendFunc = ConstantExpr::getCast(Instruction::BitCast, _module->getFunction(msgSendFuncName), castedMsgSendPointerTy);
+    AllocaInst *ptr_castedMsgSendFunc = _builder->CreateAlloca(castedMsgSendPointerTy);
+    _builder->CreateStore(msgSendFunc, ptr_castedMsgSendFunc);
+
+    // Add the original value, which could only be derived from
+    // an objc msg send and add them to the args of the new call
+    std::vector<Value*> castedMsgSendArgs;
+    auto opers = objcPointerArgValue->getNumArgOperands();
+    for (unsigned i = 0; i < opers; i++) {
+        llvm::Value *arg = objcPointerArgValue->getArgOperand(i);
+        castedMsgSendArgs.push_back(arg);
+    }
+
+    //Remove the wrongly typed value
+    objcPointerArgValue->eraseFromParent();
+   
+    _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString("Invoke struct casted msgSend"));
+    
+    //Call casted function
+    auto castedMsgSend = _builder->CreateLoad(ptr_castedMsgSendFunc);
+    CallInst *castedMsgSendCallResult = _builder->CreateCall(castedMsgSend, castedMsgSendArgs);
+
+    _builder->CreateCall(_module->getFunction("NSLog"), _runtime->newString("Did invoke struct casted msgSend"));
+  
+    AllocaInst *ptr_resultOfCastedCall = _builder->CreateAlloca(StructTy);
+    PointerType *PointerTy_18 = PointerType::get(StructTy, 0);
+    CastInst *ptr_42 = new BitCastInst(ptr_resultOfCastedCall, PointerTy_18, "", IB);
+ 
+    _builder->CreateStore(castedMsgSendCallResult, ptr_resultOfCastedCall);
+    
+    //Create a struct instance with this name
+    std::vector<llvm::Value *> Args;
+    Args.push_back(_runtime->newString(objCStructTy->name));
+    Args.push_back(ptr_42);
+
+    auto function = _module->getFunction("objc_Struct");
+    assert(function);
+    auto result = _builder->CreateCall(function,  Args);
+    PushValueToContext(result);
+}
+
+void CGJS::VisitCall(Call *node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(callee, isolate());
     
@@ -1171,23 +1261,34 @@ void CGJS::VisitCall(Call* node) {
         UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
         std::string name;
-        VariableProxy* proxy = callee->AsVariableProxy();
+        VariableProxy *proxy = callee->AsVariableProxy();
         if (proxy) {
             name = stringFromV8AstRawString(proxy->raw_name());
+
+            // handle special case compile time magic
+            auto macro = _macros[name];
+            if (macro){
+                macro(this, node);
+                return;
+            }
+            
+            if (name == "objc_Struct") {
+                EmitStructLoadCall(node);
+                return;
+            }
+            
+            if (_runtime->_structs.count(name)) {
+                //TODO:
+                return;
+            }
         } else {
             // handle anon function calls
             // implements (function(){}())
             assert(callee->AsFunctionLiteral());
             name = _nameByFunctionID[node->id().ToInt()];
         }
-       
-        auto macro = _macros[name];
-        if (macro){
-            macro(this, node);
-            return;
-        }
         
-        ZoneList<Expression*>* args = node->arguments();
+        ZoneList<Expression*> *args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
             Visit(args->at(i));
         }
@@ -1219,7 +1320,7 @@ void CGJS::VisitCall(Call* node) {
     }
 }
 
-void CGJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
+void CGJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*> *args){
     Property *property = callee->AsProperty();
     
     Expression *object = property->obj();
@@ -1236,7 +1337,7 @@ void CGJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
     std::string keyName = stringFromV8AstRawString(key->AsRawPropertyName());
 
     //send to property
-    ObjCMethod *method = ((ObjCMethod *)_objCMethodBySelector[keyName.c_str()]);
+    ObjCMethod *method = ((ObjCMethod *)_runtime->_objCMethodBySelector[keyName.c_str()]);
     if (method) {
         keyName = method->name;
     }
@@ -1245,7 +1346,7 @@ void CGJS::EmitPropertyCall(Expression *callee, ZoneList<Expression*>* args){
     PushValueToContext(result);
 }
 
-std::vector <llvm::Value *>CGJS::makeArgs(ZoneList<Expression*>* args) {
+std::vector <llvm::Value *>CGJS::makeArgs(ZoneList<Expression*> *args) {
     std::vector<llvm::Value *> finalArgs;
     
     if (args->length() == 0) {
@@ -1264,7 +1365,7 @@ std::vector <llvm::Value *>CGJS::makeArgs(ZoneList<Expression*>* args) {
     return finalArgs;
 }
 
-void CGJS::VisitCallNew(CallNew* node) {
+void CGJS::VisitCallNew(CallNew *node) {
     Expression *callee = node->expression();
     Call::CallType callType = GetCallType(callee, isolate());
     
@@ -1273,11 +1374,11 @@ void CGJS::VisitCallNew(CallNew* node) {
     } else if (callType == Call::LOOKUP_SLOT_CALL) {
         UNIMPLEMENTED();
     } else if (callType == Call::OTHER_CALL){
-        VariableProxy* proxy = callee->AsVariableProxy();
+        VariableProxy *proxy = callee->AsVariableProxy();
         Visit(proxy);
         auto newClass = PopContext();
         
-        ZoneList<Expression*>* args = node->arguments();
+        ZoneList<Expression*> *args = node->arguments();
         for (int i = 0; i <args->length(); i++) {
             Visit(args->at(i));
         }
@@ -1300,9 +1401,9 @@ void CGJS::VisitCallNew(CallNew* node) {
 
 // Runtime are only used to support the v8 nature of the AST
 // cujs should not extend javascript or rely on v8 specific features
-void CGJS::VisitCallRuntime(CallRuntime* node) {
+void CGJS::VisitCallRuntime(CallRuntime *node) {
     std::string name = stringFromV8AstRawString(node->raw_name());
-    ZoneList<Expression*>* args = node->arguments();
+    ZoneList<Expression*> *args = node->arguments();
 
     if (name == "initializeVarGlobal") {
         //create store for this global in the module initializer
@@ -1333,14 +1434,14 @@ void CGJS::VisitCallRuntime(CallRuntime* node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitUnaryOperation(UnaryOperation* node) {
+void CGJS::VisitUnaryOperation(UnaryOperation *node) {
     UNIMPLEMENTED();
 }
 
-void CGJS::VisitCountOperation(CountOperation* node) {
+void CGJS::VisitCountOperation(CountOperation *node) {
     LhsKind assignType = VARIABLE;
 
-    Property* prop = node->expression()->AsProperty();
+    Property *prop = node->expression()->AsProperty();
     // In case of a property we use the uninitialized expression context
     // of the key to detect a named property.
     if (prop != NULL) {
@@ -1383,7 +1484,7 @@ void CGJS::VisitCountOperation(CountOperation* node) {
     }
 }
 
-void CGJS::VisitBinaryOperation(BinaryOperation* expr) {
+void CGJS::VisitBinaryOperation(BinaryOperation *expr) {
   switch (expr->op()) {
       case Token::COMMA:
           return VisitComma(expr);
@@ -1396,7 +1497,7 @@ void CGJS::VisitBinaryOperation(BinaryOperation* expr) {
   }
 }
 
-void CGJS::VisitComma(BinaryOperation* expr) {
+void CGJS::VisitComma(BinaryOperation *expr) {
     UNIMPLEMENTED();
 }
 
@@ -1471,7 +1572,7 @@ void CGJS::EmitLogicalOr(BinaryOperation *expr) {
     PushValueToContext(ph);
 }
 
-void CGJS::VisitArithmeticExpression(BinaryOperation* expr) {
+void CGJS::VisitArithmeticExpression(BinaryOperation *expr) {
     Expression *left = expr->left();
     Expression *right = expr->right();
   
@@ -1495,11 +1596,11 @@ void CGJS::VisitArithmeticExpression(BinaryOperation* expr) {
 }
 
 // Check for the form (%_ClassOf(foo) === 'BarClass').
-static bool IsClassOfTest(CompareOperation* expr) {
+static bool IsClassOfTest(CompareOperation *expr) {
     if (expr->op() != Token::EQ_STRICT) return false;
-    CallRuntime* call = expr->left()->AsCallRuntime();
+    CallRuntime *call = expr->left()->AsCallRuntime();
     if (call == NULL) return false;
-    Literal* literal = expr->right()->AsLiteral();
+    Literal *literal = expr->right()->AsLiteral();
     if (literal == NULL) return false;
     if (!literal->value()->IsString()) return false;
     if (!call->name()->IsOneByteEqualTo(STATIC_ASCII_VECTOR("_ClassOf"))) {
@@ -1509,14 +1610,14 @@ static bool IsClassOfTest(CompareOperation* expr) {
     return true;
 }
  
-void CGJS::VisitCompareOperation(CompareOperation* expr) {
+void CGJS::VisitCompareOperation(CompareOperation *expr) {
     assert(!HasStackOverflow());
     llvm::Value *resultValue = NULL;
     
     // Check for a few fast cases. The AST visiting behavior must be in sync
     // with the full codegen: We don't push both left and right values onto
     // the expression stack when one side is a special-case literal.
-    Expression* sub_expr = NULL;
+    Expression *sub_expr = NULL;
     Handle<String> check;
     if (expr->IsLiteralCompareTypeof(&sub_expr, &check)) {
         UNIMPLEMENTED();
@@ -1584,7 +1685,7 @@ void CGJS::VisitCompareOperation(CompareOperation* expr) {
     PushValueToContext(resultValue);
 }
 
-void CGJS::VisitThisFunction(ThisFunction* node) {
+void CGJS::VisitThisFunction(ThisFunction *node) {
     UNIMPLEMENTED();
 }
 
@@ -1630,7 +1731,7 @@ llvm::Value *CGJS::PopContext() {
 
 //SymbolIsClass - this symbol is currently known as a class
 bool CGJS::SymbolIsClass(std::string symbol) {
-    return _classes.count(symbol) || _module->getFunction(symbol);
+    return _runtime->_classes.count(symbol) || _module->getFunction(symbol);
 }
 
 //SymbolIsJSFunction - this symbol is known jsfunction

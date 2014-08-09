@@ -6,6 +6,7 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
+#include <vector>
 #include "cgjs.h"
 #include "cgjsmacrovisitor.h"
 #include "cgclang.h"
@@ -17,6 +18,34 @@ using namespace cujs;
 #define CGJSDEBUG 0
 #define ILOG(A, ...) if (CGJSDEBUG){ printf(A,##__VA_ARGS__), printf("\n");}
 
+//TODO : move to runtime
+void MacroImportDeclareClasses(CGJS *CG, Call *node, ClangFile clangFile){
+    //Lookup the module init BB
+    CGJSRuntime *runtime = CG->_runtime;
+    //Declare classes as global variables in the init BB
+    for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
+        runtime->enterClass(*it);
+    }
+}
+
+void MacroImportEnterStructs(CGJS *CG, Call *node, ClangFile clangFile){
+    //Lookup the module init BB
+    //Declare classes as global variables in the init BB
+    CGJSRuntime *runtime = CG->_runtime;
+    for (auto it = clangFile._structs.begin(); it != clangFile._structs.end(); ++it){
+        runtime->enterStruct(*it);
+    }
+}
+
+void MacroImportEnterTypeDefs(CGJS *CG, Call *node, ClangFile clangFile){
+    //Lookup the module init BB
+    //Declare classes as global variables in the init BB
+    CGJSRuntime *runtime = CG->_runtime;
+    for (auto it = clangFile._typeDefs.begin(); it != clangFile._typeDefs.end(); ++it){
+        runtime->enterTypeDef(*it);
+    }
+}
+
 void MacroImport(CGJS *CG, Call *node){
     ZoneList<Expression*>* args = node->arguments();
     auto argExpr = args->at(0);
@@ -26,7 +55,7 @@ void MacroImport(CGJS *CG, Call *node){
     }
    
     std::string filePath = stringFromV8AstRawString(importPath);
-    auto clangFile = cujs::ClangFile(filePath);
+    ClangFile clangFile = ClangFile(filePath);
     
     //Lookup the module init BB
     llvm::Module *module = CG->_module;
@@ -38,35 +67,9 @@ void MacroImport(CGJS *CG, Call *node){
     auto insertPt = builder->GetInsertBlock();
     builder->SetInsertPoint(moduleInitBB);
 
-    //Declare classes as global variables in the init BB
-    for (auto it = clangFile._classes.begin(); it != clangFile._classes.end(); ++it){
-        cujs::ObjCClass *newClass = *it;
-        auto className = newClass->_name;
-        NewLocalStringVar(className, CG->_module);
-        
-        ILOG("Class %s #methods: %lu", className.c_str(), newClass->_methods.size());
-        
-        for (auto methodIt = newClass->_methods.begin(); methodIt != newClass->_methods.end(); ++methodIt){
-            cujs::ObjCMethod *method = *methodIt;
-            ILOG("Method (%d) %s: %lu ", method->type, method->name.c_str(), method->params.size());
-
-            std::string objCSelector = method->name;
-            auto jsSelector = ObjCSelectorToJS(objCSelector);
-            
-            ObjCMethod *existingMethod = ((ObjCMethod *)CG->_objCMethodBySelector[jsSelector]);
-            if(!existingMethod){
-                CG->_objCMethodBySelector[jsSelector] = method;
-                ILOG("JS selector name %s", jsSelector.c_str());
-            }
-        }
-       
-        auto global = module->getGlobalVariable(className);
-        if (!global) {
-            llvm::Value *globalValue = CG->_runtime->declareGlobal(className);
-            builder->CreateStore(CG->_runtime->classNamed(className.c_str()), globalValue);
-            CG->_classes.insert(className);
-        }
-    }
+    MacroImportEnterTypeDefs(CG, node, clangFile);
+    MacroImportDeclareClasses(CG, node, clangFile);
+    MacroImportEnterStructs(CG, node, clangFile);
     
     //Restore insert point
     builder->SetInsertPoint(insertPt);

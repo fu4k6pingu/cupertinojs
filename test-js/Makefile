@@ -21,7 +21,7 @@ js-build:
 # Don't enable compiler debug (bitcode dump)
 #		@echo export CUJS_ENV_DEBUG_COMPILER=true >> $(BUILD_SCRIPT)
 
-		@echo export CUJS_ENV_RUNTIME="/usr/local/lib/cujs-runtime.dylib" >> $(BUILD_SCRIPT)
+		@echo export CUJS_ENV_RUNTIME="/usr/local/lib/libcujs-runtime.a" >> $(BUILD_SCRIPT)
 		@echo export CUJS_ENV_CREATE_EXECUTABLE=true >> $(BUILD_SCRIPT)
 		@echo export CUJS_ENV_MTRIPEL="" >> $(BUILD_SCRIPT)
 		@echo export CUJS_ENV_PROJECT_ROOT_DIR=$(ROOT_DIR) >> $(BUILD_SCRIPT)

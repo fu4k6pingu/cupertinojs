@@ -25,6 +25,7 @@ void printCursorTokens(CXTranslationUnit translationUnit,CXCursor currentCursor)
 
 CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 CXChildVisitResult functionDeclVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
+CXChildVisitResult structDeclVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 
 static std::string ENV_PROJECT_ROOT_DIR("CUJS_ENV_PROJECT_ROOT_DIR");
 
@@ -41,8 +42,13 @@ ClangFile::ClangFile(std::string name) {
         "-x",
         "objective-c",
 
+        "-arch",
+        "i386",
+
+        "-m32",
         //Required for iOS/UIKit
-        "-miphoneos-version-min=3.0",
+//        "-miphoneos-version-min=3.0",
+        "-mios-simulator-version-min=7.0",
         "-isysroot/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator7.0.sdk",
         "-framework",
         "UIKit",
@@ -50,7 +56,8 @@ ClangFile::ClangFile(std::string name) {
    
     std::string rootDir = get_env_var(ENV_PROJECT_ROOT_DIR);
     std::string file = string_format("%s/%s", rootDir.c_str(), name.c_str());
-   
+    ILOG("Import file %s", file.c_str());
+
     int numArgs = sizeof(args) / sizeof(*args);
     CXTranslationUnit translationUnit = clang_parseTranslationUnit(index, file.c_str(), args, numArgs, NULL, 0, CXTranslationUnit_None);
     CXCursor rootCursor = clang_getTranslationUnitCursor(translationUnit);
@@ -59,7 +66,7 @@ ClangFile::ClangFile(std::string name) {
     clang_disposeTranslationUnit(translationUnit);
     clang_disposeIndex(index);
     
-    assert(translationUnit);
+    assert(translationUnit && "bad import");
 }
 
 ClangFile::~ClangFile() {}
@@ -118,17 +125,20 @@ void printCursorTokens(CXTranslationUnit translationUnit, CXCursor currentCursor
     clang_disposeTokens(translationUnit,tokens,nbTokens);
 }
 
+static CXType parentType;
 CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data){
     CXCursorKind kind = clang_getCursorKind(cursor);
-    CXString name = clang_getCursorSpelling(cursor);
-    ILOG("cursor '%s' kind %d\n",clang_getCString(name), kind);
+    CXString nameSpelling = clang_getCursorSpelling(cursor);
+    std::string name = clang_getCString(nameSpelling);
+
+    ILOG("cursor '%s' kind %d\n", name.c_str(), kind);
     
     ClangFile *file = (ClangFile *)client_data;
     
     if (kind == CXCursor_ObjCInterfaceDecl || kind == CXCursor_ObjCCategoryDecl) {
-        std::string className = clang_getCString(name);
-        ILOG("\tclass '%s'\n",clang_getCString(name));
-        ObjCClass *currentClass = new ObjCClass(className);
+        ILOG("\tclass '%s'\n", name.c_str());
+       
+        ObjCClass *currentClass = new ObjCClass(name);
         file->_classes.insert(currentClass);
         file->_currentClass = currentClass;
         return CXChildVisit_Recurse;
@@ -137,7 +147,7 @@ CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData 
     if ((kind ==  CXCursor_ObjCClassMethodDecl || kind == CXCursor_ObjCInstanceMethodDecl)
         && file->_currentClass){
         ObjCMethod *method = new ObjCMethod;
-        method->name = std::string(clang_getCString(name));
+        method->name = name;
 
         auto retType = clang_getCursorResultType(cursor);
         method->type = (ObjCType)retType.kind;
@@ -151,7 +161,43 @@ CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData 
         file->_currentClass->_methods.push_back(method);
         return CXChildVisit_Continue;
     }
+
+    CXType type = clang_getCursorType(cursor);
+    if ((ObjCType)type.kind == ObjCType_Record) {
+        
+        ObjCStruct *aStruct = new ObjCStruct;
+        aStruct->name = name;
+        aStruct->type = (ObjCType)type.kind;
+      
+        file->_currentStruct = aStruct;
+       
+        aStruct->size = clang_Type_getSizeOf(type);
+        file->_curentOffset = 0;
+        parentType = type;
+       
+        ILOG("struct '%s' ",aStruct->name.c_str());
+        ILOG("encoding '%s' ", clang_getCString(clang_getDeclObjCTypeEncoding(cursor)));
+        ILOG("size '%lul' \n", aStruct->size);
+
+        clang_visitChildren(cursor, *structDeclVisitor, file);
+        file->_structs.insert(file->_currentStruct);
+        return CXChildVisit_Continue;
+    }
     
+    if (kind == CXCursor_TypedefDecl){
+        ObjCTypeDef *aTypeDef = new ObjCTypeDef;
+        aTypeDef->name = name;
+        
+        CXType typeDefType = clang_getTypedefDeclUnderlyingType(cursor);
+        aTypeDef->type = (ObjCType)typeDefType.kind;
+
+        CXCursor typedefCursor = clang_getTypeDeclaration(typeDefType);
+        aTypeDef->encodingString = clang_getCString(clang_getDeclObjCTypeEncoding(typedefCursor));
+        file->_typeDefs.insert(aTypeDef);
+        
+        return CXChildVisit_Continue;
+    }
+
     return CXChildVisit_Recurse;
 }
 
@@ -171,3 +217,44 @@ CXChildVisitResult functionDeclVisitor(CXCursor cursor, CXCursor parent, CXClien
     return CXChildVisit_Continue;
 }
 
+
+CXChildVisitResult structDeclVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+    CXCursorKind kind = clang_getCursorKind(cursor);
+    CXType type = clang_getCursorType(cursor);
+    ClangFile *file = (ClangFile *)client_data;
+    
+    if (kind == CXCursor_FieldDecl){
+        ObjCField field = (ObjCField){};
+        CXString name = clang_getCursorSpelling(cursor);
+        field.name = clang_getCString(name);
+        
+       
+        // FIXME: clang_Type_getOffsetOf is not working for 32bit
+        // according to the API the following should work:
+        // (clang_Type_getOffsetOf(parentType, clang_getCString(name)))
+        // for now manually compute the offset
+        long long offset = file->_curentOffset;
+        field.offset = offset;
+        
+        if (offset == CXTypeLayoutError_Incomplete || offset == CXTypeLayoutError_Dependent) {
+            ILOG("warning FIELD ERROR: %s %d", field.name.c_str(), (int)offset);
+        }
+        
+        field.type = (ObjCType)type.kind;
+       
+        if (field.type == ObjCType_Typedef) {
+            CXCursor typeDefCursr = clang_getTypeDeclaration(type);
+            auto name = clang_getCString(clang_getCursorSpelling(typeDefCursr));
+            ILOG("ObjCType_Typedef field name %s\n", name);
+            field.typeName = name;
+        }
+
+
+        file->_curentOffset += clang_Type_getSizeOf(type);
+        ILOG("\tfield: '%s' of type '%i' offset %d \n", field.name.c_str(), field.type, (int)field.offset);
+        file->_currentStruct->fields.push_back(field);
+        return CXChildVisit_Continue;
+    }
+    
+    return CXChildVisit_Continue;
+}

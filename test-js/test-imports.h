@@ -1,4 +1,28 @@
-#import <Foundation/Foundation.h>
+//#import <Foundation/Foundation.h>
+
+typedef float CGFloat;
+
+struct CGPoint {
+    CGFloat x;
+    CGFloat y;
+};
+typedef struct CGPoint CGPoint;
+
+/* Sizes. */
+
+struct CGSize {
+    CGFloat width;
+    CGFloat height;
+};
+//typedef struct CGSize CGSize;
+//
+///* Rectangles. */
+//
+struct CGRect {
+    CGPoint origin;
+    CGSize size;
+};
+typedef struct CGRect CGRect;
 
 @interface NSObject (CUJS)
 
@@ -6,11 +30,13 @@
 
 @end
 
-struct SalamanderState { int color:0 };
+struct Color { int r; int g; int b; int a; };
+struct Animal { struct Color color; int _id; };
+struct MColor { int r; int g; int b; int a; };
 
-@interface Salamander : NSObject
+@interface ZooObject : NSObject
 
 - (void)slide;
-- (struct SalamanderState)salamanderState;
+- (struct Animal)animal;
 
 @end

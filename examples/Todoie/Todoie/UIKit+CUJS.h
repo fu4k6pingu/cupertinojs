@@ -7,6 +7,8 @@
 //
 //  FIXME : abstract UIKit+CUJS into seperate framework
 
+struct MColor { int r; int g; int b; int a; };
+struct Animal { struct MColor color; int _id; };
 
 @interface NSObject (CUJSExtend)
 
@@ -24,5 +26,6 @@
 
 - (instancetype)initWithFrameValue:(id)frameValue;
 - (id)frameValue;
+- (struct Animal)animal;
 
 @end

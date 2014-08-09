@@ -170,7 +170,7 @@ id impl3(id instance,
     cujs_defineJSFunction("subclass-2", echoFirstArgImp);
     Class aClass = objc_getClass("subclass-2");
     id f = [aClass new];
-    id result = cujs_invoke(f, CFRetain(@"An Arg"));
+    id result = cujs_invoke(f, CFRetain(@"An Arg"), nil);
     
     XCTAssertTrue(calledBody, @"It invokes body:");
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
@@ -180,7 +180,7 @@ id impl3(id instance,
     cujs_defineJSFunction("subclass-3", echoFirstArgImp);
     Class aClass = objc_getClass("subclass-3");
    
-    id result = cujs_invoke(aClass, CFRetain(@"An Arg"));
+    id result = cujs_invoke(aClass, CFRetain(@"An Arg"), nil);
     XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
     XCTAssertEqual(@"An Arg", result, @"It returns the arg");
 }
@@ -189,7 +189,7 @@ id impl3(id instance,
     cujs_defineJSFunction("subclass-4", impl2);
     Class aClass = objc_getClass("subclass-4");
    
-    id result = cujs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"));
+    id result = cujs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), nil);
     XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
     XCTAssertEqual(@"An Arg2", result, @"It returns the arg");
 }
@@ -198,7 +198,7 @@ id impl3(id instance,
     cujs_defineJSFunction("subclass-5", impl3);
     Class aClass = objc_getClass("subclass-5");
    
-    id result = cujs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), CFRetain(@"An Arg3"));
+    id result = cujs_invoke(aClass, CFRetain(@"An Arg"), CFRetain(@"An Arg2"), CFRetain(@"An Arg3"), nil);
     XCTAssertTrue(calledBody, @"It invokes body: on a new instance");
     XCTAssertEqualObjects(@([result count]), @3, @"It returns the arg");
 }
@@ -291,3 +291,237 @@ id impl3(id instance,
 }
 
 @end
+
+
+@interface cujs_runtimeStructTests : XCTestCase
+
+@end
+
+struct SalamanderState { int hot; int spots; };
+
+@interface Salamander : NSObject
+
+@property (nonatomic) struct SalamanderState state;
+
+@end
+
+@implementation Salamander
+
+@synthesize state;
+
+@end
+
+@implementation cujs_runtimeStructTests
+
+#pragma mark - Struct tests
+
+- (void)setUp {
+    [super setUp];
+
+}
+
+- (void)testSanityStandardStructAssignment {
+    Salamander *salamander = [Salamander new];
+    struct SalamanderState state;
+    state.spots = 42;
+    state.hot = 1;
+    salamander.state = state;
+    
+    XCTAssertTrue(salamander.state.hot == 1, @"It is hot");
+    XCTAssertTrue(salamander.state.spots == 42, @"It has a spots");
+}
+
+- (void)testSanityStructAssignemntWithNSValue {
+    int offsetOfHot = offsetof(struct SalamanderState, hot);
+    int offsetOfColor = offsetof(struct SalamanderState, spots);
+    int sizeOfSalamanderState = sizeof(struct SalamanderState);
+    char *encoding = @encode(struct SalamanderState);
+    assert(offsetOfHot == 0);
+    assert(offsetOfColor == 4);
+    assert(sizeOfSalamanderState == 8);
+    assert(encoding == "{SalamanderState=ii}");
+    
+    int *structBytes = malloc(sizeof(struct SalamanderState ));
+    char *baseAddr = (char *)structBytes;
+    *(int *)(baseAddr + 0) = 1;
+    *(int *)(baseAddr + 4) = 42;
+
+    NSValue *value = [NSValue valueWithBytes:structBytes
+                                    objCType:@encode(struct SalamanderState)];
+    
+    Salamander *salamander = [Salamander new];
+    [salamander setValue:value forKey:@"state"];
+    
+    XCTAssertTrue(salamander.state.hot == 1, @"It is hot");
+    XCTAssertTrue(salamander.state.spots == 42, @"It has 42 spots");
+    
+    char structValue[8];
+    [value getValue:&structValue];
+    XCTAssertTrue(structValue[0] == 1, @"It is hot");
+    XCTAssertTrue(structValue[4] == 42, @"It has a spots");
+}
+
+- (void)testItCanCreateStructs {
+    Class structClass = cujs_newJSObjectClass();
+    cujs_registerStruct("{SalamanderState=ii}");
+    cujs_assignProperty(structClass, "structType", @"{SalamanderState=ii}");
+    cujs_assignProperty(structClass,
+                        "fieldOffsets",
+                        [@{
+                          @"hot" : @0,
+                          @"spots": @4
+                          } copy]);
+    
+    cujs_assignProperty(structClass,
+                        "structFieldEncoding",
+                        [@{
+                          @"hot" : @"i",
+                          @"spots": @"i"
+                          } copy]);
+    
+    cujs_assignProperty(structClass, "structSize", @8);
+    cujs_assignProperty(structClass, "structEncoding", @"{SalamanderState=ii}");
+    
+    id instance = [[[structClass alloc] init] retain];
+    cujs_assignProperty(instance, "hot", @1);
+    cujs_assignProperty(instance, "spots", @42);
+    
+    Salamander *salamander = [[Salamander alloc] init];
+    assert(salamander);
+    NSValue *structValue = [instance structValue];
+    cujs_assignProperty(salamander, "state", structValue);
+
+    XCTAssertTrue(salamander.state.hot == 1, @"It is hot");
+    XCTAssertTrue(salamander.state.spots == 42, @"It has 42 spots");
+}
+
+struct ZooKeeper {int size; int gender; };
+
+__attribute__((constructor))void initZooZeeper(){
+    CUJSStructField fields[] = {
+        {"size", "", 0, ObjCType_Int},
+        {"gender","", sizeof(int), ObjCType_Int}
+    };
+    
+    cujs_defineStruct("ZooKeeper", 2, fields);
+}
+
+- (void)testItCanCreateStructsWithRuntimeFunction {
+    // this is really an implementation detail that the
+    // structs are prefixed but makes for a good integration test
+    id structClass = objc_getClass("JSStructZooKeeper");
+
+    id zookeyperObject = [[structClass alloc] init];
+    cujs_assignProperty(zookeyperObject, "size", @69);
+    cujs_assignProperty(zookeyperObject, "gender", @3);
+
+    struct ZooKeeper *zookeyper = (struct ZooKeeper *)[zookeyperObject toStruct];
+    
+    XCTAssertTrue(zookeyper->size == 69, @"It has a size");
+    XCTAssertTrue(zookeyper->gender == 3, @"It has a gender");
+}
+
+- (void)testItCanCreateStructsWithAStructArgument
+{
+    id zookeyperObject = objc_Struct(@"ZooKeeper", &(struct ZooKeeper){69, 3});
+    XCTAssertTrue([[zookeyperObject performSelector:NSSelectorFromString(@"size")] intValue] == 69, @"It has a size");
+    XCTAssertTrue([[zookeyperObject performSelector:NSSelectorFromString(@"gender")] intValue] == 3, @"It has a gender");
+}
+
+struct ZooKeeper2 {float size; int gender; };
+
+__attribute__((constructor))void initZooZeeper2(){
+    CUJSStructField fields[] = {
+        {"size", "", 0, ObjCType_Float},
+        {"gender", "", sizeof(float), ObjCType_Int}
+    };
+    
+    cujs_defineStruct("ZooKeeper2", 2, fields);
+}
+
+- (void)testItCanCreateStructsWithAStructArgumentAndFloats
+{
+    id zookeyperObject = objc_Struct(@"ZooKeeper2", &(struct ZooKeeper2){69.3, 3});
+    //FIXME : this test is a copout but xcttest can't assert float equality
+    XCTAssertEqual((int)[[zookeyperObject performSelector:NSSelectorFromString(@"size")] floatValue], (int)69.3, @"It has a size");
+    XCTAssertTrue([[zookeyperObject performSelector:NSSelectorFromString(@"gender")] intValue] == 3, @"It has a gender");
+}
+
+struct Color { int r; int g; int b; int a; };
+struct Animal { struct Color color; int _id; };
+
+__attribute__((constructor))void initAnimal(){
+
+}
+
+- (void)testItCanCreateStructObjectsWithComplexTypes {
+    CUJSStructField colorFields[] = {
+        {"r", "", 0, ObjCType_Int},
+        {"g", "", sizeof(int), ObjCType_Int},
+        {"b", "", sizeof(int) * 2, ObjCType_Int},
+        {"a", "", sizeof(int) * 3, ObjCType_Int},
+    };
+    cujs_defineStruct("Color", 4, colorFields);
+  
+    CUJSStructField animalFields[] = {
+        {"color", "Color", 0, ObjCType_Unexposed},
+        {"_id", "", sizeof(struct Color), ObjCType_Int}
+    };
+    
+    cujs_defineStruct("Animal", 2, animalFields);
+    
+    struct Color color = (struct Color){1, 2, 3, 0};
+    struct Animal animal = (struct Animal){color, 42};
+    id zookeyperObject = objc_Struct(@"Animal", &animal);
+   
+    XCTAssertEqualObjects([zookeyperObject performSelector:NSSelectorFromString(@"_id")], @42, @"It has an id");
+    
+    id colorObject = [zookeyperObject performSelector:NSSelectorFromString(@"color")];
+    XCTAssertNotNil(colorObject, @"It has a color");
+
+    XCTAssertEqualObjects([colorObject performSelector:NSSelectorFromString(@"r")], @1, @"It has an r");
+    XCTAssertEqualObjects([colorObject performSelector:NSSelectorFromString(@"g")], @2, @"It has an g");
+    XCTAssertEqualObjects([colorObject performSelector:NSSelectorFromString(@"b")], @3, @"It has an b");
+    XCTAssertEqualObjects([colorObject performSelector:NSSelectorFromString(@"a")], @0, @"It has an a");
+}
+
+- (void)testItCanCreateStructsWithComplexTypesToNSValue {
+    struct Color color = (struct Color){1, 2, 3, 0};
+    struct Animal animal = (struct Animal){color, 42};
+    id zookeyperObject = objc_Struct(@"Animal", &animal);
+
+    NSValue *structValue = [zookeyperObject structValue];
+    assert(structValue);
+    
+    struct Animal retrievedAnimal;
+    [structValue getValue:&retrievedAnimal];
+
+    XCTAssertEqual(retrievedAnimal._id, 42, @"It has an _id");
+    
+    struct Color retrievedColor = retrievedAnimal.color;
+    XCTAssertEqual(retrievedColor.r, 1, @"It has an r");
+    XCTAssertEqual(retrievedColor.g, 2, @"It has an g");
+    XCTAssertEqual(retrievedColor.b, 3, @"It has an b");
+    XCTAssertEqual(retrievedColor.a, 0, @"It has an a");
+}
+
+- (void)testItCanCreateStructsWithToStruct {
+    struct Color color = (struct Color){1, 2, 3, 0};
+    struct Animal animal = (struct Animal){color, 42};
+    id zookeyperObject = objc_Struct(@"Animal", &animal);
+    
+    struct Animal retrievedAnimal;
+    char *bytes  = [zookeyperObject toStruct];
+    memcpy(&retrievedAnimal, bytes, sizeof(struct Animal));
+    free(bytes);
+    
+    XCTAssertEqual(retrievedAnimal._id, 42, @"It has an _id");
+    
+    struct Color retrievedColor = retrievedAnimal.color;
+    XCTAssertEqual(retrievedColor.r, 1, @"It has an r");
+    XCTAssertEqual(retrievedColor.g, 2, @"It has an g");
+    XCTAssertEqual(retrievedColor.b, 3, @"It has an b");
+}
+
+@end
+

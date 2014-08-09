@@ -14,9 +14,25 @@
     [NSException raise:@"CUJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
 //FIXME : assert VA_ARGS if not enabled
-#define CUJSRuntimeDEBUG 1
+#define CUJSRuntimeDEBUG 0
 #define ILOG(A, ...){if(CUJSRuntimeDEBUG){ NSLog(A,##__VA_ARGS__), printf("\n"); }}
 
+@implementation NSString (CUJSCString)
+
+- (const char *)cujs_cString{
+    return self.cString;
+}
+
+@end
+
+
+NSString *cujs_prefixedStructClassNameWithString(NSString *original){
+    return [NSString stringWithFormat:@"JSStruct%@", original];
+}
+
+NSString *cujs_prefixedStructClassNameWithCString(const char *original){
+    return [NSString stringWithFormat:@"JSStruct%s", original];
+}
 
 @implementation NSObject (CUJSFunction)
 
@@ -50,6 +66,17 @@ static NSMutableDictionary *CUJSParents = NULL;
 }
 
 + (BOOL)cujs_defineProperty:(const char *)propertyName {
+    SEL getterSelector = sel_getUid(propertyName);
+    char *setterName = setterNameFromPropertyName(propertyName);
+    SEL setterSelector = sel_getUid(setterName);
+    free(setterName);
+    
+    if ([self respondsToSelector:getterSelector] &&
+        [self respondsToSelector:setterSelector]) {
+        ILOG(@"%s - already defined", __PRETTY_FUNCTION__);
+        return NO;
+    }
+    
     return cujs_defineProperty(object_getClass(self) , propertyName);
 }
 
@@ -68,6 +95,7 @@ BOOL cujs_isRestrictedProperty(const char *propertyName){
     return YES;
 }
 
+
 BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
     if (cujs_isRestrictedProperty(propertyName)) {
         RuntimeException(@"unsupported - cannot define property '%s'", propertyName);
@@ -77,15 +105,10 @@ BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
     char *setterName = setterNameFromPropertyName(propertyName);
     SEL setterSelector = sel_getUid(setterName);
     
-    if ([selfClass respondsToSelector:getterSelector] &&
-        [selfClass respondsToSelector:setterSelector]) {
-        ILOG(@"%s - already defined", __PRETTY_FUNCTION__);
-        return NO;
-    }
-    
     ILOG(@"%s: %s", __PRETTY_FUNCTION__, propertyName);
-    
-    IMP getter = imp_implementationWithBlock(^(id _self, SEL cmd){
+   
+    IMP getter = imp_implementationWithBlock(^(id _self){
+        assert(propertyName);
         id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
         id value;
         if ([[[_self _cujs_keyed_properties] allKeys] containsObject:propertyNameString]) {
@@ -93,13 +116,14 @@ BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
         } else {
             value = objc_getAssociatedObject(_self, propertyName);
         }
-        
-        ILOG(@"ACCESS VALUE FOR KEY %@ <%p>, %s - %s: %@", _self, _self, __PRETTY_FUNCTION__, propertyName, value);
+
+        ILOG(@"ACCESS VALUE FOR KEY %@ <%p>, %s: %@", _self, _self, propertyName, value);
         return value;
     });
-    
-    IMP setter = imp_implementationWithBlock(^(id _self, SEL cmd, id value){
-        ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, __PRETTY_FUNCTION__, value);
+        
+    IMP setter = imp_implementationWithBlock(^(id _self, id value){
+        assert(propertyName);
+        ILOG(@"SET VALUE %@ <%p>, %s - %@", _self, _self, propertyName, value);
         id propertyNameString = [NSString stringWithCString:propertyName encoding:NSUTF8StringEncoding];
         if ([[[_self _cujs_keyed_properties] allKeys] containsObject:propertyNameString]) {
             [_self _cujs_keyed_properties][propertyNameString] = value;
@@ -107,7 +131,7 @@ BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
             id _value = objc_getAssociatedObject(_self, propertyName);
             if (value != _value) {
                 [_value release];
-                objc_setAssociatedObject(_self, propertyName, [value retain], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+                objc_setAssociatedObject(_self, propertyName, value, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
                 ILOG(@"DID SET VALUE");
             }     
         }
@@ -121,6 +145,17 @@ BOOL cujs_defineProperty(Class selfClass, const char *propertyName){
 }
 
 - (BOOL)cujs_defineProperty:(const char *)propertyName {
+    SEL getterSelector = sel_getUid(propertyName);
+    char *setterName = setterNameFromPropertyName(propertyName);
+    SEL setterSelector = sel_getUid(setterName);
+    free(setterName);
+    
+    if ([self respondsToSelector:getterSelector] &&
+        [self respondsToSelector:setterSelector]) {
+        ILOG(@"%s - already defined", __PRETTY_FUNCTION__);
+        return NO;
+    }
+    
     return cujs_defineProperty([self class], propertyName);
 }
 
@@ -137,6 +172,7 @@ char *setterNameFromPropertyName(const char *propertyName){
     
     setterName[nameLen + 3] = ':';
     setterName[nameLen + 4] = '\0';
+    sel_registerName(setterName);
     return setterName;
 }
 
@@ -235,21 +271,158 @@ void *cujs_defineJSFunction(const char *name,
     return jsClass;
 }
 
+char *encodingToChar(int encoding){
+    /**
+     * \brief Reprents an invalid type (e.g., where no type is available).
+     */
+
+    if (!encoding) {
+        RuntimeException(@"bad encoding!");
+    }
+    
+    static char *types[200];
+    //This is assigned for completeness, but throw an exception otherwise
+    types[ObjCType_Invalid] =  NULL,
+    
+    /**
+     * \brief A type whose specific kind is not exposed via this
+     * interface.
+     */
+    types[ObjCType_Unexposed] =  "?",
+   
+    /* Builtin types */
+    types[ObjCType_Void] = @encode(void),
+    types[ObjCType_Bool] =  @encode(BOOL),
+    types[ObjCType_Char_U] =  @encode(unsigned char),
+    types[ObjCType_UChar] =  @encode(u_char),
+    types[ObjCType_Char16] =  @encode(char),
+    types[ObjCType_Char32] =  @encode(char),
+    types[ObjCType_UShort] =  @encode(unsigned short),
+    types[ObjCType_UInt] =  @encode(unsigned int),
+    
+    types[ObjCType_ULong] =  @encode(unsigned long),
+    types[ObjCType_ULongLong] =  @encode(unsigned long long),
+    types[ObjCType_UInt128] = @encode(unsigned int),
+    types[ObjCType_Char_S] =  @encode(char),
+    types[ObjCType_SChar] =  @encode(char *),
+    types[ObjCType_WChar] =  @encode(wchar_t),
+    types[ObjCType_Short] =  @encode(short),
+    types[ObjCType_Int] =  @encode(int),
+    types[ObjCType_Long] =  @encode(long),
+    types[ObjCType_LongLong] =  @encode(long long),
+    types[ObjCType_Int128] =  @encode(long long),
+    types[ObjCType_Float] =  @encode(float),
+    types[ObjCType_Double] =  @encode(double),
+    types[ObjCType_LongDouble] =  @encode(long double),
+    types[ObjCType_NullPtr] =  @encode(int),
+//    types[ObjCType_Overload] =  @encode(),
+//    types[ObjCType_Dependent] =  26,
+    types[ObjCType_ObjCId] =  @encode(id),
+    types[ObjCType_ObjCClass] =  @encode(Class),
+    types[ObjCType_ObjCSel] =  @encode(SEL),
+    types[ObjCType_FirstBuiltin] =  types[ObjCType_Void],
+    types[ObjCType_LastBuiltin ] =  types[ObjCType_ObjCSel],
+    
+//    types[ObjCType_Complex] = 100,
+    types[ObjCType_Pointer] = @encode(pointer_t),
+    types[ObjCType_BlockPointer] =  @encode(pointer_t),
+//    types[ObjCType_LValueReference] =  @encode(0),
+//    types[ObjCType_RValueReference] =  104,
+    types[ObjCType_Record] =  "?",
+    types[ObjCType_Enum] =  "?",
+    types[ObjCType_Typedef] =  "?",
+//    types[ObjCType_ObjCInterface] =  @encode(@interface()),
+    types[ObjCType_ObjCObjectPointer] =  @encode(id),
+//    types[ObjCType_FunctionNoProto] =  ,
+//    types[ObjCType_FunctionProto] =  111,
+//    types[ObjCType_ConstantArray] =  112,
+//    types[ObjCType_Vector] =  113,
+//    types[ObjCType_IncompleteArray] =  114,
+//    types[ObjCType_VariableArray] =  115,
+//    types[ObjCType_DependentSizedArray] =  116,
+    types[ObjCType_MemberPointer] =  @encode(pointer_t);
+    return types[encoding];
+}
+
+size_t encodingToSize(int encoding){
+    size_t sizes[200];
+    sizes[ObjCType_Invalid] =  0,
+    
+    /**
+     * \brief A type whose specific kind is not exposed via this
+     * interface.
+     */
+    sizes[ObjCType_Unexposed] =  -1,
+   
+    /* Builtin types */
+    sizes[ObjCType_Void] = sizeof(void),
+    sizes[ObjCType_Bool] =  sizeof(BOOL),
+    sizes[ObjCType_Char_U] =  sizeof(unsigned char),
+    sizes[ObjCType_UChar] =  sizeof(u_char),
+    sizes[ObjCType_Char16] =  sizeof(char),
+    sizes[ObjCType_Char32] =  sizeof(char),
+    sizes[ObjCType_UShort] =  sizeof(unsigned short),
+    sizes[ObjCType_UInt] =  sizeof(unsigned int),
+    
+    sizes[ObjCType_ULong] =  sizeof(unsigned long),
+    sizes[ObjCType_ULongLong] =  sizeof(unsigned long long),
+    sizes[ObjCType_UInt128] = sizeof(unsigned int),
+    sizes[ObjCType_Char_S] =  sizeof(char *),
+    sizes[ObjCType_SChar] =  sizeof(char),
+    sizes[ObjCType_WChar] =  sizeof(wchar_t),
+    sizes[ObjCType_Short] =  sizeof(short),
+    sizes[ObjCType_Int] =  sizeof(int),
+    sizes[ObjCType_Long] =  sizeof(long),
+    sizes[ObjCType_LongLong] =  sizeof(long long),
+    sizes[ObjCType_Int128] =  sizeof(long long),
+    sizes[ObjCType_Float] =  sizeof(float),
+    sizes[ObjCType_Double] =  sizeof(double),
+    sizes[ObjCType_LongDouble] =  sizeof(long double),
+    sizes[ObjCType_NullPtr] =  sizeof(int),
+//    sizes[ObjCType_Overload] =  sizeof(),
+//    sizes[ObjCType_Dependent] =  26,
+    sizes[ObjCType_ObjCId] =  sizeof(id),
+    sizes[ObjCType_ObjCClass] =  sizeof(Class),
+    sizes[ObjCType_ObjCSel] =  sizeof(SEL),
+    sizes[ObjCType_FirstBuiltin] =  sizes[ObjCType_Void],
+    sizes[ObjCType_LastBuiltin ] =  sizes[ObjCType_ObjCSel],
+   
+    
+//    sizes[ObjCType_Complex] = 100,
+    sizes[ObjCType_Pointer] = sizeof(pointer_t),
+    sizes[ObjCType_BlockPointer] =  sizeof(pointer_t),
+//    sizes[ObjCType_LValueReference] =  sizeof(<#a#>),
+//    sizes[ObjCType_RValueReference] =  104,
+//    sizes[ObjCType_Record] =  sizeof(stru),
+//    sizes[ObjCType_Enum] =  106,
+//    sizes[ObjCType_Typedef] =  sizeof,
+//    sizes[ObjCType_ObjCInterface] =  sizeof(@interface()),
+    sizes[ObjCType_ObjCObjectPointer] =  sizeof(id),
+//    sizes[ObjCType_FunctionNoProto] =  ,
+//    sizes[ObjCType_FunctionProto] =  111,
+//    sizes[ObjCType_ConstantArray] =  112,
+//    sizes[ObjCType_Vector] =  113,
+//    sizes[ObjCType_IncompleteArray] =  114,
+//    sizes[ObjCType_VariableArray] =  115,
+//    sizes[ObjCType_DependentSizedArray] =  116,
+    sizes[ObjCType_MemberPointer] =  sizeof(pointer_t);
+    return sizes[encoding];
+}
 void *cujs_newJSObjectClass(void){
-    NSString *name = [NSString stringWithFormat:@"JSOBJ_%ld", random()];
+    NSString *name = [NSString stringWithFormat:@"JSOBJ_%d", (int)random()];
     Class superClass = [NSObject class];
     return cujs_newSubclass(superClass, name);
 }
 
 void *cujs_newSubclass(Class superClass, NSString *name){
     ILOG(@"-%s %@",__PRETTY_FUNCTION__, name);
-    const char *className = name.cString;
+    const char *className = name.cujs_cString;
     if (objc_getClass(className)) {
         RuntimeException(@"tried to override exising class %@", name);
     }
     
     Class jsClass = objc_allocateClassPair(superClass, className, 16);
-    
+
     Method superBody = class_getInstanceMethod(superClass, @selector(_cujs_body:));
     IMP body = imp_implementationWithBlock(^(id _self, SEL cmd, ...){
         RuntimeException(@"object is not a function");
@@ -287,10 +460,38 @@ BOOL ptrIsJSFunctionClass(void *ptr){
     return [objc_getAssociatedObject(ptr, JSFunctionTag) boolValue];
 }
 
+BOOL setterArgumentTypeIsKnownStruct(Method setter){
+    struct objc_method_description *description = method_getDescription(setter);
+    char *types = description->types;
+    size_t sizeOfTypes = strlen(types);
+  
+    //Fixme: this could be improved
+    //If the last value of encoding is '@' bail out quickly
+    if (types[sizeOfTypes-1] == '@'){
+        return NO;
+    }
+
+    //Save mallocs
+    static char *nameBuffer;
+    static dispatch_once_t onceToken;
+    NSUInteger maxLen = 100;
+    dispatch_once(&onceToken, ^{
+        nameBuffer = malloc(sizeof(char) * maxLen);
+    });
+    
+    int nArgs = method_getNumberOfArguments(setter);
+    method_getArgumentType(setter, nArgs-1, nameBuffer, maxLen);
+
+    if (!nameBuffer) {
+        return NO;
+    }
+    return cujs_isStruct(nameBuffer);
+}
+
 void *cujs_assignProperty(id target,
                             const char *name,
                             id value) {
-    ILOG(@"%s %p %p %p %@", __PRETTY_FUNCTION__, target, name, value, value);
+    ILOG(@"%s %p %s %p %@", __PRETTY_FUNCTION__, target, name, value, value);
     assert(target && "target required for property assignment");
     assert(name && "name required for property assignment");
 
@@ -318,15 +519,25 @@ void *cujs_assignProperty(id target,
                             method_getImplementation(valueMethod),
                             method_getTypeEncoding(valueMethod));
         ILOG(@"added method with selector %s", sel_getName(newSelector));
-    } else  {
+    } else {
         ILOG(@"add property");
         BOOL status = [target cujs_defineProperty:name];
-        ILOG(@"defined property: %d", status);
+        ILOG(@"defined property: %d with name %s:", status, name);
         char *setterName = setterNameFromPropertyName(name);
-        [target performSelector:sel_getUid(setterName) withObject:value];
-        ILOG(@"added property with name %s value %@", name, value);
-        ILOG(@"accessor returned %@", [target performSelector:sel_getUid(name)]);
-        free(setterName);
+        SEL setterSelector = sel_getUid(setterName);
+       
+        //We need to use kvc to handle setters with structs as arguments
+        BOOL isStructSetter = NO;
+        if (!ptrIsClass(target)) {
+            isStructSetter = setterArgumentTypeIsKnownStruct(class_getInstanceMethod([target class], setterSelector));
+        }
+        
+        if (!isStructSetter) {
+            objc_msgSend(target, setterSelector, [value retain]);
+        } else {
+            NSValue *structValue = [value structValue];
+            [target setValue:structValue forKey:[NSString stringWithUTF8String:name]];
+        }
     }
     
     return nil;
@@ -402,6 +613,11 @@ void *cujs_invoke(void *target, ...){
             result = imp(target, bodySel, arg1, arg2, arg3, arg4, nil);
             break;
         }
+        default: {
+            NSLog(@"warning failed %s %@ %s: (%d)", __PRETTY_FUNCTION__, target, sel_getName(bodySel), argCt);
+            result = nil;
+        }
+            
     }
     va_end(args);
     return result;
@@ -571,7 +787,7 @@ DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftrightright:);
 - (void)cujs_ss_setValue:(id)value forKey:(id)key {
     ILOG(@"%s %@[%@] = %@", __PRETTY_FUNCTION__, self, key, value);
     if ([key isKindOfClass:[NSString class]]) {
-        char *setterName = setterNameFromPropertyName([key cString]);
+        char *setterName = setterNameFromPropertyName([key cujs_cString]);
         SEL setter = sel_getUid(setterName);
         free(setterName);
         
@@ -589,7 +805,7 @@ DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftrightright:);
 - (id)cujs_ss_valueForKey:(id)index {
     ILOG(@"%s %@[%@]", __PRETTY_FUNCTION__, self, index);
     if ([index isKindOfClass:[NSString class]]) {
-        char *getterName = [index cString];
+        const char *getterName = [index cujs_cString];
         SEL getter = sel_getUid(getterName);
         
         if ([self respondsToSelector:getter]) {
@@ -634,3 +850,328 @@ DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftrightright:);
 @implementation CUJSPrototype
 
 @end
+
+@implementation NSObject (CUJSStruct)
+
+NSMutableSet *CUJSStructClasses();
+NSMutableSet *CUJSStructs();
+
++ (NSDictionary *)fieldOffsets {
+    return @{};
+}
+
++ (NSDictionary *)fieldTypeNames{
+    return @{};
+}
+
++ (NSNumber *)structSize {
+    return nil;
+}
+
++ (NSString *)structEncoding {
+    return nil;
+}
+
++ (NSDictionary *)structFieldEncoding {
+    return nil;
+}
+
+// convert the struct to the actual struct type and set it on the key
+- (id)structValue {
+    NSDictionary *offsets = [[self class] fieldOffsets] ;
+    NSNumber *structSize = [[self class] structSize] ;
+    NSString *structEncoding = [[self class] structEncoding];
+    NSDictionary *fieldEncoding = [[self class] structFieldEncoding];
+    NSDictionary *fieldTypeNames = [[self class] fieldTypeNames] ;
+    
+    if (!(offsets
+        && structSize) &&
+        (structEncoding
+        && fieldEncoding)) {
+        NSLog(@"warning - invoked -[NSObject structValue] on incomplete struct type");
+        return nil;
+    }
+    
+    __block char *structBytes = malloc(structSize.intValue);
+    for(id key in offsets) {
+        id obj = [offsets valueForKey:key];
+        NSUInteger offset = [obj integerValue];
+        NSString *fieldEncodingString = fieldEncoding[key];
+        const char *fieldEncoding = fieldEncodingString.cujs_cString;
+
+        assert(fieldEncoding && "Missing field encoding for string");
+        id value = [[self valueForKey:key] retain];
+        if (!strcmp("i", fieldEncoding)) {
+            assert([self respondsToSelector:NSSelectorFromString(key)]);
+            *(int *)(structBytes + offset) = [value intValue];
+        } else if (!strcmp("f", fieldEncoding)) {
+            *(float *)(structBytes + offset) = [value floatValue];
+        } else if (!strcmp("d", fieldEncoding)) {
+            *(double *)(structBytes + offset) = [value doubleValue];
+        } else {
+            NSString *typeName = fieldTypeNames[key];
+            NSString *prefixedTypeNameString = cujs_prefixedStructClassNameWithString(typeName);
+            BOOL isStruct = cujs_isStruct([typeName cujs_cString]) || [CUJSStructClasses() containsObject:prefixedTypeNameString];
+            if (isStruct) {
+                Class valueClass = objc_getClass([prefixedTypeNameString cujs_cString]);
+                assert(valueClass);
+                int valueSize = [[valueClass structSize] intValue];
+                char *valueBytes = (char *)[value toStruct];
+                memcpy(structBytes + offset, valueBytes, valueSize);
+                free(valueBytes);
+            } else {
+                NSLog(@"waring unsupported struct member type (not struct) %@", fieldEncodingString);
+                abort();
+            }
+        }
+    }
+
+    NSValue *structValue = [NSValue valueWithBytes:structBytes objCType:structEncoding.cujs_cString];
+    free(structBytes);
+    return structValue;
+}
+
+- (char *)toStruct {
+    NSNumber *structSize = [[self class] structSize];
+    assert(structSize && "missing required size");
+    NSValue *structValue = [self structValue];
+    assert(structValue);
+    void *ptr = malloc(structSize.intValue);
+    [structValue getValue:ptr];
+    return ptr;
+}
+
++ (BOOL)cujs_isStruct {
+    return !![self structSize];
+}
+
+- (BOOL)cujs_isStruct {
+    return [[self class] cujs_isStruct];
+}
+
+@end
+
+NSMutableSet *CUJSStructClasses(){
+    static id instance;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[NSMutableSet alloc] init];
+    });
+    return instance;
+}
+
+NSMutableSet *CUJSStructs(){
+    static id instance;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        instance = [[NSMutableSet alloc] init];
+    });
+    return instance;
+}
+
+extern void *cujs_defineStruct(const char *name, size_t size, CUJSStructField fields[]) {
+    NSString *prefixedClassName = cujs_prefixedStructClassNameWithCString(name);
+    Class existingClass = NSClassFromString(prefixedClassName);
+    if (existingClass) {
+        return existingClass;
+    }
+
+    //FIXME: this should really be for debug only
+    //Check support
+     for (int i = 0; i < size; i++){
+        CUJSStructField field = fields[i];
+        //assignn the encoding
+         char *fieldEncoding = encodingToChar(field.encoding);
+         if (!fieldEncoding) {
+             NSLog(@"warning found unsupported struct %s violating field encoding %d", name, field.encoding);
+             return NULL;
+         }
+         
+         BOOL hasRestrictedTypeName = cujs_isRestrictedProperty(field.name);
+         if (hasRestrictedTypeName) {
+             NSLog(@"warning found unsupported struct %s violating field has restricted name %s", name, field.typeName);
+             return NULL;
+         }
+     }
+    
+    //Declare a new subclass and add it to the struct classes
+    NSString *nameString = [NSString stringWithUTF8String:name];
+    Class structClass = cujs_newSubclass([NSObject class], prefixedClassName);
+    [CUJSStructClasses() addObject:prefixedClassName];
+
+    char *encodingBuffer = malloc(sizeof(char) * 1000);
+    encodingBuffer[0] = '{';
+    int nameOffset = 1;
+    for (unsigned i = 0; i < strlen(name); i++) {
+        encodingBuffer[nameOffset++] = name[i];
+    }
+    
+    encodingBuffer[nameOffset] = '=';
+
+    NSMutableDictionary *fieldOffsets = [NSMutableDictionary dictionary];
+    NSMutableDictionary *fieldEncodigns = [NSMutableDictionary dictionary];
+    NSMutableDictionary *fieldTypeNames = [NSMutableDictionary dictionary];
+    
+    size_t structSize = 0;
+    for (int i = 0; i < size; i++){
+        CUJSStructField field = fields[i];
+        //assignn the encoding
+        char *fieldEncoding = encodingToChar(field.encoding);
+
+        NSString *typeNameString = [NSString stringWithUTF8String:field.typeName];
+        NSString *fieldName = [NSString stringWithUTF8String:field.name];
+        fieldOffsets[fieldName] = @(field.offset);
+        fieldEncodigns[fieldName] = [NSString stringWithUTF8String:fieldEncoding];
+        fieldTypeNames[fieldName] = typeNameString;
+       
+        ILOG(@"FieldName %s", field.name);
+        ILOG(@"FieldTypeName %s", field.typeName);
+        ILOG(@"FieldOffset %d", field.offset);
+        ILOG(@"FieldEncoding %d", field.encoding);
+        
+        if (strcmp("?", fieldEncoding) == 0) {
+            NSString *prefixedTypeNameString = cujs_prefixedStructClassNameWithString(typeNameString);
+            if ([CUJSStructClasses() containsObject:prefixedTypeNameString]) {
+                id fieldClass = objc_getClass([prefixedTypeNameString cujs_cString]);
+                assert(fieldClass);
+               
+                nameOffset++;
+                encodingBuffer[nameOffset] = '=';
+                
+                NSString *fieldEncodingActualString = [fieldClass structEncoding];
+                if (!fieldEncodingActualString) {
+//                    abort();
+                    [CUJSStructClasses() removeObject:prefixedTypeNameString];
+                    ILOG(@"warning - cannot create struct: %s missing typename string %@", name, typeNameString);
+                    free(encodingBuffer);
+                    return NULL;
+                }
+                
+                const char *fieldEncodingActual = [fieldEncodingActualString cujs_cString];
+                size_t fieldEncodingLen = strlen(fieldEncodingActual);
+                for (unsigned j = 0; j < fieldEncodingLen; j++) {
+                    encodingBuffer[nameOffset++] = fieldEncodingActual[j];
+                }
+                
+                nameOffset--;
+                size_t fieldSize = [[fieldClass structSize] intValue];
+                structSize += fieldSize;
+            } else {
+//                abort();
+                ILOG(@"warning - cannot create struct: %s missing typename string %@", name, typeNameString);
+                [CUJSStructClasses() removeObject:prefixedTypeNameString];
+                free(encodingBuffer);
+                return NULL;
+            }
+        } else {
+            nameOffset++;
+            encodingBuffer[nameOffset] = fieldEncoding[0];
+            
+            structSize += encodingToSize(field.encoding);
+        }
+        
+        cujs_defineProperty(structClass, field.name);
+    }
+    
+    nameOffset++;
+    encodingBuffer[nameOffset] = '}';
+    
+    nameOffset++;
+    encodingBuffer[nameOffset] = '\0';
+    cujs_registerStruct(encodingBuffer);
+    NSString *encodingString = [NSString stringWithUTF8String:encodingBuffer];
+    cujs_assignProperty(structClass,
+                        "structType",
+                        encodingString);
+    
+    cujs_assignProperty(structClass,
+                        "fieldOffsets",
+                        fieldOffsets);
+
+    cujs_assignProperty(structClass,
+                        "fieldTypeNames",
+                        fieldTypeNames);
+    
+    cujs_assignProperty(structClass,
+                        "structFieldEncoding",
+                        fieldEncodigns);
+   
+    //Fixme - test leak on this number
+    cujs_assignProperty(structClass, "structSize", [@(structSize) retain]);
+    cujs_assignProperty(structClass, "structEncoding", encodingString);
+
+    free(encodingBuffer);
+
+    return structClass;
+}
+
+void cujs_registerStruct(const char *name) {
+    [CUJSStructs() addObject:[NSString stringWithUTF8String:name]];
+}
+
+extern BOOL cujs_isStruct(const char *name) {
+    return [CUJSStructs() containsObject:[NSString stringWithUTF8String:name]];
+}
+
+extern void *objc_Struct(NSString *nameString, ...) {
+    NSLog(@"%s %@", __PRETTY_FUNCTION__, nameString);
+//    const char *name = [nameString cujs_cString];
+    Class structClass = objc_getClass([cujs_prefixedStructClassNameWithString(nameString) cujs_cString]);
+    assert(structClass);
+    id instance = [[structClass alloc] init];
+
+    NSDictionary *offsets = [[[instance class] fieldOffsets] retain];
+    NSNumber *structSize = [[[instance class] structSize] retain];
+    NSString *structEncoding = [[[instance class] structEncoding] retain];
+    NSDictionary *fieldEncoding = [[[instance class] structFieldEncoding] retain];
+    NSDictionary *fieldTypeNames = [[instance class] fieldTypeNames];
+    if (!((offsets
+        && structSize) &&
+        (structEncoding
+        && fieldEncoding)
+        && fieldTypeNames)) {
+            abort();
+            NSLog(@"warning - invoked -[NSObject structValue] on incomplete struct type");
+            return nil;
+    }
+
+    
+    va_list args;
+    va_start(args, nameString);
+    const char *structBytes = va_arg(args, const char *);
+    va_end(args);
+
+    [offsets enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+        NSInteger offset = [obj integerValue];
+        NSString *fieldEncodingString = fieldEncoding[key];
+        const char *fieldEncoding = fieldEncodingString.cujs_cString;
+
+        assert(fieldEncoding && "Missing field encoding for string");
+        if (!strcmp("i", fieldEncoding)) {
+            assert([instance respondsToSelector:NSSelectorFromString(key)]);
+            int value = *(int *)(structBytes + offset);
+            cujs_assignProperty(instance, [key cujs_cString], [NSNumber numberWithInt:value]);
+        } else if (!strcmp("f", fieldEncoding)) {
+            float value = *(float *)(structBytes + offset);
+            cujs_assignProperty(instance, [key cujs_cString], [NSNumber numberWithFloat:value]);
+        } else if (!strcmp("d", fieldEncoding)) {
+            double value = *(double *)(structBytes + offset);
+            cujs_assignProperty(instance, [key cujs_cString], [NSNumber numberWithDouble:value]);
+        } else if (!strcmp("?", fieldEncoding)) {
+            //Recurse and set value to the result
+            NSString *typeName = fieldTypeNames[key];
+            BOOL isStruct = cujs_isStruct([typeName cujs_cString]) || [CUJSStructClasses() containsObject:cujs_prefixedStructClassNameWithString(typeName)];
+            if (isStruct) {
+                id structValue = objc_Struct(typeName, (structBytes + offset));
+                cujs_assignProperty(instance, [key cujs_cString], structValue);
+            } else {
+                NSLog(@"waring unsupported struct member type (not struct) %@ %@", typeName, fieldEncodingString);
+            }
+            
+        } else {
+            NSLog(@"waring unsupported struct member type %@", fieldEncodingString);
+        }
+    }];
+
+    return [instance autorelease];
+}

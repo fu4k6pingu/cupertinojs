@@ -15,10 +15,15 @@
 #include <llvm/IR/Module.h>
 #include <llvm-c/Core.h>
 #include <src/ast.h>
-
 #include <set>
+#include "cgclang.h"
 
 namespace cujs {
+    struct ObjCMethod;
+    struct ObjCStruct;
+    struct ObjCClass;
+    struct ObjCTypeDef;
+
     std::string ObjCSelectorToJS(std::string objCSelector);
     llvm::AllocaInst *CreateEntryBlockAlloca(llvm::Function *Function,
                                              const std::string &VarName);
@@ -39,6 +44,13 @@ namespace cujs {
     class CGJSRuntime {
         std::set <std::string>  _builtins;
     public:
+        
+        std::map <std::string, ObjCMethod *> _objCMethodBySelector;
+        std::set <std::string> _classes;
+        std::set <std::string> _structs;
+        std::map <std::string, ObjCTypeDef *> _typedefs;
+        std::map <std::string, ObjCStruct *> _objCStructByName;
+        
         CGJSRuntime(llvm::IRBuilder<> *builder, llvm::Module *module);
         
         llvm::IRBuilder<> *_builder;
@@ -75,6 +87,8 @@ namespace cujs {
         llvm::Value *defineJSFuction(const char *name,
                                      unsigned nArgs
                                      );
+       
+        
         llvm::Value *declareProperty(llvm::Value *instance,
                                      std::string name);
         llvm::Value *assignProperty(llvm::Value *instance,
@@ -82,7 +96,10 @@ namespace cujs {
                                     llvm::Value *value);
         
         llvm::Value *declareGlobal(std::string name);
-        
+       
+        void enterStruct(ObjCStruct *newStruct);
+        void enterClass(ObjCClass *newClass);
+        void enterTypeDef(ObjCTypeDef *typeDef);
         
         llvm::Value *selectorByAddingColon(const char *name);
         llvm::Value *selectorWithName(const char *name);

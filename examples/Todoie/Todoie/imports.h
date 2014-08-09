@@ -6,7 +6,7 @@
 //  Copyright (c) 2014 Jerry Marino. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
-#import <Foundation/Foundation.h>
 
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import "UIKit+CUJS.h"
