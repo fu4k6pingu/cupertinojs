@@ -1691,6 +1691,10 @@ void CGJS::VisitThisFunction(ThisFunction *node) {
     UNIMPLEMENTED();
 }
 
+void CGJS::VisitSuperReference(SuperReference* node) {
+    UNIMPLEMENTED();
+}
+
 void CGJS::VisitStartAccumulation(AstNode *expr, bool extendContext) {
     if (extendContext){
         EnterContext();

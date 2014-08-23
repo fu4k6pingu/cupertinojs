@@ -242,3 +242,6 @@ void CGJSMacroVisitor::VisitArithmeticExpression(BinaryOperation* expr) {}
 void CGJSMacroVisitor::VisitCompareOperation(CompareOperation* expr) {}
 
 void CGJSMacroVisitor::VisitThisFunction(ThisFunction* node) {}
+
+void CGJSMacroVisitor::VisitSuperReference(SuperReference* node) {}
+

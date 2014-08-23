@@ -75,6 +75,7 @@ namespace cujs {
         void VisitBinaryOperation(BinaryOperation* node);
         void VisitCompareOperation(CompareOperation* node);
         void VisitThisFunction(ThisFunction* node) ;
+        void VisitSuperReference(SuperReference* node);
         
         void VisitComma(BinaryOperation* expr);
         void VisitLogicalExpression(BinaryOperation* expr);
