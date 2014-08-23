@@ -1,1 +1,25 @@
 *.svn*
+build/
+deps/
+
+Pods/*
+Podfile.lock
+Submodules/*
+$ cat ~/Projects/Kiwi/.gitignore
+.DS_Store
+.localized
+
+# XCode user specific files
+xcuserdata/
+*.xcworkspace/
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.pbxuser
+output
+
+# raw logs
+xcodebuild.log
+xcodebuild_error.log
+
+
