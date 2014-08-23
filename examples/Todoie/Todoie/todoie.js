@@ -48,9 +48,9 @@ function OnLoad(){
     TodoListViewController.prototype.tableViewDidSelectRowAtIndexPath = function(tableView, indexPath){
         var fruit = this.fruits[Number(indexPath.row)]
         UIAlertView
-            .alloc
-            .initWithTitleMessageDelegateCancelButtonTitleOtherButtonTitles("Don't forget", fruit, null, "Got it", null)
-            .show
+        .alloc
+        .initWithTitleMessageDelegateCancelButtonTitleOtherButtonTitles("Don't forget", fruit, null, "Got it", null)
+        .show
     }
     
     TodoListViewController.prototype.numberOfSectionsInTableView = function(tableView){
@@ -61,22 +61,15 @@ function OnLoad(){
         var cell = tableView.dequeueReusableCellWithIdentifier("FruitCell")
         
         //A JS array is indexed by objects - cast the integer indexPath.row to a number
-        var fruit = this.fruits[Number(indexPath.row)]
-        var textLabel = cell.textLabel
-        cell.textLabel.text = fruit
+        cell.textLabel.text = this.fruits[Number(indexPath.row)]
         return cell
     }
-
+    
     // Declare a function DidFinishLaunching
     function DidFinishLaunching(application, options){
+        // Structs are accessed with the cast constructor
+        var applicationFrame = CGRect(UIScreen.mainScreen.bounds)
         
-        // Structs can be accessed with the cast function
-        // objc_Struct - which takes the name of a struct and the value
-        // and converts it to an object
-        var applicationFrame = objc_Struct("CGRect", UIScreen
-                                                       .mainScreen
-                                                       .bounds)
-
         // Once structs are casted to objects, they work just like regular JS objects
         NSLog("height %@", applicationFrame.size.height)
         

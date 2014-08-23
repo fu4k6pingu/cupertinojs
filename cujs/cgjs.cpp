@@ -1187,7 +1187,6 @@ void CGJS::EmitStructLoadCall(Call *node) {
 void CGJS::EmitStructLoadCast(std::string name, llvm::CallInst *objcPointerArgValue) {
     CGJSRuntime *runtime = _runtime;
 
-    //TODO : nicely declare struct names
     std::string defName = name;
     ObjCStruct *objCStructTy = runtime->_objCStructByName[name];
     assert(objCStructTy && "Missing type for struct");
@@ -1278,7 +1277,10 @@ void CGJS::VisitCall(Call *node) {
             }
             
             if (_runtime->_structs.count(name)) {
-                //TODO:
+                //The struct ctor macro only takes 1 argument
+                Visit(node->arguments()->at(0));
+                
+                EmitStructLoadCast(name, (CallInst *)PopContext());
                 return;
             }
         } else {
