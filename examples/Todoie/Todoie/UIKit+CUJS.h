@@ -7,9 +7,6 @@
 //
 //  FIXME : abstract UIKit+CUJS into seperate framework
 
-struct MColor { int r; int g; int b; int a; };
-struct Animal { struct MColor color; int _id; };
-
 @interface NSObject (CUJSExtend)
 
 + (id)extend:(NSString *)name;
@@ -18,14 +15,8 @@ struct Animal { struct MColor color; int _id; };
 
 @interface UIApplication (CUJS)
 
+// Since CUJS doesn't yet support c function calls,
+// wrap this one into a class method
 + (int)applicationMain:(int)argc argV:(char *[])argv name:(NSString *)appDelegateName;
-
-@end
-
-@interface UIView (CUJS)
-
-- (instancetype)initWithFrameValue:(id)frameValue;
-- (id)frameValue;
-- (struct Animal)animal;
 
 @end

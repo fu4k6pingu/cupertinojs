@@ -26,7 +26,7 @@ int main(int argc, const char * argv[])
     v8::HandleScope handle_scope(isolate);
     v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate);
     v8::Local<v8::Context> context = v8::Context::New(isolate, NULL, global);
-    ASSERT(!context.IsEmpty());
+    assert(!context.IsEmpty());
     v8::Context::Scope scope(context);
 
     cujs::CompilerOptions options(argc, argv);

@@ -148,15 +148,12 @@ CompilationInfoWithZone *ProgramWithSourceHandle(v8::Handle<v8::String> source_h
     Handle<String> handle = v8::Utils::OpenHandle(*source_handle);
     Handle<Script> script = Isolate::Current()->factory()->NewScript(handle);
     
-    i::ScriptData* cached_data_impl = NULL;
     // First round of parsing (produce data to cache).
     auto info = new CompilationInfoWithZone(script);
     info->MarkAsGlobal();
     info->MarkNonOptimizable();
     info->MarkAsEval();
     assert(!info->is_lazy());
-    
-    info->SetCachedData(&cached_data_impl, i::PRODUCE_CACHED_DATA);
     
     bool success = Parser::Parse(info, false);
     if (!success) {

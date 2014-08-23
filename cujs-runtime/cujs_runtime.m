@@ -815,6 +815,7 @@ DEF_CUJS_OPERATOR_RETURN_CLASS_OR_ZERO(cujs_shiftrightright:);
         return [self _cujs_keyed_properties][index];
     }
 
+    //FIXME: this will infinitely recurse
     return [self cujs_ss_valueForKey:[index stringValue]];
 }
 
