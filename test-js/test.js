@@ -1,14 +1,16 @@
+//<expect>bullitburbon
+
 objc_import("test-imports.h")
 
 function DidLoad(){
-    var color = 1
+    var boozey = true
+
+    NSLog("bullitburbon")
     return
     
-//    if (2 < 1){
-//        NSLog("No color")
-//    } else {
-        NSLog("No color")
-//    }
+    if (1 < 2){
+        NSLog("bullitburbon")
+    }
 }
 
 function main(a,b){
