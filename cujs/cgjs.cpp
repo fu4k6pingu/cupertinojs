@@ -775,6 +775,8 @@ static void AddMissingTerminators(llvm::Function *function){
 void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral *node) {
     auto startIB = _builder->GetInsertBlock();
     auto name = stringFromV8AstRawString(node->raw_name());
+    
+    //TODO : abstract init module function
     if (!_context){
         EnterContext();
        //start module inserting at beginning of init function
@@ -811,7 +813,6 @@ void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral *node) {
         EnterContext();
     } else {
         EnterContext();
-        
     }
     
     // Create a new basic block to start insertion into.

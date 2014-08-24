@@ -584,7 +584,7 @@ llvm::Type *structTypeWithStructModule(ObjCStruct *objCStructTy,  llvm::Module *
             }
             
             if (!fieldType){
-                printf("warning - missed field for deffname %s field %s \n", defName.c_str(), field.name.c_str());
+                ILOG("warning - missed field for deffname %s field %s \n", defName.c_str(), field.name.c_str());
                 fieldType = typeByObjCType(field.type, module);
             }
     
@@ -613,7 +613,7 @@ void CGJSRuntime::enterStruct(ObjCStruct *newStruct) {
     }
     
     if (_classes.count(name) && !_structs.count(name)) {
-        printf("warning - class exists for struct %s", name.c_str());
+        ILOG("warning - class exists for struct %s", name.c_str());
     }
 
     StructType *structTyFieldInfo = _module->getTypeByName("FieldInfo");
@@ -660,7 +660,7 @@ void CGJSRuntime::enterStruct(ObjCStruct *newStruct) {
     
     auto global = _module->getGlobalVariable(name);
     if (global) {
-        printf("warning - already had global declared for struct %s \n", name.c_str());
+        ILOG("warning - already had global declared for struct %s \n", name.c_str());
     }
     
     llvm::Value *globalValue = declareGlobal(name);
@@ -681,7 +681,7 @@ void CGJSRuntime::enterClass(ObjCClass *newClass) {
 
     auto global = _module->getGlobalVariable(name);
     if (global) {
-        printf("warning - already had global declared for class %s\n", name.c_str());
+        ILOG("warning - already had global declared for class %s\n", name.c_str());
     } else {
         
         NewLocalStringVar(name,  _module);

@@ -15,6 +15,7 @@
 		C534CD1A199718F2007BE0A5 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB3F1991E89300948556 /* UIKit.framework */; };
 		C534CD1D199718F2007BE0A5 /* libcujs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */; };
 		C534CD23199718F2007BE0A5 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C534CD21199718F2007BE0A5 /* InfoPlist.strings */; };
+		C545014F19A96B5F009F2008 /* test-remove-instructions-after-early-return.js in Sources */ = {isa = PBXBuildFile; fileRef = C545014E19A96B5F009F2008 /* test-remove-instructions-after-early-return.js */; };
 		C549B40A19969CF300169564 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C56554D91997192D0003F873 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */; };
 		C56554DA1997194A0003F873 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */; };
@@ -238,6 +239,7 @@
 		C534CD17199718F2007BE0A5 /* cujs-runtime-iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "cujs-runtime-iosTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C534CD20199718F2007BE0A5 /* cujs-runtime-iosTests-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "cujs-runtime-iosTests-Info.plist"; sourceTree = "<group>"; };
 		C534CD22199718F2007BE0A5 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		C545014E19A96B5F009F2008 /* test-remove-instructions-after-early-return.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = "test-remove-instructions-after-early-return.js"; sourceTree = "<group>"; };
 		C568622519763041001C8B45 /* test3.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test3.js; sourceTree = "<group>"; };
 		C568622619763041001C8B45 /* test4.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test4.js; sourceTree = "<group>"; };
 		C568622719763041001C8B45 /* test6.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = test6.js; sourceTree = "<group>"; };
@@ -356,6 +358,7 @@
 				C504ECB81980CD4B00B2FE6C /* test7.js */,
 				C504ECB91980CD4B00B2FE6C /* test8.js */,
 				C504ECBA1980CD4B00B2FE6C /* test9.js */,
+				C545014E19A96B5F009F2008 /* test-remove-instructions-after-early-return.js */,
 			);
 			path = "test-js";
 			sourceTree = "<group>";
@@ -865,6 +868,7 @@
 				C5D6F7FF19969601007E3ED3 /* cujscompiler.cpp in Sources */,
 				C5D6F7FC19969601007E3ED3 /* cgjsruntime.cpp in Sources */,
 				C5D6F7FE19969601007E3ED3 /* cgjsmacrovisitor.cpp in Sources */,
+				C545014F19A96B5F009F2008 /* test-remove-instructions-after-early-return.js in Sources */,
 				C5D6F80119969601007E3ED3 /* main.cpp in Sources */,
 				C5D6F80019969601007E3ED3 /* cujsutils.cpp in Sources */,
 				C5D6F7FD19969601007E3ED3 /* cgjs.cpp in Sources */,
