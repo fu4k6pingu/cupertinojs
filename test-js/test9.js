@@ -81,7 +81,7 @@ function runtests(){
     testWhileContinue()
 }
 
-function cujs_main(a, b){
+function main(a, b){
     runtests()
     return 0
 }

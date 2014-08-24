@@ -25,7 +25,7 @@ function runtests(){
     testDecPreFix(1)
 }
 
-function cujs_main(a, b){
+function main(a, b){
     runtests()
     return 0
 }

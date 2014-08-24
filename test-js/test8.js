@@ -12,7 +12,7 @@ function larryf(argument){
     return nestedFunction
 }
 
-function cujs_main(a, b){
+function main(a, b){
     var counter = larryf(0);
     NSLog("c: %@", counter);
     

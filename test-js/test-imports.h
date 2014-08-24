@@ -1,5 +1,3 @@
-//#import <Foundation/Foundation.h>
-
 typedef float CGFloat;
 
 struct CGPoint {
@@ -14,10 +12,8 @@ struct CGSize {
     CGFloat width;
     CGFloat height;
 };
-//typedef struct CGSize CGSize;
-//
-///* Rectangles. */
-//
+typedef struct CGSize CGSize;
+
 struct CGRect {
     CGPoint origin;
     CGSize size;
@@ -38,5 +34,11 @@ struct MColor { int r; int g; int b; int a; };
 
 - (void)slide;
 - (struct Animal)animal;
+
+@end
+
+@interface console : NSObject
+
++ (void)log:(id)arg, ...;
 
 @end

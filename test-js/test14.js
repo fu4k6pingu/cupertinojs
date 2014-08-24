@@ -11,7 +11,7 @@ function Platform(){
     this.name = "turtle neck"
 }
 
-function cujs_main(a, b){
+function main(a, b){
     var P = Platform
     var platform = new P()
 
