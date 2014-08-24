@@ -441,7 +441,7 @@ void CGJS::CGIfStatement(IfStatement *node, bool flag){
     // Codegen of 'Else' can change the current block
     elseBB = _builder->GetInsertBlock();
     if (!elseBB->getTerminator()) {
-        _builder->CreateBr(mergeBB);
+            _builder->CreateBr(mergeBB);
     }
     
     // Emit merge block.
@@ -501,9 +501,7 @@ void CGJS::VisitBreakStatement(BreakStatement *node) {
 void CGJS::VisitReturnStatement(ReturnStatement *node) {
     llvm::BasicBlock *block = _builder->GetInsertBlock();
     llvm::Function *function = block->getParent();
-    auto name = function->getName();
-    std::cout << &name;
-    
+
     llvm::BasicBlock *jumpBlock = llvm::BasicBlock::Create(_builder->getContext(), "retjump");
     _builder->SetInsertPoint(block);
     
@@ -655,19 +653,40 @@ void CGJS::VisitDebuggerStatement(DebuggerStatement *node) {
 static void CleanupInstructionsAfterBreaks(llvm::Function *function){
     for (llvm::Function::iterator BB = function->begin(), e = function->end(); BB != e; ++BB){
         bool didBreak = false;
-        for (llvm::BasicBlock::iterator i = BB->begin(), h = BB->end();  i && i != h; ++i){
-            if (llvm::ReturnInst::classof(i) || llvm::BranchInst::classof(i)){
+        for (llvm::BasicBlock::iterator BBInstruction = BB->begin(), BBInstructionsEnd = BB->end(); BBInstruction != BBInstructionsEnd; ++BBInstruction){
+            if (llvm::ReturnInst::classof(BBInstruction) || llvm::BranchInst::classof(BBInstruction)){
                 didBreak = true;
             } else if (didBreak) {
-                while (i && i != h) {
-                    i++;
-                    if (i) {
-                        i->removeFromParent();
-                        
-                    }
+                ++BBInstruction;
+                while (BBInstruction && BBInstruction != BBInstructionsEnd) {
+                    BBInstruction->replaceAllUsesWith(ObjcNullPointer());
+                    BBInstruction->eraseFromParent();
+                    BBInstruction++;
                 }
-                break;
+                
+                return;
             }
+        
+        }
+    }
+}
+
+// AddMissingTerminators - add missing terminators to all the basic blocks
+// in this function - terminators jump to the return
+static void AddMissingTerminators(llvm::Function *function){
+    for (llvm::Function::iterator BB = function->begin(), e = function->end(); BB != e; ++BB){
+        if (!BB->getTerminator()){
+            llvm::BasicBlock *jumpTarget = NULL;
+           
+            for (llvm::Function::iterator BBJ = function->end(), e = function->begin(); BBJ != e; --BBJ){
+                if (BBJ->getName().startswith(llvm::StringRef("return.set"))) {
+                    jumpTarget = BBJ;
+                    break;
+                }
+            }
+            
+            auto retJump = BranchInst::Create(jumpTarget);
+            BB->getInstList().push_back(retJump);
         }
     }
 }
@@ -758,18 +777,21 @@ void CGJS::VisitFunctionLiteral(v8::internal::FunctionLiteral *node) {
     if (_context) {
         ILOG("Context size: %lu", _context->size());
     }
-   
-    // This code will not be executed and llvm will throw
-    // errors if it exists, in the best case it wouldn't be added
-    // in the first place
-    CleanupInstructionsAfterBreaks(function);
-
+ 
     llvm::BasicBlock *front = &function->front();
     auto needsTerminator = !front->getTerminator();
     if (needsTerminator) {
         front->getInstList().push_back(llvm::BranchInst::Create(setRetBB));
     }
     
+    // This code will not be executed and llvm will throw
+    // errors if it exists, in the best case it wouldn't be added
+    // in the first place
+    CleanupInstructionsAfterBreaks(function);
+
+    // LLVM needs to have terminators on every block
+    AddMissingTerminators(function);
+
     EndAccumulation();
     
     // Return to starting basic block and push
