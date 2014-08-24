@@ -10,6 +10,70 @@
 #import <objc/message.h>
 #import <malloc/malloc.h>
 
+typedef enum ObjCType {
+    /**
+     * \brief Reprents an invalid type (e.g., where no type is available).
+     */
+    ObjCType_Invalid = 0,
+    
+    /**
+     * \brief A type whose specific kind is not exposed via this
+     * interface.
+     */
+    ObjCType_Unexposed = 1,
+    
+    /* Builtin types */
+    ObjCType_Void = 2,
+    ObjCType_Bool = 3,
+    ObjCType_Char_U = 4,
+    ObjCType_UChar = 5,
+    ObjCType_Char16 = 6,
+    ObjCType_Char32 = 7,
+    ObjCType_UShort = 8,
+    ObjCType_UInt = 9,
+    ObjCType_ULong = 10,
+    ObjCType_ULongLong = 11,
+    ObjCType_UInt128 = 12,
+    ObjCType_Char_S = 13,
+    ObjCType_SChar = 14,
+    ObjCType_WChar = 15,
+    ObjCType_Short = 16,
+    ObjCType_Int = 17,
+    ObjCType_Long = 18,
+    ObjCType_LongLong = 19,
+    ObjCType_Int128 = 20,
+    ObjCType_Float = 21,
+    ObjCType_Double = 22,
+    ObjCType_LongDouble = 23,
+    ObjCType_NullPtr = 24,
+    ObjCType_Overload = 25,
+    ObjCType_Dependent = 26,
+    ObjCType_ObjCId = 27,
+    ObjCType_ObjCClass = 28,
+    ObjCType_ObjCSel = 29,
+    ObjCType_FirstBuiltin = ObjCType_Void,
+    ObjCType_LastBuiltin  = ObjCType_ObjCSel,
+    
+    ObjCType_Complex = 100,
+    ObjCType_Pointer = 101,
+    ObjCType_BlockPointer = 102,
+    ObjCType_LValueReference = 103,
+    ObjCType_RValueReference = 104,
+    ObjCType_Record = 105,
+    ObjCType_Enum = 106,
+    ObjCType_Typedef = 107,
+    ObjCType_ObjCInterface = 108,
+    ObjCType_ObjCObjectPointer = 109,
+    ObjCType_FunctionNoProto = 110,
+    ObjCType_FunctionProto = 111,
+    ObjCType_ConstantArray = 112,
+    ObjCType_Vector = 113,
+    ObjCType_IncompleteArray = 114,
+    ObjCType_VariableArray = 115,
+    ObjCType_DependentSizedArray = 116,
+    ObjCType_MemberPointer = 117
+} ObjCType;
+
 #define RuntimeException(_FMT, ...) \
     [NSException raise:@"CUJSRuntimeException" format:_FMT, ##__VA_ARGS__]
 
@@ -1115,8 +1179,6 @@ extern BOOL cujs_isStruct(const char *name) {
 }
 
 extern void *objc_Struct(NSString *nameString, ...) {
-    NSLog(@"%s %@", __PRETTY_FUNCTION__, nameString);
-//    const char *name = [nameString cujs_cString];
     Class structClass = objc_getClass([cujs_prefixedStructClassNameWithString(nameString) cujs_cString]);
     assert(structClass);
     id instance = [[structClass alloc] init];
@@ -1176,3 +1238,21 @@ extern void *objc_Struct(NSString *nameString, ...) {
 
     return [instance autorelease];
 }
+
+@implementation console : NSObject
+
++ (void)log:(id)arg, ...
+{
+    NSMutableString *output = [NSMutableString string];
+    va_list args;
+    va_start(args, arg);
+    for (id current = arg; current; current = va_arg(args, id)) {
+        [output appendString:[NSString stringWithFormat:@"%@", current]];
+    }
+    va_end(args);
+    
+    NSLog(@"%@", output);
+}
+
+@end
+
