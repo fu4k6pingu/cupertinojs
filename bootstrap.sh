@@ -54,19 +54,16 @@ cd $CUJS_ROOT_DIR
 
 # Compiler dependencies
 
-# Use this version of clang and llc
-INSTALL_PATH="/usr/local/bin"
-cp deps/llvm/bin/llc $INSTALL_PATH/cujs-llc
-cp deps/llvm/bin/clang $INSTALL_PATH/cujs-clang
+mkdir -p /usr/local/bin/cujs-deps
 
-# clang and llc will use libLLVM in /usr/local/lib so copy there
-if [ -f /usr/local/lib/libLLVM-3.4.dylib ];
-then
-   echo "Warning - already had libLLVM-3.4.dylib installed to usr/local/lib
-   using existing version"
-else
-    cp deps/llvm/lib/libLLVM-3.4.dylib /usr/local/lib/
-fi
+# Use this version of clang and llc
+INSTALL_PATH="/usr/local/bin/cujs-deps"
+cp deps/llvm/bin/llc $INSTALL_PATH
+cp deps/llvm/bin/clang $INSTALL_PATH
+
+# clang and llc will use libLLVM in /usr/local/lib/cujs-deps so copy there
+mkdir -p /usr/local/lib/cujs-deps
+cp deps/llvm/lib/libLLVM-3.4.dylib /usr/local/lib/cujs-deps
 
 echo "Installed llvm with lib clang"
 

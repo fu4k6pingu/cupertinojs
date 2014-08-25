@@ -33,8 +33,8 @@
 using namespace v8::internal;
 using namespace cujs;
 
-
-const char *LLVM_LLC_PATH = "/usr/local/bin/cujs-llc";
+const char *LLVM_DYLIB_PATH = "/usr/local/lib/cujs-deps";
+const char *LLVM_BIN_PATH = "/usr/local/bin/cujs-deps";
 
 const char *COMPILE_ENV_BUILD_DIR = "CUJS_ENV_BUILD_DIR";
 const char *COMPILE_ENV_CUJS_RUNTIME_PATH = "CUJS_ENV_RUNTIME";
@@ -201,8 +201,9 @@ std::string cujs::Compiler::compileModule(v8::Isolate *isolate, std::string file
     outfile.close();
 
     //compile bitcode
-    system(string_format("%s %s %s",
-                         LLVM_LLC_PATH,
+    system(string_format("LD_LIBRARY_PATH=%s %s/llc %s %s",
+                         LLVM_DYLIB_PATH,
+                         LLVM_BIN_PATH,
                          _options->_mTripel.c_str(),
                          outFileName.c_str()).c_str());
     std::string llcOutput = string_format("%s/%s.s", buildDir.c_str(), moduleName.c_str());
@@ -220,7 +221,9 @@ void cujs::Compiler::run(){
     }
 
     if (options._createExecutable){
-        std::string clangCmd = string_format("/usr/local/bin/cujs-clang -framework Foundation %s %s -o %s/cujsapp",
+        std::string clangCmd = string_format("LD_LIBRARY_PATH=%s %s/clang -framework Foundation %s %s -o %s/cujsapp",
+                                             LLVM_DYLIB_PATH,
+                                             LLVM_BIN_PATH,
                                              options._runtimePath.c_str(),
                                              sFiles.c_str(),
                                              options._buildDir.c_str());
