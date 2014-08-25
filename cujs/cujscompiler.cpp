@@ -34,7 +34,7 @@ using namespace v8::internal;
 using namespace cujs;
 
 
-const char *LLVM_LLC_PATH = "/usr/local/Cellar/llvm/3.4/bin/llc";
+const char *LLVM_LLC_PATH = "/usr/local/bin/cujs-llc";
 
 const char *COMPILE_ENV_BUILD_DIR = "CUJS_ENV_BUILD_DIR";
 const char *COMPILE_ENV_CUJS_RUNTIME_PATH = "CUJS_ENV_RUNTIME";
@@ -220,7 +220,7 @@ void cujs::Compiler::run(){
     }
 
     if (options._createExecutable){
-        std::string clangCmd = string_format("clang -framework Foundation %s %s -o %s/cujsapp",
+        std::string clangCmd = string_format("/usr/local/bin/cujs-clang -framework Foundation %s %s -o %s/cujsapp",
                                              options._runtimePath.c_str(),
                                              sFiles.c_str(),
                                              options._buildDir.c_str());

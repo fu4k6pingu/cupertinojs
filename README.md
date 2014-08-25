@@ -170,17 +170,6 @@ There is an install script which sets up the development environment
 
     ./bootstrap.sh
 
-### Manual install
 
-- install v8 to deps/ with gyp
 
-    https://code.google.com/p/v8/wiki/BuildingWithGYP
-
-    make builddeps
-
-    build/gyp_v8 -Dtarget_arch=x64
-
-- install llvm with clang support
-
-    brew install llvm --with-clang
 
