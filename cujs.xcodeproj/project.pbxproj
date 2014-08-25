@@ -15,9 +15,15 @@
 		C534CD1A199718F2007BE0A5 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C521AB3F1991E89300948556 /* UIKit.framework */; };
 		C534CD1D199718F2007BE0A5 /* libcujs-runtime-ios.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C534CD0A199718F2007BE0A5 /* libcujs-runtime-ios.a */; };
 		C534CD23199718F2007BE0A5 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C534CD21199718F2007BE0A5 /* InfoPlist.strings */; };
-		C549B40A19969CF300169564 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B851969186400A381F3 /* libv8_nosnapshot.a */; };
 		C56554D91997192D0003F873 /* cujs_runtime.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC38C1997077C00D1ED51 /* cujs_runtime.m */; };
 		C56554DA1997194A0003F873 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */; };
+		C59DA7B419AB31AA00E0BA27 /* libicudata.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7AD19AB31AA00E0BA27 /* libicudata.a */; };
+		C59DA7B519AB31AA00E0BA27 /* libicuuc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7AE19AB31AA00E0BA27 /* libicuuc.a */; };
+		C59DA7B619AB31AA00E0BA27 /* libicui18n.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7AF19AB31AA00E0BA27 /* libicui18n.a */; };
+		C59DA7B719AB31AA00E0BA27 /* libv8_libbase.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7B019AB31AA00E0BA27 /* libv8_libbase.a */; };
+		C59DA7B819AB31AA00E0BA27 /* libv8_libplatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7B119AB31AA00E0BA27 /* libv8_libplatform.a */; };
+		C59DA7B919AB31AA00E0BA27 /* libv8_nosnapshot.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7B219AB31AA00E0BA27 /* libv8_nosnapshot.a */; };
+		C59DA7BA19AB31AA00E0BA27 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C59DA7B319AB31AA00E0BA27 /* libv8_base.a */; };
 		C5A2162E19AB12AF00C9BDC6 /* libclang.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5A2162C19AB12AF00C9BDC6 /* libclang.dylib */; };
 		C5A2162F19AB12AF00C9BDC6 /* libLLVM-3.4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = C5A2162D19AB12AF00C9BDC6 /* libLLVM-3.4.dylib */; };
 		C5A2163019AB1C6100C9BDC6 /* test-remove-instructions-after-early-return.js in Sources */ = {isa = PBXBuildFile; fileRef = C545014E19A96B5F009F2008 /* test-remove-instructions-after-early-return.js */; };
@@ -27,7 +33,6 @@
 		C5CFC3971997077C00D1ED51 /* libcujs-runtime.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */; };
 		C5CFC39D1997077C00D1ED51 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C5CFC39B1997077C00D1ED51 /* InfoPlist.strings */; };
 		C5CFC39F1997077C00D1ED51 /* cujs_runtimeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C5CFC39E1997077C00D1ED51 /* cujs_runtimeTests.m */; };
-		C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B891969186400A381F3 /* libv8_base.a */; };
 		C5D6F7FB19969601007E3ED3 /* cgclang.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7EC19969601007E3ED3 /* cgclang.cpp */; };
 		C5D6F7FC19969601007E3ED3 /* cgjsruntime.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7EE19969601007E3ED3 /* cgjsruntime.cpp */; };
 		C5D6F7FD19969601007E3ED3 /* cgjs.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F019969601007E3ED3 /* cgjs.cpp */; };
@@ -35,21 +40,9 @@
 		C5D6F7FF19969601007E3ED3 /* cujscompiler.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F519969601007E3ED3 /* cujscompiler.cpp */; };
 		C5D6F80019969601007E3ED3 /* cujsutils.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F719969601007E3ED3 /* cujsutils.cpp */; };
 		C5D6F80119969601007E3ED3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C5D6F7F919969601007E3ED3 /* main.cpp */; };
-		C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA619691B2D00A381F3 /* libicudata.a */; };
-		C5F83BBC19691BC800A381F3 /* libicui18n.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BA819691B2D00A381F3 /* libicui18n.a */; };
-		C5F83BBD19691BC800A381F3 /* libicuuc.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83BAA19691B2D00A381F3 /* libicuuc.a */; };
-		C5F83BC619691E1900A381F3 /* libv8_libbase.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B8B1969186400A381F3 /* libv8_libbase.a */; };
-		C5F83BDB196923BF00A381F3 /* libv8_libplatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C5F83B8D1969186400A381F3 /* libv8_libplatform.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		C50C700119969EA700FC00C8 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 554758952FC3AF9BD4BA01ED;
-			remoteInfo = js2c;
-		};
 		C521AB631991E90500948556 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C521AB5E1991E90400948556 /* Todoie.xcodeproj */;
@@ -71,131 +64,12 @@
 			remoteGlobalIDString = C534CD09199718F2007BE0A5;
 			remoteInfo = "cujs-runtime-ios";
 		};
-		C549B3F919969CE700169564 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = F3BBBE4BC63971772D137A52;
-			remoteInfo = v8_nosnapshot;
-		};
 		C5CFC3951997077C00D1ED51 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = C5F83B031969155100A381F3 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = C5CFC3851997077C00D1ED51;
 			remoteInfo = "cujs-runtime";
-		};
-		C5F83B821969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = EA65271C3D0F7C3383C07B9B;
-			remoteInfo = v8_snapshot;
-		};
-		C5F83B841969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = DC1F34142EA542A84E75D457;
-			remoteInfo = v8_nosnapshot;
-		};
-		C5F83B861969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 5AF7710A7C268F6340457FCF;
-			remoteInfo = v8_external_snapshot;
-		};
-		C5F83B881969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 26273B5082FD9E2952EA55E6;
-			remoteInfo = v8_base;
-		};
-		C5F83B8A1969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 76808CD7B8548E9CADFE2761;
-			remoteInfo = v8_libbase;
-		};
-		C5F83B8C1969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 451E0376C6ED476190E95DA1;
-			remoteInfo = v8_libplatform;
-		};
-		C5F83B8E1969186400A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = D031ED9682F21360344042FF;
-			remoteInfo = mksnapshot;
-		};
-		C5F83BA519691B2D00A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 232F791EEF1663B99B3948A0;
-			remoteInfo = icudata;
-		};
-		C5F83BA719691B2D00A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = C08DF88BB43555FDD0E6951C;
-			remoteInfo = icui18n;
-		};
-		C5F83BA919691B2D00A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 47A48DEFDFDD22CF05CDA95B;
-			remoteInfo = icuuc;
-		};
-		C5F83BC419691DFE00A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = F254D34C24C76377F3729B84;
-			remoteInfo = v8_base;
-		};
-		C5F83BC919691E4100A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 792C62A0E4868989A4A36A3E;
-			remoteInfo = v8_libplatform;
-		};
-		C5F83BCB19691E4800A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 9ECCDE91D9EA1FE332B22C55;
-			remoteInfo = v8_libbase;
-		};
-		C5F83BD519691F9900A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = F46C1033BA316E88C6721A96;
-			remoteInfo = icudata;
-		};
-		C5F83BD719691F9900A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 438C51A5B19300095C141CAB;
-			remoteInfo = icui18n;
-		};
-		C5F83BD919691F9900A381F3 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = A8365F341FF32481B097DC30;
-			remoteInfo = icuuc;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -253,6 +127,13 @@
 		C579D83C198DE88700544D8A /* test12.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test12.js; sourceTree = "<group>"; };
 		C579D83D198DE88700544D8A /* test13.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test13.js; sourceTree = "<group>"; };
 		C579D83E198DE88700544D8A /* test14.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = test14.js; sourceTree = "<group>"; };
+		C59DA7AD19AB31AA00E0BA27 /* libicudata.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libicudata.a; path = "deps/v8-trunk/xcodebuild/Release/libicudata.a"; sourceTree = "<group>"; };
+		C59DA7AE19AB31AA00E0BA27 /* libicuuc.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libicuuc.a; path = "deps/v8-trunk/xcodebuild/Release/libicuuc.a"; sourceTree = "<group>"; };
+		C59DA7AF19AB31AA00E0BA27 /* libicui18n.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libicui18n.a; path = "deps/v8-trunk/xcodebuild/Release/libicui18n.a"; sourceTree = "<group>"; };
+		C59DA7B019AB31AA00E0BA27 /* libv8_libbase.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libv8_libbase.a; path = "deps/v8-trunk/xcodebuild/Release/libv8_libbase.a"; sourceTree = "<group>"; };
+		C59DA7B119AB31AA00E0BA27 /* libv8_libplatform.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libv8_libplatform.a; path = "deps/v8-trunk/xcodebuild/Release/libv8_libplatform.a"; sourceTree = "<group>"; };
+		C59DA7B219AB31AA00E0BA27 /* libv8_nosnapshot.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libv8_nosnapshot.a; path = "deps/v8-trunk/xcodebuild/Release/libv8_nosnapshot.a"; sourceTree = "<group>"; };
+		C59DA7B319AB31AA00E0BA27 /* libv8_base.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libv8_base.a; path = "deps/v8-trunk/xcodebuild/Release/libv8_base.a"; sourceTree = "<group>"; };
 		C5A2162C19AB12AF00C9BDC6 /* libclang.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libclang.dylib; path = deps/llvm/lib/libclang.dylib; sourceTree = "<group>"; };
 		C5A2162D19AB12AF00C9BDC6 /* libLLVM-3.4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libLLVM-3.4.dylib"; path = "deps/llvm/lib/libLLVM-3.4.dylib"; sourceTree = "<group>"; };
 		C5CFC3861997077C00D1ED51 /* libcujs-runtime.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libcujs-runtime.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -279,8 +160,6 @@
 		C5D6F7F919969601007E3ED3 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = main.cpp; path = cujs/main.cpp; sourceTree = SOURCE_ROOT; };
 		C5F471EC198337D200F72FAA /* Makefile */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.make; path = Makefile; sourceTree = "<group>"; };
 		C5F83B0B1969155100A381F3 /* cujs */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = cujs; sourceTree = BUILT_PRODUCTS_DIR; };
-		C5F83B6F1969186400A381F3 /* v8.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = v8.xcodeproj; path = "deps/v8-trunk/tools/gyp/v8.xcodeproj"; sourceTree = "<group>"; };
-		C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = icu.xcodeproj; path = "deps/v8-trunk/third_party/icu/icu.xcodeproj"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -325,16 +204,16 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C59DA7B419AB31AA00E0BA27 /* libicudata.a in Frameworks */,
+				C59DA7B519AB31AA00E0BA27 /* libicuuc.a in Frameworks */,
+				C59DA7B619AB31AA00E0BA27 /* libicui18n.a in Frameworks */,
+				C59DA7B719AB31AA00E0BA27 /* libv8_libbase.a in Frameworks */,
+				C59DA7B819AB31AA00E0BA27 /* libv8_libplatform.a in Frameworks */,
+				C59DA7B919AB31AA00E0BA27 /* libv8_nosnapshot.a in Frameworks */,
+				C59DA7BA19AB31AA00E0BA27 /* libv8_base.a in Frameworks */,
 				C5A2162E19AB12AF00C9BDC6 /* libclang.dylib in Frameworks */,
 				C5A2162F19AB12AF00C9BDC6 /* libLLVM-3.4.dylib in Frameworks */,
 				C51CBC45196A815A0095CD4E /* libstdc++.6.0.9.dylib in Frameworks */,
-				C5F83BBB19691BC800A381F3 /* libicudata.a in Frameworks */,
-				C5F83BBC19691BC800A381F3 /* libicui18n.a in Frameworks */,
-				C5F83BBD19691BC800A381F3 /* libicuuc.a in Frameworks */,
-				C549B40A19969CF300169564 /* libv8_nosnapshot.a in Frameworks */,
-				C5F83BDB196923BF00A381F3 /* libv8_libplatform.a in Frameworks */,
-				C5F83BC619691E1900A381F3 /* libv8_libbase.a in Frameworks */,
-				C5D6F09919693BD700BB9050 /* libv8_base.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -415,17 +294,16 @@
 			name = "Supporting Files";
 			sourceTree = "<group>";
 		};
-		C5397CCF1995F6C800A1042E /* deps */ = {
-			isa = PBXGroup;
-			children = (
-				C5F83B6E1969185A00A381F3 /* v8 */,
-			);
-			name = deps;
-			sourceTree = "<group>";
-		};
 		C5686238197637B0001C8B45 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C59DA7AD19AB31AA00E0BA27 /* libicudata.a */,
+				C59DA7AE19AB31AA00E0BA27 /* libicuuc.a */,
+				C59DA7AF19AB31AA00E0BA27 /* libicui18n.a */,
+				C59DA7B019AB31AA00E0BA27 /* libv8_libbase.a */,
+				C59DA7B119AB31AA00E0BA27 /* libv8_libplatform.a */,
+				C59DA7B219AB31AA00E0BA27 /* libv8_nosnapshot.a */,
+				C59DA7B319AB31AA00E0BA27 /* libv8_base.a */,
 				C5A2162C19AB12AF00C9BDC6 /* libclang.dylib */,
 				C5A2162D19AB12AF00C9BDC6 /* libLLVM-3.4.dylib */,
 				C579D820198D908500544D8A /* libLLVM-3.4.dylib */,
@@ -491,7 +369,6 @@
 			children = (
 				C51CE3271971F2ED00996E03 /* examples */,
 				C51CE3151971BC4000996E03 /* test-js */,
-				C5397CCF1995F6C800A1042E /* deps */,
 				C5F83B0D1969155100A381F3 /* cujs */,
 				C5CFC3881997077C00D1ED51 /* cujs-runtime */,
 				C5CFC3981997077C00D1ED51 /* cujs-runtimeTests */,
@@ -533,39 +410,6 @@
 				C5D6F7F919969601007E3ED3 /* main.cpp */,
 			);
 			path = cujs;
-			sourceTree = "<group>";
-		};
-		C5F83B6E1969185A00A381F3 /* v8 */ = {
-			isa = PBXGroup;
-			children = (
-				C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */,
-				C5F83B6F1969186400A381F3 /* v8.xcodeproj */,
-			);
-			name = v8;
-			sourceTree = "<group>";
-		};
-		C5F83B701969186400A381F3 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				C5F83B831969186400A381F3 /* libv8_snapshot.a */,
-				C5F83B851969186400A381F3 /* libv8_nosnapshot.a */,
-				C5F83B871969186400A381F3 /* libv8_external_snapshot.a */,
-				C5F83B891969186400A381F3 /* libv8_base.a */,
-				C5F83B8B1969186400A381F3 /* libv8_libbase.a */,
-				C5F83B8D1969186400A381F3 /* libv8_libplatform.a */,
-				C5F83B8F1969186400A381F3 /* mksnapshot */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		C5F83B9F19691B2D00A381F3 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				C5F83BA619691B2D00A381F3 /* libicudata.a */,
-				C5F83BA819691B2D00A381F3 /* libicui18n.a */,
-				C5F83BAA19691B2D00A381F3 /* libicuuc.a */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -662,14 +506,6 @@
 			buildRules = (
 			);
 			dependencies = (
-				C50C700219969EA700FC00C8 /* PBXTargetDependency */,
-				C5F83BD619691F9900A381F3 /* PBXTargetDependency */,
-				C5F83BD819691F9900A381F3 /* PBXTargetDependency */,
-				C5F83BDA19691F9900A381F3 /* PBXTargetDependency */,
-				C549B3FA19969CE700169564 /* PBXTargetDependency */,
-				C5F83BCC19691E4800A381F3 /* PBXTargetDependency */,
-				C5F83BCA19691E4100A381F3 /* PBXTargetDependency */,
-				C5F83BC519691DFE00A381F3 /* PBXTargetDependency */,
 			);
 			name = cujs;
 			productName = cujs;
@@ -702,16 +538,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = C5F83B9F19691B2D00A381F3 /* Products */;
-					ProjectRef = C5F83B9E19691B2D00A381F3 /* icu.xcodeproj */;
-				},
-				{
 					ProductGroup = C521AB5F1991E90400948556 /* Products */;
 					ProjectRef = C521AB5E1991E90400948556 /* Todoie.xcodeproj */;
-				},
-				{
-					ProductGroup = C5F83B701969186400A381F3 /* Products */;
-					ProjectRef = C5F83B6F1969186400A381F3 /* v8.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -738,76 +566,6 @@
 			fileType = wrapper.cfbundle;
 			path = TodoieTests.xctest;
 			remoteRef = C521AB651991E90500948556 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B831969186400A381F3 /* libv8_snapshot.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_snapshot.a;
-			remoteRef = C5F83B821969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B851969186400A381F3 /* libv8_nosnapshot.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_nosnapshot.a;
-			remoteRef = C5F83B841969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B871969186400A381F3 /* libv8_external_snapshot.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_external_snapshot.a;
-			remoteRef = C5F83B861969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B891969186400A381F3 /* libv8_base.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_base.a;
-			remoteRef = C5F83B881969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B8B1969186400A381F3 /* libv8_libbase.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_libbase.a;
-			remoteRef = C5F83B8A1969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B8D1969186400A381F3 /* libv8_libplatform.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libv8_libplatform.a;
-			remoteRef = C5F83B8C1969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83B8F1969186400A381F3 /* mksnapshot */ = {
-			isa = PBXReferenceProxy;
-			fileType = "compiled.mach-o.executable";
-			path = mksnapshot;
-			remoteRef = C5F83B8E1969186400A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83BA619691B2D00A381F3 /* libicudata.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libicudata.a;
-			remoteRef = C5F83BA519691B2D00A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83BA819691B2D00A381F3 /* libicui18n.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libicui18n.a;
-			remoteRef = C5F83BA719691B2D00A381F3 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-		C5F83BAA19691B2D00A381F3 /* libicuuc.a */ = {
-			isa = PBXReferenceProxy;
-			fileType = archive.ar;
-			path = libicuuc.a;
-			remoteRef = C5F83BA919691B2D00A381F3 /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -882,55 +640,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		C50C700219969EA700FC00C8 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = js2c;
-			targetProxy = C50C700119969EA700FC00C8 /* PBXContainerItemProxy */;
-		};
 		C534CD1C199718F2007BE0A5 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C534CD09199718F2007BE0A5 /* cujs-runtime-ios */;
 			targetProxy = C534CD1B199718F2007BE0A5 /* PBXContainerItemProxy */;
 		};
-		C549B3FA19969CE700169564 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = v8_nosnapshot;
-			targetProxy = C549B3F919969CE700169564 /* PBXContainerItemProxy */;
-		};
 		C5CFC3961997077C00D1ED51 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C5CFC3851997077C00D1ED51 /* cujs-runtime */;
 			targetProxy = C5CFC3951997077C00D1ED51 /* PBXContainerItemProxy */;
-		};
-		C5F83BC519691DFE00A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = v8_base;
-			targetProxy = C5F83BC419691DFE00A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BCA19691E4100A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = v8_libplatform;
-			targetProxy = C5F83BC919691E4100A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BCC19691E4800A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = v8_libbase;
-			targetProxy = C5F83BCB19691E4800A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BD619691F9900A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = icudata;
-			targetProxy = C5F83BD519691F9900A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BD819691F9900A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = icui18n;
-			targetProxy = C5F83BD719691F9900A381F3 /* PBXContainerItemProxy */;
-		};
-		C5F83BDA19691F9900A381F3 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = icuuc;
-			targetProxy = C5F83BD919691F9900A381F3 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1224,24 +942,11 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
-				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/deps/llvm/lib";
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					V8_TARGET_ARCH_X64,
-					ENABLE_GDB_JIT_INTERFACE,
-					V8_DEPRECATION_WARNINGS,
-					V8_I18N_SUPPORT,
-					"U_USING_ICU_NAMESPACE=0",
-					U_STATIC_IMPLEMENTATION,
-					ENABLE_DISASSEMBLER,
-					V8_ENABLE_CHECKS,
-					OBJECT_PRINT,
-					VERIFY_HEAP,
-					DEBUG,
-					ENABLE_EXTRA_CHECKS,
-					ENABLE_HANDLE_ZAPPING,
 					__STDC_CONSTANT_MACROS,
 					__STDC_LIMIT_MACROS,
 				);
@@ -1255,6 +960,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/deps/llvm/include",
 					"$(SRCROOT)/deps/llvm/lib",
+					"$(SRCROOT)/deps/v8-trunk/xcodebuild/Release/",
 				);
 				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;
@@ -1293,24 +999,12 @@
 				DEPLOYMENT_LOCATION = YES;
 				DEPLOYMENT_POSTPROCESSING = YES;
 				DSTROOT = /;
-				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/deps/llvm/lib";
+				FRAMEWORK_SEARCH_PATHS = "";
 				GCC_C_LANGUAGE_STANDARD = ansi;
 				GCC_ENABLE_CPP_RTTI = NO;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					OBJECT_PRINT,
-					V8_TARGET_ARCH_X64,
-					ENABLE_GDB_JIT_INTERFACE,
-					V8_DEPRECATION_WARNINGS,
-					V8_I18N_SUPPORT,
-					"U_USING_ICU_NAMESPACE=0",
-					U_STATIC_IMPLEMENTATION,
-					ENABLE_DISASSEMBLER,
-					V8_ENABLE_CHECKS,
-					VERIFY_HEAP,
-					ENABLE_EXTRA_CHECKS,
-					ENABLE_HANDLE_ZAPPING,
 					__STDC_CONSTANT_MACROS,
 					__STDC_LIMIT_MACROS,
 				);
@@ -1324,6 +1018,7 @@
 					"$(inherited)",
 					"$(SRCROOT)/deps/llvm/include",
 					"$(SRCROOT)/deps/llvm/lib",
+					"$(SRCROOT)/deps/v8-trunk/xcodebuild/Release/",
 				);
 				MACH_O_TYPE = mh_execute;
 				MACOSX_DEPLOYMENT_TARGET = 10.9;

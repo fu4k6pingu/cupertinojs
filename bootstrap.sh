@@ -8,15 +8,20 @@ echo "Installing v8.."
 git clone https://chromium.googlesource.com/external/v8.git deps/v8-trunk
 
 # Explicitly use Version 3.29.16 (based on bleeding_edge revision r23326)
-git checkout f284b29e37d97d7ee9128055862179dcbda7e398
+git checkout a8702c210b949f35c64d8e4aa01bb6d525086c85
 
 cd deps/v8-trunk/ 
 make builddeps
 build/gyp_v8 -Dtarget_arch=x64
 
+cd tools/gyp
+
+# Build with xcodebuild
+xcodebuild GCC_PREPROCESSOR_MACROS="OBJECT_PRINT V8_TARGET_ARCH_X64 ENABLE_GDB_JIT_INTERFACE V8_DEPRECATION_WARNINGS V8_I18N_SUPPORT U_USING_ICU_NAMESPACE=0 U_STATIC_IMPLEMENTATION ENABLE_DISASSEMBLER V8_ENABLE_CHECKS VERIFY_HEAP ENABLE_EXTRA_CHECKS ENABLE_HANDLE_ZAPPING __STDC_CONSTANT_MACROS __STDC_LIMIT_MACROS" -configuration "Release"
+
 echo "Installed v8"
 
-cd ../..
+cd  $CUJS_ROOT_DIR
 
 echo "Installing llvm and lib clang.."
 
